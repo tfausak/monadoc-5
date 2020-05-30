@@ -1,0 +1,47 @@
+cabal-version: 2.2
+
+category: Documentation
+description: Monadoc provides better Haskell documentation.
+extra-source-files: README.markdown
+license-file: LICENSE.markdown
+license: ISC
+maintainer: Taylor Fausak
+name: monadoc
+synopsis: Better Haskell documentation.
+version: 0.0.0.0
+
+source-repository head
+  location: https://github.com/tfausak/monadoc
+  type: git
+
+common basics
+  default-language: Haskell2010
+  ghc-options:
+    -Weverything
+    -Wno-implicit-prelude
+    -Wno-missing-safe-haskell-mode
+    -Wno-prepositive-qualified-module
+    -Wno-safe
+
+library
+  import: basics
+
+  build-depends:
+    base >= 4.14.0 && < 4.15
+  exposed-modules: Monadoc
+  hs-source-dirs: src/lib
+
+executable monadoc
+  import: basics
+
+  build-depends: base, monadoc
+  hs-source-dirs: src/exe
+  main-is: Main.hs
+
+test-suite test
+  import: basics
+
+  build-depends: base
+  hs-source-dirs: src/test
+  main-is: Main.hs
+  type: exitcode-stdio-1.0
