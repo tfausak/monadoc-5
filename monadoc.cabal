@@ -19,6 +19,7 @@ common basics
   ghc-options:
     -Weverything
     -Wno-implicit-prelude
+    -Wno-missing-deriving-strategies
     -Wno-missing-safe-haskell-mode
     -Wno-prepositive-qualified-module
     -Wno-safe
@@ -30,6 +31,7 @@ library
   build-depends:
     base >= 4.14.0 && < 4.15
     , bytestring >= 0.10.10 && < 0.11
+    , Cabal >= 3.2.0 && < 3.3
     , ghc >= 8.10.1 && < 8.11
     , ghc-paths >= 0.1.0 && < 0.2
     , http-types >= 0.12.3 && < 0.13
@@ -38,6 +40,7 @@ library
     , warp >= 3.3.12 && < 3.4
   exposed-modules:
     Monadoc
+    Monadoc.Cabal
     Monadoc.Ghc
   hs-source-dirs: src/lib
 
@@ -58,6 +61,7 @@ test-suite test
   hs-source-dirs: src/test
   main-is: Main.hs
   other-modules:
-    MonadocSpec
+    Monadoc.CabalSpec
     Monadoc.GhcSpec
+    MonadocSpec
   type: exitcode-stdio-1.0
