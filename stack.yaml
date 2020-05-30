@@ -19,6 +19,7 @@ extra-deps:
 - colour-2.3.5
 - cryptonite-0.26
 - direct-sqlite-2.3.26
+- ghc-paths-0.1.0.12
 - hashable-1.3.0.0
 - hourglass-0.2.12
 - hspec-2.7.1

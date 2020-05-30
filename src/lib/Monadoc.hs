@@ -1,4 +1,4 @@
-module Monadoc ( monadoc, unit ) where
+module Monadoc ( monadoc ) where
 
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Network.Wai as Wai
@@ -10,6 +10,3 @@ monadoc :: IO ()
 monadoc = Sql.withConnection ":memory:" $ \ _ ->
   Warp.run 8080 $ \ _ respond ->
     respond $ Wai.responseLBS Http.ok200 [] LazyByteString.empty
-
-unit :: ()
-unit = ()
