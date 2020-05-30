@@ -47,7 +47,12 @@ executable monadoc
 test-suite test
   import: basics
 
-  build-depends: base
+  build-depends:
+    base
+    , hspec >= 2.7.1 && < 2.8
+    , monadoc
   hs-source-dirs: src/test
   main-is: Main.hs
+  other-modules:
+    MonadocSpec
   type: exitcode-stdio-1.0
