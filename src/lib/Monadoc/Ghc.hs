@@ -1,7 +1,11 @@
 module Monadoc.Ghc ( Errors(..), Module(..), parse ) where
 
 import qualified Bag
+import qualified Data.ByteString
 import qualified Data.Function
+import qualified Data.Text
+import qualified Data.Text.Encoding
+import qualified Data.Text.Encoding.Error
 import qualified DynFlags
 import qualified ErrUtils
 import qualified FastString
@@ -37,11 +41,13 @@ instance Show Module where
 
 parse
   :: FilePath
-  -> String
+  -> Data.ByteString.ByteString
   -> IO (Either Errors Module)
-parse filePath string = do
+parse filePath byteString = do
   dynFlags1 <- GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags
   let dynFlags2 = DynFlags.gopt_set dynFlags1 DynFlags.Opt_KeepRawTokenStream
+  let text = Data.Text.Encoding.decodeUtf8With Data.Text.Encoding.Error.lenientDecode byteString
+  let string = Data.Text.unpack text
   let stringBuffer = StringBuffer.stringToStringBuffer string
   let locatedStrings = HeaderInfo.getOptions dynFlags2 stringBuffer filePath
   (dynFlags3, _, _) <- DynFlags.parseDynamicFilePragma dynFlags2 locatedStrings

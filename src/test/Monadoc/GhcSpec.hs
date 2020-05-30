@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Monadoc.GhcSpec ( spec ) where
 
 import qualified Data.Either as Either
