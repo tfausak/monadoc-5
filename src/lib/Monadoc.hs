@@ -21,6 +21,8 @@ import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import qualified Network.HTTP.Client as Client
+import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
@@ -144,11 +146,13 @@ runApp = flip Reader.runReaderT
 
 data Context = Context
   { contextConfig :: Config
+  , contextManager :: Client.Manager
   , contextPool :: Pool.Pool Sql.Connection
   }
 
 makeContext :: Config -> IO Context
 makeContext config = do
+  manager <- Tls.newTlsManager
   let database = configDatabase config
   pool <- Pool.createPool
     (Sql.open database)
@@ -158,6 +162,7 @@ makeContext config = do
     (if null database || database == ":memory:" then 1 else 8)
   pure Context
     { contextConfig = config
+    , contextManager = manager
     , contextPool = pool
     }
 
