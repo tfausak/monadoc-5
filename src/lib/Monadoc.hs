@@ -31,9 +31,9 @@ import qualified Text.Read as Read
 monadoc :: IO ()
 monadoc = do
   config <- getConfig
-  environment <- makeEnvironment config
-  runApp environment migrate
-  Async.race_ (runApp environment server) (runApp environment worker)
+  context <- makeContext config
+  runApp context migrate
+  Async.race_ (runApp context server) (runApp context worker)
 
 migrate :: App ()
 migrate = withConnection $ \ connection -> Trans.lift $ do
@@ -128,24 +128,24 @@ instance Sql.ToField Iso8601 where
 
 withConnection :: (Sql.Connection -> App a) -> App a
 withConnection app = do
-  pool <- Reader.asks environmentPool
+  pool <- Reader.asks contextPool
   Pool.withResource pool app
 
 query :: String -> Sql.Query
 query = Sql.Query . Text.pack
 
-type App = Reader.ReaderT Environment IO
+type App = Reader.ReaderT Context IO
 
-runApp :: Environment -> App a -> IO a
+runApp :: Context -> App a -> IO a
 runApp = flip Reader.runReaderT
 
-data Environment = Environment
-  { environmentConfig :: Config
-  , environmentPool :: Pool.Pool Sql.Connection
+data Context = Context
+  { contextConfig :: Config
+  , contextPool :: Pool.Pool Sql.Connection
   }
 
-makeEnvironment :: Config -> IO Environment
-makeEnvironment config = do
+makeContext :: Config -> IO Context
+makeContext config = do
   let database = configDatabase config
   pool <- Pool.createPool
     (Sql.open database)
@@ -153,9 +153,9 @@ makeEnvironment config = do
     1
     60
     (if null database || database == ":memory:" then 1 else 8)
-  pure Environment
-    { environmentConfig = config
-    , environmentPool = pool
+  pure Context
+    { contextConfig = config
+    , contextPool = pool
     }
 
 data Config = Config
@@ -230,9 +230,9 @@ getConfig = do
 
 server :: App ()
 server = do
-  environment <- Reader.ask
+  context <- Reader.ask
   Trans.lift
-    . Warp.run (configPort $ environmentConfig environment)
+    . Warp.run (configPort $ contextConfig context)
     $ \ _ respond -> respond $ Wai.responseLBS Http.ok200 [] LazyByteString.empty
 
 worker :: App ()
