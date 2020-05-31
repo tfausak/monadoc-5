@@ -7,12 +7,15 @@ import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
+import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Fixed as Fixed
 import qualified Data.Map as Map
 import qualified Data.Pool as Pool
+import qualified Data.String as String
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
+import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Time as Time
 import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
@@ -161,6 +164,7 @@ makeContext config = do
 data Config = Config
   { configDatabase :: String
   , configHelp :: Bool
+  , configHost :: Warp.HostPreference
   , configPort :: Warp.Port
   , configVersion :: Bool
   } deriving (Eq, Show)
@@ -169,6 +173,7 @@ defaultConfig :: Config
 defaultConfig = Config
   { configDatabase = "monadoc.sqlite3"
   , configHelp = False
+  , configHost = String.fromString "127.0.0.1"
   , configPort = 4444
   , configVersion = False
   }
@@ -184,12 +189,19 @@ getConfig = do
         (GetOpt.ReqArg
           (\ database config -> Right config { configDatabase = database })
           "FILE")
-        "sets the database file (defaults to \"monadoc.sqlite3\")"
+        "sets the database file (defaults to monadoc.sqlite3)"
       , GetOpt.Option
         ['h']
         ["help"]
         (GetOpt.NoArg (\ config -> Right config { configHelp = True }))
         "shows the help and exits"
+      , GetOpt.Option
+        []
+        ["host"]
+        (GetOpt.ReqArg
+          (\ host config -> Right config { configHost = String.fromString host })
+          "STRING")
+        "sets the server host (defaults to 127.0.0.1)"
       , GetOpt.Option
         []
         ["port"]
@@ -218,7 +230,6 @@ getConfig = do
       IO.hPutStrLn IO.stderr $ "ERROR: " <> err
       Exit.exitFailure
     Right cfg -> pure cfg
-  let version = Version.showVersion Package.version
   Monad.when (configHelp config) $ do
     name <- Environment.getProgName
     putStr $ GetOpt.usageInfo (unwords [name, "version", version]) options
@@ -228,12 +239,64 @@ getConfig = do
     Exit.exitSuccess
   pure config
 
+version :: String
+version = Version.showVersion Package.version
+
 server :: App ()
 server = do
   context <- Reader.ask
   Trans.lift
-    . Warp.run (configPort $ contextConfig context)
-    $ \ _ respond -> respond $ Wai.responseLBS Http.ok200 [] LazyByteString.empty
+    . Warp.runSettings (makeSettings $ contextConfig context)
+    $ \ _ respond -> respond $ statusResponse Http.notFound404 []
+
+makeSettings :: Config -> Warp.Settings
+makeSettings config =
+  Warp.setBeforeMainLoop (beforeMainLoop config)
+    . Warp.setHost (configHost config)
+    . Warp.setLogger logger
+    . Warp.setOnException onException
+    . Warp.setOnExceptionResponse onExceptionResponse
+    . Warp.setPort (configPort config)
+    $ Warp.setServerName serverName Warp.defaultSettings
+
+beforeMainLoop :: Config -> IO ()
+beforeMainLoop config = putStrLn $ unwords
+  ["Listening on", show $ configHost config, "port", show $ configPort config]
+
+logger :: Wai.Request -> Http.Status -> Maybe Integer -> IO ()
+logger request status _ = putStrLn $ unwords
+  [ show $ Http.statusCode status
+  , fromUtf8 $ Wai.requestMethod request
+  , fromUtf8 $ Wai.rawPathInfo request <> Wai.rawQueryString request
+  ]
+
+onException :: Maybe Wai.Request -> Exception.SomeException -> IO ()
+onException _ someException@(Exception.SomeException exception) =
+  Monad.when (Warp.defaultShouldDisplayException someException)
+    . IO.hPutStrLn IO.stderr
+    $ Exception.displayException exception
+
+onExceptionResponse :: Exception.SomeException -> Wai.Response
+onExceptionResponse _ = statusResponse Http.internalServerError500 []
+
+statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
+statusResponse status headers = stringResponse status headers $ unwords
+  [show $ Http.statusCode status, fromUtf8 $ Http.statusMessage status]
+
+stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
+stringResponse status headers string = Wai.responseLBS
+  status
+  ((Http.hContentType, toUtf8 "text/plain; charset=utf-8") : headers)
+  (LazyByteString.fromStrict $ toUtf8 string)
+
+fromUtf8 :: ByteString.ByteString -> String
+fromUtf8 = Text.unpack . Text.decodeUtf8With Text.lenientDecode
+
+toUtf8 :: String -> ByteString.ByteString
+toUtf8 = Text.encodeUtf8 . Text.pack
+
+serverName :: ByteString.ByteString
+serverName = toUtf8 $ "monadoc-" <> version
 
 worker :: App ()
 worker = Monad.forever $ do
