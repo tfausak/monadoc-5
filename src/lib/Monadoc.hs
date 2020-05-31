@@ -48,7 +48,7 @@ migrate = withConnection $ \ connection -> Trans.lift $ do
     let iso8601 = migrationIso8601 migration
     let actualSha256 = migrationSha256 migration
     case Map.lookup iso8601 digests of
-      Nothing -> do
+      Nothing -> Sql.withTransaction connection $ do
         Sql.execute_ connection $ migrationQuery migration
         Sql.execute connection
           (query "insert into migrations (iso8601, sha256) values (?, ?)")
