@@ -146,12 +146,13 @@ data Environment = Environment
 
 makeEnvironment :: Config -> IO Environment
 makeEnvironment config = do
+  let database = configDatabase config
   pool <- Pool.createPool
-    (Sql.open $ configDatabase config)
+    (Sql.open database)
     Sql.close
     1
     60
-    1
+    (if null database || database == ":memory:" then 1 else 8)
   pure Environment
     { environmentConfig = config
     , environmentPool = pool
@@ -166,7 +167,7 @@ data Config = Config
 
 defaultConfig :: Config
 defaultConfig = Config
-  { configDatabase = ":memory:"
+  { configDatabase = "monadoc.sqlite3"
   , configHelp = False
   , configPort = 4444
   , configVersion = False
@@ -183,7 +184,7 @@ getConfig = do
         (GetOpt.ReqArg
           (\ database config -> Right config { configDatabase = database })
           "FILE")
-        "sets the database file (defaults to \":memory:\")"
+        "sets the database file (defaults to \"monadoc.sqlite3\")"
       , GetOpt.Option
         ['h']
         ["help"]
