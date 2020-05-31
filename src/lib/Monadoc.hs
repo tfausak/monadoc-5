@@ -3,12 +3,21 @@ module Monadoc ( monadoc ) where
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Concurrent.Async as Async
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Fixed as Fixed
+import qualified Data.Map as Map
 import qualified Data.Pool as Pool
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import qualified Data.Time as Time
 import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
@@ -23,7 +32,107 @@ monadoc :: IO ()
 monadoc = do
   config <- getConfig
   environment <- makeEnvironment config
+  runApp environment migrate
   Async.race_ (runApp environment server) (runApp environment worker)
+
+migrate :: App ()
+migrate = withConnection $ \ connection -> Trans.lift $ do
+  Sql.execute_ connection $ query "pragma journal_mode = wal"
+  Sql.execute_ connection $ query
+    "create table if not exists migrations \
+    \( iso8601 text not null primary key \
+    \, sha256 text not null )"
+  digests <- fmap Map.fromList . Sql.query_ connection $ query
+    "select iso8601, sha256 from migrations"
+  Monad.forM_ migrations $ \ migration -> do
+    let iso8601 = migrationIso8601 migration
+    let actualSha256 = migrationSha256 migration
+    case Map.lookup iso8601 digests of
+      Nothing -> do
+        Sql.execute_ connection $ migrationQuery migration
+        Sql.execute connection
+          (query "insert into migrations (iso8601, sha256) values (?, ?)")
+          (iso8601, actualSha256)
+      Just expectedSha256 -> Monad.when (actualSha256 /= expectedSha256)
+        . Exception.throwM
+        $ MigrationMismatch iso8601 expectedSha256 actualSha256
+
+data MigrationMismatch = MigrationMismatch
+  { migrationMismatchIso8601 :: Iso8601
+  , migrationMismatchExpectedSha256 :: Sha256
+  , migrationMismatchActualSha256 :: Sha256
+  } deriving (Eq, Show)
+
+instance Exception.Exception MigrationMismatch
+
+data Migration = Migration
+  { migrationIso8601 :: Iso8601
+  , migrationQuery :: Sql.Query
+  } deriving (Eq, Show)
+
+migrationSha256 :: Migration -> Sha256
+migrationSha256 =
+  Sha256 . Crypto.hash . Text.encodeUtf8 . Sql.fromQuery . migrationQuery
+
+migrations :: [Migration]
+migrations =
+  [ Migration
+    { migrationIso8601 = makeIso8601 2020 5 31 13 38 0
+    , migrationQuery = query "select 1"
+    }
+  ]
+
+makeIso8601 :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Iso8601
+makeIso8601 year month day hour minute second = Iso8601 Time.UTCTime
+  { Time.utctDay = Time.fromGregorian year month day
+  , Time.utctDayTime = Time.timeOfDayToTime Time.TimeOfDay
+    { Time.todHour = hour
+    , Time.todMin = minute
+    , Time.todSec = second
+    }
+  }
+
+newtype Sha256 = Sha256
+  { unwrapSha256 :: Crypto.Digest Crypto.SHA256
+  } deriving (Eq, Ord, Show)
+
+instance Sql.FromField Sha256 where
+  fromField field = do
+    string <- Sql.fromField field
+    case Read.readMaybe string of
+      Nothing -> Sql.returnError Sql.ConversionFailed field
+        $ "failed to parse: " <> show string
+      Just digest -> pure $ Sha256 digest
+
+instance Sql.ToField Sha256 where
+  toField = Sql.toField . show . unwrapSha256
+
+newtype Iso8601 = Iso8601
+  { unwrapIso8601 :: Time.UTCTime
+  } deriving (Eq, Ord, Show)
+
+instance Sql.FromField Iso8601 where
+  fromField field = do
+    let format = "%Y-%m-%dT%H:%M:%S%QZ"
+    string <- Sql.fromField field
+    case Time.parseTimeM False Time.defaultTimeLocale format string of
+      Nothing -> Sql.returnError Sql.ConversionFailed field
+        $ "failed to parse: " <> show string
+      Just utcTime -> pure $ Iso8601 utcTime
+
+instance Sql.ToField Iso8601 where
+  toField =
+    Sql.toField
+      . Time.formatTime Time.defaultTimeLocale "%Y-%m-%dT%H:%M:%S%3QZ"
+      . unwrapIso8601
+
+withConnection :: (Sql.Connection -> App a) -> App a
+withConnection app = do
+  pool <- Reader.asks environmentPool
+  Pool.withResource pool app
+
+query :: String -> Sql.Query
+query = Sql.Query . Text.pack
 
 type App = Reader.ReaderT Environment IO
 
