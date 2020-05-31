@@ -4,6 +4,7 @@ import qualified Control.Concurrent as Concurrent
 import qualified Control.Concurrent.Async as Async
 import qualified Control.Monad as Monad
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Pool as Pool
 import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
 import qualified Network.HTTP.Types as Http
@@ -19,9 +20,26 @@ import qualified Text.Read as Read
 monadoc :: IO ()
 monadoc = do
   config <- getConfig
-  Sql.withConnection (configDatabase config) $ \ _ -> Async.race_
-    (server config)
-    worker
+  environment <- makeEnvironment config
+  Async.race_ (server environment) worker
+
+data Environment = Environment
+  { environmentConfig :: Config
+  , environmentPool :: Pool.Pool Sql.Connection
+  }
+
+makeEnvironment :: Config -> IO Environment
+makeEnvironment config = do
+  pool <- Pool.createPool
+    (Sql.open $ configDatabase config)
+    Sql.close
+    1
+    60
+    1
+  pure Environment
+    { environmentConfig = config
+    , environmentPool = pool
+    }
 
 data Config = Config
   { configDatabase :: String
@@ -93,9 +111,9 @@ getConfig = do
     Exit.exitSuccess
   pure config
 
-server :: Config -> IO ()
-server config = Warp.run (configPort config) $ \ _ respond ->
-  respond $ Wai.responseLBS Http.ok200 [] LazyByteString.empty
+server :: Environment -> IO ()
+server environment = Warp.run (configPort $ environmentConfig environment)
+  $ \ _ respond -> respond $ Wai.responseLBS Http.ok200 [] LazyByteString.empty
 
 worker :: IO ()
 worker = Monad.forever $ do
