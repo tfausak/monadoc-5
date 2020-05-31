@@ -3,6 +3,8 @@ module Monadoc ( monadoc ) where
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Concurrent.Async as Async
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans.Class as Trans
+import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Pool as Pool
 import qualified Data.Version as Version
@@ -21,7 +23,12 @@ monadoc :: IO ()
 monadoc = do
   config <- getConfig
   environment <- makeEnvironment config
-  Async.race_ (server environment) worker
+  Async.race_ (runApp environment server) (runApp environment worker)
+
+type App = Reader.ReaderT Environment IO
+
+runApp :: Environment -> App a -> IO a
+runApp = flip Reader.runReaderT
 
 data Environment = Environment
   { environmentConfig :: Config
@@ -111,10 +118,13 @@ getConfig = do
     Exit.exitSuccess
   pure config
 
-server :: Environment -> IO ()
-server environment = Warp.run (configPort $ environmentConfig environment)
-  $ \ _ respond -> respond $ Wai.responseLBS Http.ok200 [] LazyByteString.empty
+server :: App ()
+server = do
+  environment <- Reader.ask
+  Trans.lift
+    . Warp.run (configPort $ environmentConfig environment)
+    $ \ _ respond -> respond $ Wai.responseLBS Http.ok200 [] LazyByteString.empty
 
-worker :: IO ()
+worker :: App ()
 worker = Monad.forever $ do
-  Concurrent.threadDelay 1000000
+  Trans.lift $ Concurrent.threadDelay 1000000
