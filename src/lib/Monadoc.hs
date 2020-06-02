@@ -13,6 +13,7 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Fixed as Fixed
 import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
 import qualified Data.String as String
 import qualified Data.Text as Text
@@ -28,6 +29,7 @@ import qualified GHC.Stack as Stack
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
+import qualified Network.HTTP.Types.Header as Http
 import qualified Network.URI as Uri
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
@@ -403,4 +405,66 @@ serverName = toUtf8 $ "monadoc-" <> version
 
 worker :: App ()
 worker = Monad.forever $ do
-  Trans.lift $ Concurrent.threadDelay 1000000
+  Trans.lift $ putStrLn "updating hackage index"
+  let url = "https://hackage.haskell.org/01-index.tar.gz"
+  result <- withConnection $ \ connection -> Trans.lift $ Sql.query connection
+    (query "select etag, sha256 from cache where url = ?") [url]
+  contents <- case result of
+    [] -> do
+      Trans.lift $ putStrLn "index is not cached"
+      request <- Client.parseRequest url
+      manager <- Reader.asks contextManager
+      response <- Trans.lift $ Client.httpLbs request manager
+      Monad.when (Client.responseStatus response /= Http.ok200)
+        . throwWithCallStack
+        . userError
+        $ show response
+      let
+        body = LazyByteString.toStrict $ Client.responseBody response
+        sha256 = Sha256 $ Crypto.hash body
+        etag = Etag . Maybe.fromMaybe ByteString.empty . lookup Http.hETag
+          $ Client.responseHeaders response
+      Trans.lift $ putStrLn "got index, caching response"
+      withConnection $ \ connection -> Trans.lift $ do
+        Sql.execute connection
+          (query "insert into blobs (octets, sha256) values (?, ?) on conflict do nothing")
+          (Octets body, sha256)
+        Sql.execute connection
+          (query "insert into cache (etag, sha256, url) values (?, ?, ?)")
+          (etag, sha256, url)
+      pure body
+    (etag, sha256) : _ -> do
+      Trans.lift $ putStrLn "index is cached"
+      request <- fmap (addRequestHeader Http.hIfNoneMatch $ unwrapEtag etag) $ Client.parseRequest url
+      manager <- Reader.asks contextManager
+      response <- Trans.lift $ Client.httpLbs request manager
+      case Http.statusCode $ Client.responseStatus response of
+        200 -> do
+          Trans.lift $ putStrLn "index has changed"
+          let
+            body = LazyByteString.toStrict $ Client.responseBody response
+            newSha256 = Sha256 $ Crypto.hash body
+            newEtag = Etag . Maybe.fromMaybe ByteString.empty . lookup Http.hETag
+              $ Client.responseHeaders response
+          Trans.lift $ putStrLn "got index, caching response"
+          withConnection $ \ connection -> Trans.lift $ do
+            Sql.execute connection
+              (query "insert into blobs (octets, sha256) values (?, ?) on conflict do nothing")
+              (Octets body, newSha256)
+            Sql.execute connection
+              (query "insert into cache (etag, sha256, url) values (?, ?, ?)")
+              (newEtag, newSha256, url)
+          pure body
+        304 -> do
+          Trans.lift $ putStrLn "index has not changed"
+          rows <- withConnection $ \ connection -> Trans.lift $ Sql.query connection
+            (query "select octets from blobs where sha256 = ?") [sha256 :: Sha256]
+          case rows of
+            [] -> throwWithCallStack $ userError "missing index blob"
+            row : _ -> pure . unwrapOctets $ Sql.fromOnly row
+        _ -> throwWithCallStack . userError $ show response
+  Trans.lift . putStrLn $ "index size: " <> show (ByteString.length contents)
+  Trans.lift $ Concurrent.threadDelay 60000000
+
+addRequestHeader :: Http.HeaderName -> ByteString.ByteString -> Client.Request -> Client.Request
+addRequestHeader name value request = request { Client.requestHeaders = (name, value) : Client.requestHeaders request }
