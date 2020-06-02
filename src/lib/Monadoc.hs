@@ -27,6 +27,7 @@ import qualified GHC.Stack as Stack
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
+import qualified Network.URI as Uri
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Paths_monadoc as Package
@@ -95,17 +96,56 @@ migrations =
       \( octets blob not null \
       \, sha256 text not null primary key )"
     }
+  , Migration
+    { migrationIso8601 = makeIso8601 2020 6 2 13 50 0
+    , migrationQuery = query
+      " create table cache \
+      \( etag text not null \
+      \, sha256 text not null \
+      \, url text not null primary key )"
+    }
   ]
+
+data Cache = Cache
+  { cacheEtag :: Etag
+  , cacheSha256 :: Sha256
+  , cacheUrl :: Url
+  } deriving (Eq, Show)
+
+newtype Etag = Etag
+  { unwrapEtag :: ByteString.ByteString
+  } deriving (Eq, Show)
+
+instance Sql.FromField Etag where
+  fromField field = do
+    string <- Sql.fromField field
+    case Read.readMaybe string of
+      Nothing -> Sql.returnError Sql.ConversionFailed field
+        $ "failed to parse: " <> show string
+      Just byteString -> pure $ Etag byteString
+
+instance Sql.ToField Etag where
+  toField = Sql.toField . show . unwrapEtag
+
+newtype Url = Url
+  { unwrapUrl :: Uri.URI
+  } deriving (Eq, Show)
+
+instance Sql.FromField Url where
+  fromField field = do
+    string <- Sql.fromField field
+    case Uri.parseURI string of
+      Nothing -> Sql.returnError Sql.ConversionFailed field
+        $ "failed to parse: " <> show string
+      Just uri -> pure $ Url uri
+
+instance Sql.ToField Url where
+  toField = Sql.toField . ($ "") . Uri.uriToString id . unwrapUrl
 
 data Blob = Blob
   { blobOctets :: Octets
   , blobSha256 :: Sha256
   } deriving (Eq, Show)
-
-instance Sql.FromRow Blob where
-  fromRow = Blob
-    <$> Sql.field
-    <*> Sql.field
 
 newtype Octets = Octets
   { unwrapOctets :: ByteString.ByteString
@@ -113,6 +153,9 @@ newtype Octets = Octets
 
 instance Sql.FromField Octets where
   fromField = fmap Octets . Sql.fromField
+
+instance Sql.ToField Octets where
+  toField = Sql.toField . unwrapOctets
 
 makeIso8601 :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Iso8601
 makeIso8601 year month day hour minute second = Iso8601 Time.UTCTime
