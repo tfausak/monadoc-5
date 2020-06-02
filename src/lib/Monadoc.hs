@@ -2,6 +2,8 @@
 
 module Monadoc ( monadoc ) where
 
+import qualified Codec.Archive.Tar as Tar
+import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Concurrent.Async as Async
 import qualified Control.Monad as Monad
@@ -454,6 +456,13 @@ worker = Monad.forever $ do
             row : _ -> pure . unwrapOctets $ Sql.fromOnly row
         _ -> throwWithCallStack . userError $ show response
   Trans.lift . putStrLn $ "index size: " <> show (ByteString.length contents)
+  Trans.lift
+    . print
+    . length
+    . Tar.foldEntries ((:) . Right) [] (pure . Left)
+    . Tar.read
+    . Gzip.decompress
+    $ LazyByteString.fromStrict contents
   Trans.lift $ Concurrent.threadDelay 60000000
 
 newtype Size = Size

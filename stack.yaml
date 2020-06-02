@@ -63,6 +63,7 @@ extra-deps:
   - splitmix-0.0.5
   - sqlite-simple-0.4.18.0
   - streaming-commons-0.2.1.2
+  - tar-0.5.1.1
   - tf-random-0.5
   - time-manager-0.0.0
   - tls-1.5.4
