@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Monadoc ( monadoc ) where
 
 import qualified Control.Concurrent as Concurrent
@@ -21,6 +23,7 @@ import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import qualified GHC.Stack as Stack
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
@@ -33,7 +36,7 @@ import qualified System.Exit as Exit
 import qualified System.IO as IO
 import qualified Text.Read as Read
 
-monadoc :: IO ()
+monadoc :: Stack.HasCallStack => IO ()
 monadoc = do
   config <- getConfig
   context <- makeContext config
@@ -139,10 +142,38 @@ withConnection app = do
 query :: String -> Sql.Query
 query = Sql.Query . Text.pack
 
-type App = Reader.ReaderT Context IO
+type App a = Stack.HasCallStack => Reader.ReaderT Context IO a
 
-runApp :: Context -> App a -> IO a
+runApp :: Stack.HasCallStack => Context -> App a -> IO a
 runApp = flip Reader.runReaderT
+
+data SomeExceptionWithCallStack
+  = SomeExceptionWithCallStack Exception.SomeException Stack.CallStack
+  deriving Show
+
+instance Exception.Exception SomeExceptionWithCallStack where
+  displayException (SomeExceptionWithCallStack e s) = unlines
+    [ Exception.displayException e
+    , Stack.prettyCallStack s
+    ]
+
+addCallStack
+  :: Stack.HasCallStack
+  => Exception.SomeException
+  -> Exception.SomeException
+addCallStack e = case Exception.fromException e of
+  Just (SomeExceptionWithCallStack _ _) -> e
+  Nothing -> Exception.toException $ SomeExceptionWithCallStack e Stack.callStack
+
+-- removeCallStack :: Exception.SomeException -> Exception.SomeException
+-- removeCallStack e = case Exception.fromException e of
+--   Just (SomeExceptionWithCallStack f _) -> removeCallStack f
+--   Nothing -> e
+
+throwWithCallStack
+  :: (Stack.HasCallStack, Exception.Exception e, Exception.MonadThrow m)
+  => e -> m a
+throwWithCallStack = Exception.throwM . addCallStack . Exception.toException
 
 data Context = Context
   { contextConfig :: Config
@@ -252,7 +283,16 @@ server = do
   context <- Reader.ask
   Trans.lift
     . Warp.runSettings (makeSettings $ contextConfig context)
-    $ \ _ respond -> respond $ statusResponse Http.notFound404 []
+    $ \ request respond -> runApp context $ do
+      let method = fromUtf8 $ Wai.requestMethod request
+      let path = fmap Text.unpack $ Wai.pathInfo request
+      case (method, path) of
+        ("GET", ["health-check"]) ->
+          Trans.lift . respond $ statusResponse Http.ok200 []
+        ("GET", ["throw"]) ->
+          throwWithCallStack $ userError "oh no"
+        _ ->
+          Trans.lift . respond $ statusResponse Http.notFound404 []
 
 makeSettings :: Config -> Warp.Settings
 makeSettings config =

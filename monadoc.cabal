@@ -24,6 +24,7 @@ common library
     -Wno-missing-exported-signatures
     -Wno-missing-safe-haskell-mode
     -Wno-prepositive-qualified-module
+    -Wno-redundant-constraints
     -Wno-safe
     -Wno-unsafe
 
