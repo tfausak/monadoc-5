@@ -19,6 +19,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Time as Time
+import qualified Data.Typeable as Typeable
 import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
@@ -117,12 +118,16 @@ newtype Etag = Etag
   } deriving (Eq, Show)
 
 instance Sql.FromField Etag where
-  fromField field = do
-    string <- Sql.fromField field
-    case Read.readMaybe string of
-      Nothing -> Sql.returnError Sql.ConversionFailed field
-        $ "failed to parse: " <> show string
-      Just byteString -> pure $ Etag byteString
+  fromField = fromFieldVia $ fmap Etag . Read.readMaybe
+
+fromFieldVia
+  :: (Sql.FromField a, Show a, Typeable.Typeable b)
+  => (a -> Maybe b) -> Sql.FieldParser b
+fromFieldVia convert field = do
+  before <- Sql.fromField field
+  case convert before of
+    Nothing -> Sql.returnError Sql.ConversionFailed field $ "failed to convert: " <>  show before
+    Just after -> pure after
 
 instance Sql.ToField Etag where
   toField = Sql.toField . show . unwrapEtag
@@ -132,12 +137,7 @@ newtype Url = Url
   } deriving (Eq, Show)
 
 instance Sql.FromField Url where
-  fromField field = do
-    string <- Sql.fromField field
-    case Uri.parseURI string of
-      Nothing -> Sql.returnError Sql.ConversionFailed field
-        $ "failed to parse: " <> show string
-      Just uri -> pure $ Url uri
+  fromField = fromFieldVia $ fmap Url . Uri.parseURI
 
 instance Sql.ToField Url where
   toField = Sql.toField . ($ "") . Uri.uriToString id . unwrapUrl
@@ -172,12 +172,7 @@ newtype Sha256 = Sha256
   } deriving (Eq, Show)
 
 instance Sql.FromField Sha256 where
-  fromField field = do
-    string <- Sql.fromField field
-    case Read.readMaybe string of
-      Nothing -> Sql.returnError Sql.ConversionFailed field
-        $ "failed to parse: " <> show string
-      Just digest -> pure $ Sha256 digest
+  fromField = fromFieldVia $ fmap Sha256 . Read.readMaybe
 
 instance Sql.ToField Sha256 where
   toField = Sql.toField . show . unwrapSha256
@@ -187,13 +182,9 @@ newtype Iso8601 = Iso8601
   } deriving (Eq, Ord, Show)
 
 instance Sql.FromField Iso8601 where
-  fromField field = do
-    let format = "%Y-%m-%dT%H:%M:%S%QZ"
-    string <- Sql.fromField field
-    case Time.parseTimeM False Time.defaultTimeLocale format string of
-      Nothing -> Sql.returnError Sql.ConversionFailed field
-        $ "failed to parse: " <> show string
-      Just utcTime -> pure $ Iso8601 utcTime
+  fromField = fromFieldVia
+    $ fmap Iso8601
+    . Time.parseTimeM False Time.defaultTimeLocale "%Y-%m-%dT%H:%M:%S%QZ"
 
 instance Sql.ToField Iso8601 where
   toField =
