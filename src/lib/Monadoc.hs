@@ -97,7 +97,8 @@ migrations =
     , migrationQuery = query
       " create table blobs \
       \( octets blob not null \
-      \, sha256 text not null primary key )"
+      \, sha256 text not null primary key \
+      \, size integer not null )"
     }
   , Migration
     { migrationIso8601 = makeIso8601 2020 6 2 13 50 0
@@ -108,12 +109,6 @@ migrations =
       \, url text not null primary key )"
     }
   ]
-
-data Cache = Cache
-  { cacheEtag :: Etag
-  , cacheSha256 :: Sha256
-  , cacheUrl :: Url
-  } deriving (Eq, Show)
 
 newtype Etag = Etag
   { unwrapEtag :: ByteString.ByteString
@@ -143,11 +138,6 @@ instance Sql.FromField Url where
 
 instance Sql.ToField Url where
   toField = Sql.toField . ($ "") . Uri.uriToString id . unwrapUrl
-
-data Blob = Blob
-  { blobOctets :: Octets
-  , blobSha256 :: Sha256
-  } deriving (Eq, Show)
 
 newtype Octets = Octets
   { unwrapOctets :: ByteString.ByteString
@@ -427,8 +417,8 @@ worker = Monad.forever $ do
       Trans.lift $ putStrLn "got index, caching response"
       withConnection $ \ connection -> Trans.lift $ do
         Sql.execute connection
-          (query "insert into blobs (octets, sha256) values (?, ?) on conflict do nothing")
-          (Octets body, sha256)
+          (query "insert into blobs (octets, sha256, size) values (?, ?, ?) on conflict do nothing")
+          (Octets body, sha256, Size $ ByteString.length body)
         Sql.execute connection
           (query "insert into cache (etag, sha256, url) values (?, ?, ?)")
           (etag, sha256, url)
@@ -449,8 +439,8 @@ worker = Monad.forever $ do
           Trans.lift $ putStrLn "got index, caching response"
           withConnection $ \ connection -> Trans.lift $ do
             Sql.execute connection
-              (query "insert into blobs (octets, sha256) values (?, ?) on conflict do nothing")
-              (Octets body, newSha256)
+              (query "insert into blobs (octets, sha256) values (?, ?, ?) on conflict do nothing")
+              (Octets body, newSha256, Size $ ByteString.length body)
             Sql.execute connection
               (query "insert into cache (etag, sha256, url) values (?, ?, ?)")
               (newEtag, newSha256, url)
@@ -465,6 +455,13 @@ worker = Monad.forever $ do
         _ -> throwWithCallStack . userError $ show response
   Trans.lift . putStrLn $ "index size: " <> show (ByteString.length contents)
   Trans.lift $ Concurrent.threadDelay 60000000
+
+newtype Size = Size
+  { unwrapSize :: Int
+  } deriving (Eq, Show)
+
+instance Sql.ToField Size where
+  toField = Sql.toField . unwrapSize
 
 addRequestHeader :: Http.HeaderName -> ByteString.ByteString -> Client.Request -> Client.Request
 addRequestHeader name value request = request { Client.requestHeaders = (name, value) : Client.requestHeaders request }
