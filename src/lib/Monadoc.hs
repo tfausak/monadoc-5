@@ -88,7 +88,31 @@ migrations =
     { migrationIso8601 = makeIso8601 2020 5 31 13 38 0
     , migrationQuery = query "select 1"
     }
+  , Migration
+    { migrationIso8601 = makeIso8601 2020 6 2 13 43 0
+    , migrationQuery = query
+      " create table blobs \
+      \( octets blob not null \
+      \, sha256 text not null primary key )"
+    }
   ]
+
+data Blob = Blob
+  { blobOctets :: Octets
+  , blobSha256 :: Sha256
+  } deriving (Eq, Show)
+
+instance Sql.FromRow Blob where
+  fromRow = Blob
+    <$> Sql.field
+    <*> Sql.field
+
+newtype Octets = Octets
+  { unwrapOctets :: ByteString.ByteString
+  } deriving (Eq, Show)
+
+instance Sql.FromField Octets where
+  fromField = fmap Octets . Sql.fromField
 
 makeIso8601 :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Iso8601
 makeIso8601 year month day hour minute second = Iso8601 Time.UTCTime
@@ -102,7 +126,7 @@ makeIso8601 year month day hour minute second = Iso8601 Time.UTCTime
 
 newtype Sha256 = Sha256
   { unwrapSha256 :: Crypto.Digest Crypto.SHA256
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Show)
 
 instance Sql.FromField Sha256 where
   fromField field = do
