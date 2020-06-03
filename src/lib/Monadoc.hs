@@ -43,7 +43,9 @@ import qualified Paths_monadoc as Package
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
+import qualified System.FilePath as FilePath
 import qualified System.IO as IO
+import qualified System.IO.Unsafe as Unsafe
 import qualified Text.Read as Read
 
 monadoc :: Stack.HasCallStack => IO ()
@@ -514,7 +516,21 @@ worker = Monad.forever $ do
     . mappend "index entry count: "
     . show
     . length
-    . Tar.foldEntries ((:) . Right) [] (pure . Left)
+    . Tar.foldEntries
+        (\entry entries -> case Tar.entryContent entry of
+          Tar.NormalFile _contents _size ->
+            case FilePath.takeExtension $ Tar.entryPath entry of
+              "" -> entry : entries -- preferred-versions
+              ".cabal" -> entry : entries
+              ".json" -> entries -- ignore
+              _ ->
+                Unsafe.unsafePerformIO . throwWithCallStack . userError $ show
+                  entry
+          _ -> Unsafe.unsafePerformIO . throwWithCallStack . userError $ show
+            entry
+        )
+        []
+        (Unsafe.unsafePerformIO . throwWithCallStack)
     . Tar.read
     . Gzip.decompress
     $ LazyByteString.fromStrict contents
