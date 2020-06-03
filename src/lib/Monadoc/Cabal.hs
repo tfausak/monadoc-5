@@ -1,4 +1,9 @@
-module Monadoc.Cabal ( Errors(..), Package(..), parse ) where
+module Monadoc.Cabal
+  ( Errors(..)
+  , Package(..)
+  , parse
+  )
+where
 
 import qualified Data.ByteString
 import qualified Data.Function
@@ -21,7 +26,12 @@ newtype Package = Package
 parse :: Data.ByteString.ByteString -> Either Errors Package
 parse byteString =
   let
-    parseResult = Distribution.PackageDescription.Parsec.parseGenericPackageDescription byteString
-  in case snd $ Distribution.PackageDescription.Parsec.runParseResult parseResult of
-    Left (_, x) -> Left $ Errors x
-    Right x -> Right $ Package x
+    parseResult =
+      Distribution.PackageDescription.Parsec.parseGenericPackageDescription
+        byteString
+  in
+    case
+      snd $ Distribution.PackageDescription.Parsec.runParseResult parseResult
+    of
+      Left (_, x) -> Left $ Errors x
+      Right x -> Right $ Package x

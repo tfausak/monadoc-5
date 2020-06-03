@@ -1,6 +1,9 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Monadoc ( monadoc ) where
+module Monadoc
+  ( monadoc
+  )
+where
 
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
@@ -50,26 +53,29 @@ monadoc = do
   Async.race_ (runApp context server) (runApp context worker)
 
 migrate :: App ()
-migrate = withConnection $ \ connection -> Trans.lift $ do
+migrate = withConnection $ \connection -> Trans.lift $ do
   Sql.execute_ connection $ query "pragma journal_mode = wal"
-  Sql.execute_ connection $ query
-    "create table if not exists migrations \
-    \( iso8601 text not null primary key \
-    \, sha256 text not null )"
+  Sql.execute_ connection
+    $ query
+        "create table if not exists migrations \
+        \( iso8601 text not null primary key \
+        \, sha256 text not null )"
   digests <- fmap Map.fromList . Sql.query_ connection $ query
     "select iso8601, sha256 from migrations"
-  Monad.forM_ migrations $ \ migration -> do
+  Monad.forM_ migrations $ \migration -> do
     let iso8601 = migrationIso8601 migration
     let actualSha256 = migrationSha256 migration
     case Map.lookup iso8601 digests of
       Nothing -> Sql.withTransaction connection $ do
         Sql.execute_ connection $ migrationQuery migration
-        Sql.execute connection
+        Sql.execute
+          connection
           (query "insert into migrations (iso8601, sha256) values (?, ?)")
           (iso8601, actualSha256)
-      Just expectedSha256 -> Monad.when (actualSha256 /= expectedSha256)
-        . Exception.throwM
-        $ MigrationMismatch iso8601 expectedSha256 actualSha256
+      Just expectedSha256 ->
+        Monad.when (actualSha256 /= expectedSha256)
+          . Exception.throwM
+          $ MigrationMismatch iso8601 expectedSha256 actualSha256
 
 data MigrationMismatch = MigrationMismatch
   { migrationMismatchIso8601 :: Iso8601
@@ -96,19 +102,21 @@ migrations =
     }
   , Migration
     { migrationIso8601 = makeIso8601 2020 6 2 13 43 0
-    , migrationQuery = query
-      " create table blobs \
-      \( octets blob not null \
-      \, sha256 text not null primary key \
-      \, size integer not null )"
+    , migrationQuery =
+      query
+        " create table blobs \
+        \( octets blob not null \
+        \, sha256 text not null primary key \
+        \, size integer not null )"
     }
   , Migration
     { migrationIso8601 = makeIso8601 2020 6 2 13 50 0
-    , migrationQuery = query
-      " create table cache \
-      \( etag text not null \
-      \, sha256 text not null \
-      \, url text not null primary key )"
+    , migrationQuery =
+      query
+        " create table cache \
+        \( etag text not null \
+        \, sha256 text not null \
+        \, url text not null primary key )"
     }
   ]
 
@@ -121,11 +129,15 @@ instance Sql.FromField Etag where
 
 fromFieldVia
   :: (Sql.FromField a, Show a, Typeable.Typeable b)
-  => (a -> Maybe b) -> Sql.FieldParser b
+  => (a -> Maybe b)
+  -> Sql.FieldParser b
 fromFieldVia convert field = do
   before <- Sql.fromField field
   case convert before of
-    Nothing -> Sql.returnError Sql.ConversionFailed field $ "failed to convert: " <>  show before
+    Nothing ->
+      Sql.returnError Sql.ConversionFailed field
+        $ "failed to convert: "
+        <> show before
     Just after -> pure after
 
 instance Sql.ToField Etag where
@@ -176,9 +188,10 @@ newtype Iso8601 = Iso8601
   } deriving (Eq, Ord, Show)
 
 instance Sql.FromField Iso8601 where
-  fromField = fromFieldVia
-    $ fmap Iso8601
-    . Time.parseTimeM False Time.defaultTimeLocale "%Y-%m-%dT%H:%M:%S%QZ"
+  fromField = fromFieldVia $ fmap Iso8601 . Time.parseTimeM
+    False
+    Time.defaultTimeLocale
+    "%Y-%m-%dT%H:%M:%S%QZ"
 
 instance Sql.ToField Iso8601 where
   toField =
@@ -204,18 +217,15 @@ data SomeExceptionWithCallStack
   deriving Show
 
 instance Exception.Exception SomeExceptionWithCallStack where
-  displayException (SomeExceptionWithCallStack e s) = unlines
-    [ Exception.displayException e
-    , Stack.prettyCallStack s
-    ]
+  displayException (SomeExceptionWithCallStack e s) =
+    unlines [Exception.displayException e, Stack.prettyCallStack s]
 
 addCallStack
-  :: Stack.HasCallStack
-  => Exception.SomeException
-  -> Exception.SomeException
+  :: Stack.HasCallStack => Exception.SomeException -> Exception.SomeException
 addCallStack e = case Exception.fromException e of
   Just (SomeExceptionWithCallStack _ _) -> e
-  Nothing -> Exception.toException $ SomeExceptionWithCallStack e Stack.callStack
+  Nothing ->
+    Exception.toException $ SomeExceptionWithCallStack e Stack.callStack
 
 -- removeCallStack :: Exception.SomeException -> Exception.SomeException
 -- removeCallStack e = case Exception.fromException e of
@@ -224,7 +234,8 @@ addCallStack e = case Exception.fromException e of
 
 throwWithCallStack
   :: (Stack.HasCallStack, Exception.Exception e, Exception.MonadThrow m)
-  => e -> m a
+  => e
+  -> m a
 throwWithCallStack = Exception.throwM . addCallStack . Exception.toException
 
 data Context = Context
@@ -275,43 +286,47 @@ getConfig = do
         []
         ["database"]
         (GetOpt.ReqArg
-          (\ database config -> Right config { configDatabase = database })
-          "FILE")
+          (\database config -> Right config { configDatabase = database })
+          "FILE"
+        )
         "sets the database file (defaults to monadoc.sqlite3)"
       , GetOpt.Option
         ['h']
         ["help"]
-        (GetOpt.NoArg (\ config -> Right config { configHelp = True }))
+        (GetOpt.NoArg (\config -> Right config { configHelp = True }))
         "shows the help and exits"
       , GetOpt.Option
         []
         ["host"]
         (GetOpt.ReqArg
-          (\ host config -> Right config { configHost = String.fromString host })
-          "STRING")
+          (\host config -> Right config { configHost = String.fromString host }
+          )
+          "STRING"
+        )
         "sets the server host (defaults to 127.0.0.1)"
       , GetOpt.Option
         []
         ["port"]
         (GetOpt.ReqArg
-          (\ rawPort config -> case Read.readMaybe rawPort of
+          (\rawPort config -> case Read.readMaybe rawPort of
             Nothing -> Left $ "invalid port: " <> show rawPort
-            Just port -> Right config { configPort = port })
-          "NUMBER")
+            Just port -> Right config { configPort = port }
+          )
+          "NUMBER"
+        )
         "sets the server port (defaults to 4444)"
       , GetOpt.Option
         ['v']
         ["version"]
-        (GetOpt.NoArg (\ config -> Right config { configVersion = True }))
+        (GetOpt.NoArg (\config -> Right config { configVersion = True }))
         "shows the version number and exits"
       ]
     (funs, args, opts, errs) = GetOpt.getOpt' GetOpt.Permute options arguments
-  Monad.forM_ args $ \ arg ->
+  Monad.forM_ args $ \arg ->
     IO.hPutStrLn IO.stderr $ "WARNING: argument `" <> arg <> "' not expected"
-  Monad.forM_ opts $ \ opt ->
+  Monad.forM_ opts $ \opt ->
     IO.hPutStrLn IO.stderr $ "WARNING: option `" <> opt <> "' not recognized"
-  Monad.forM_ errs $ \ err ->
-    IO.hPutStr IO.stderr $ "ERROR: " <> err
+  Monad.forM_ errs $ \err -> IO.hPutStr IO.stderr $ "ERROR: " <> err
   Monad.unless (null errs) Exit.exitFailure
   config <- case Monad.foldM (flip ($)) defaultConfig funs of
     Left err -> do
@@ -335,16 +350,14 @@ server = do
   context <- Reader.ask
   Trans.lift
     . Warp.runSettings (makeSettings $ contextConfig context)
-    $ \ request respond -> runApp context $ do
-      let method = fromUtf8 $ Wai.requestMethod request
-      let path = fmap Text.unpack $ Wai.pathInfo request
-      case (method, path) of
-        ("GET", ["health-check"]) ->
-          Trans.lift . respond $ statusResponse Http.ok200 []
-        ("GET", ["throw"]) ->
-          throwWithCallStack $ userError "oh no"
-        _ ->
-          Trans.lift . respond $ statusResponse Http.notFound404 []
+    $ \request respond -> runApp context $ do
+        let method = fromUtf8 $ Wai.requestMethod request
+        let path = Text.unpack <$> Wai.pathInfo request
+        case (method, path) of
+          ("GET", ["health-check"]) ->
+            Trans.lift . respond $ statusResponse Http.ok200 []
+          ("GET", ["throw"]) -> throwWithCallStack $ userError "oh no"
+          _ -> Trans.lift . respond $ statusResponse Http.notFound404 []
 
 makeSettings :: Config -> Warp.Settings
 makeSettings config =
@@ -377,8 +390,9 @@ onExceptionResponse :: Exception.SomeException -> Wai.Response
 onExceptionResponse _ = statusResponse Http.internalServerError500 []
 
 statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
-statusResponse status headers = stringResponse status headers $ unwords
-  [show $ Http.statusCode status, fromUtf8 $ Http.statusMessage status]
+statusResponse status headers = stringResponse status headers
+  $ unwords
+      [show $ Http.statusCode status, fromUtf8 $ Http.statusMessage status]
 
 stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
 stringResponse status headers string = Wai.responseLBS
@@ -399,8 +413,10 @@ worker :: App ()
 worker = Monad.forever $ do
   Trans.lift $ putStrLn "updating hackage index"
   let url = "https://hackage.haskell.org/01-index.tar.gz"
-  result <- withConnection $ \ connection -> Trans.lift $ Sql.query connection
-    (query "select etag, sha256 from cache where url = ?") [url]
+  result <- withConnection $ \connection -> Trans.lift $ Sql.query
+    connection
+    (query "select etag, sha256 from cache where url = ?")
+    [url]
   contents <- case result of
     [] -> do
       Trans.lift $ putStrLn "index is not cached"
@@ -414,20 +430,29 @@ worker = Monad.forever $ do
       let
         body = LazyByteString.toStrict $ Client.responseBody response
         sha256 = Sha256 $ Crypto.hash body
-        etag = Etag . Maybe.fromMaybe ByteString.empty . lookup Http.hETag
-          $ Client.responseHeaders response
+        etag =
+          Etag
+            . Maybe.fromMaybe ByteString.empty
+            . lookup Http.hETag
+            $ Client.responseHeaders response
       Trans.lift $ putStrLn "got index, caching response"
-      withConnection $ \ connection -> Trans.lift $ do
-        Sql.execute connection
-          (query "insert into blobs (octets, sha256, size) values (?, ?, ?) on conflict do nothing")
+      withConnection $ \connection -> Trans.lift $ do
+        Sql.execute
+          connection
+          (query
+            "insert into blobs (octets, sha256, size) \
+            \ values (?, ?, ?) on conflict do nothing"
+          )
           (Octets body, sha256, Size $ ByteString.length body)
-        Sql.execute connection
+        Sql.execute
+          connection
           (query "insert into cache (etag, sha256, url) values (?, ?, ?)")
           (etag, sha256, url)
       pure body
     (etag, sha256) : _ -> do
       Trans.lift $ putStrLn "index is cached"
-      request <- fmap (addRequestHeader Http.hIfNoneMatch $ unwrapEtag etag) $ Client.parseRequest url
+      request <- addRequestHeader Http.hIfNoneMatch (unwrapEtag etag)
+        <$> Client.parseRequest url
       manager <- Reader.asks contextManager
       response <- Trans.lift $ Client.httpLbs request manager
       case Http.statusCode $ Client.responseStatus response of
@@ -436,21 +461,31 @@ worker = Monad.forever $ do
           let
             body = LazyByteString.toStrict $ Client.responseBody response
             newSha256 = Sha256 $ Crypto.hash body
-            newEtag = Etag . Maybe.fromMaybe ByteString.empty . lookup Http.hETag
-              $ Client.responseHeaders response
+            newEtag =
+              Etag
+                . Maybe.fromMaybe ByteString.empty
+                . lookup Http.hETag
+                $ Client.responseHeaders response
           Trans.lift $ putStrLn "got index, caching response"
-          withConnection $ \ connection -> Trans.lift $ do
-            Sql.execute connection
-              (query "insert into blobs (octets, sha256) values (?, ?, ?) on conflict do nothing")
+          withConnection $ \connection -> Trans.lift $ do
+            Sql.execute
+              connection
+              (query
+                "insert into blobs (octets, sha256) \
+                \ values (?, ?, ?) on conflict do nothing"
+              )
               (Octets body, newSha256, Size $ ByteString.length body)
-            Sql.execute connection
+            Sql.execute
+              connection
               (query "insert into cache (etag, sha256, url) values (?, ?, ?)")
               (newEtag, newSha256, url)
           pure body
         304 -> do
           Trans.lift $ putStrLn "index has not changed"
-          rows <- withConnection $ \ connection -> Trans.lift $ Sql.query connection
-            (query "select octets from blobs where sha256 = ?") [sha256 :: Sha256]
+          rows <- withConnection $ \connection -> Trans.lift $ Sql.query
+            connection
+            (query "select octets from blobs where sha256 = ?")
+            [sha256 :: Sha256]
           case rows of
             [] -> throwWithCallStack $ userError "missing index blob"
             row : _ -> pure . unwrapOctets $ Sql.fromOnly row
@@ -472,5 +507,11 @@ newtype Size = Size
 instance Sql.ToField Size where
   toField = Sql.toField . unwrapSize
 
-addRequestHeader :: Http.HeaderName -> ByteString.ByteString -> Client.Request -> Client.Request
-addRequestHeader name value request = request { Client.requestHeaders = (name, value) : Client.requestHeaders request }
+addRequestHeader
+  :: Http.HeaderName
+  -> ByteString.ByteString
+  -> Client.Request
+  -> Client.Request
+addRequestHeader name value request = request
+  { Client.requestHeaders = (name, value) : Client.requestHeaders request
+  }

@@ -1,4 +1,7 @@
-module MonadocSpec ( spec ) where
+module MonadocSpec
+  ( spec
+  )
+where
 
 import qualified Test.Hspec as Hspec
 
