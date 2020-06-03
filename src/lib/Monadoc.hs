@@ -248,12 +248,13 @@ makeContext :: Config -> IO Context
 makeContext config = do
   manager <- Tls.newTlsManager
   let database = configDatabase config
+  capabilities <- Concurrent.getNumCapabilities
   pool <- Pool.createPool
     (Sql.open database)
     Sql.close
     1
     60
-    (if null database || database == ":memory:" then 1 else 8)
+    (if null database || database == ":memory:" then 1 else capabilities + 1)
   pure Context
     { contextConfig = config
     , contextManager = manager
