@@ -452,12 +452,16 @@ worker = Monad.forever $ do
           connection
           (query
             "insert into blobs (octets, sha256, size) \
-            \ values (?, ?, ?) on conflict do nothing"
+            \ values (?, ?, ?) on conflict (sha256) do nothing"
           )
           (Octets body, sha256, Size $ ByteString.length body)
         Sql.execute
           connection
-          (query "insert into cache (etag, sha256, url) values (?, ?, ?)")
+          (query
+            "insert into cache (etag, sha256, url) values (?, ?, ?) \
+            \ on conflict (url) do update set \
+            \ etag = excluded.etag, sha256 = excluded.sha256"
+          )
           (etag, sha256, url)
       pure body
     (etag, sha256) : _ -> do
@@ -483,12 +487,16 @@ worker = Monad.forever $ do
               connection
               (query
                 "insert into blobs (octets, sha256, size) \
-                \ values (?, ?, ?) on conflict do nothing"
+                \ values (?, ?, ?) on conflict (sha256) do nothing"
               )
               (Octets body, newSha256, Size $ ByteString.length body)
             Sql.execute
               connection
-              (query "insert into cache (etag, sha256, url) values (?, ?, ?)")
+              (query
+                "insert into cache (etag, sha256, url) values (?, ?, ?) \
+                \ on conflict (url) do update set \
+                \ etag = excluded.etag, sha256 = excluded.sha256"
+              )
               (newEtag, newSha256, url)
           pure body
         304 -> do
