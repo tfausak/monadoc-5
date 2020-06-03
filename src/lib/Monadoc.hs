@@ -472,7 +472,7 @@ worker = Monad.forever $ do
             Sql.execute
               connection
               (query
-                "insert into blobs (octets, sha256) \
+                "insert into blobs (octets, sha256, size) \
                 \ values (?, ?, ?) on conflict do nothing"
               )
               (Octets body, newSha256, Size $ ByteString.length body)
