@@ -10,9 +10,11 @@ import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Text.Read as Read
 
--- | A 256-bit digest from the Secure Hash Algorithm 2 (SHA-2). This algorithm
--- was selected as a good balance between speed (like MD5) and cryptographic
--- properties (like SHA3-512).
+-- | A 256-bit digest from the Secure Hash Algorithm 2 (SHA-2). This is backed
+-- by a 'Crypto.Digest', specifically 'Crypto.SHA256'. Use 'fromDigest' and
+-- 'toDigest' to convert to and from this type. This algorithm was selected as
+-- a good balance between fast methods like MD5 and cryptographically secure
+-- ones like SHA3-512.
 newtype Sha256
   = Sha256 (Crypto.Digest Crypto.SHA256)
   deriving (Eq, Show)

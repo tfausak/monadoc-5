@@ -75,22 +75,22 @@ migrate = withConnection $ \connection -> Trans.lift $ do
   digests <- fmap Map.fromList . Sql.query_ connection $ query
     "select iso8601, sha256 from migrations"
   Monad.forM_ migrations $ \migration -> do
-    let iso8601 = migrationIso8601 migration
+    let timestamp = migrationTimestamp migration
     let actualSha256 = migrationSha256 migration
-    case Map.lookup iso8601 digests of
+    case Map.lookup timestamp digests of
       Nothing -> Sql.withTransaction connection $ do
         Sql.execute_ connection $ migrationQuery migration
         Sql.execute
           connection
           (query "insert into migrations (iso8601, sha256) values (?, ?)")
-          (iso8601, actualSha256)
+          (timestamp, actualSha256)
       Just expectedSha256 ->
         Monad.when (actualSha256 /= expectedSha256)
           . Exception.throwM
-          $ MigrationMismatch iso8601 expectedSha256 actualSha256
+          $ MigrationMismatch timestamp expectedSha256 actualSha256
 
 data MigrationMismatch = MigrationMismatch
-  { migrationMismatchIso8601 :: Iso8601
+  { migrationMismatchTimestamp :: Timestamp
   , migrationMismatchExpectedSha256 :: Sha256.Sha256
   , migrationMismatchActualSha256 :: Sha256.Sha256
   } deriving (Eq, Show)
@@ -98,7 +98,7 @@ data MigrationMismatch = MigrationMismatch
 instance Exception.Exception MigrationMismatch
 
 data Migration = Migration
-  { migrationIso8601 :: Iso8601
+  { migrationTimestamp :: Timestamp
   , migrationQuery :: Sql.Query
   } deriving (Eq, Show)
 
@@ -113,11 +113,11 @@ migrationSha256 =
 migrations :: [Migration]
 migrations =
   [ Migration
-    { migrationIso8601 = makeIso8601 2020 5 31 13 38 0
+    { migrationTimestamp = makeTimestamp 2020 5 31 13 38 0
     , migrationQuery = query "select 1"
     }
   , Migration
-    { migrationIso8601 = makeIso8601 2020 6 2 13 43 0
+    { migrationTimestamp = makeTimestamp 2020 6 2 13 43 0
     , migrationQuery =
       query
         " create table blobs \
@@ -126,7 +126,7 @@ migrations =
         \, size integer not null )"
     }
   , Migration
-    { migrationIso8601 = makeIso8601 2020 6 2 13 50 0
+    { migrationTimestamp = makeTimestamp 2020 6 2 13 50 0
     , migrationQuery =
       query
         " create table cache \
@@ -169,8 +169,8 @@ instance Sql.FromField Octets where
 instance Sql.ToField Octets where
   toField = Sql.toField . unwrapOctets
 
-makeIso8601 :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Iso8601
-makeIso8601 year month day hour minute second = Iso8601 Time.UTCTime
+makeTimestamp :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Timestamp
+makeTimestamp year month day hour minute second = Timestamp Time.UTCTime
   { Time.utctDay = Time.fromGregorian year month day
   , Time.utctDayTime = Time.timeOfDayToTime Time.TimeOfDay
     { Time.todHour = hour
@@ -179,21 +179,21 @@ makeIso8601 year month day hour minute second = Iso8601 Time.UTCTime
     }
   }
 
-newtype Iso8601 = Iso8601
-  { unwrapIso8601 :: Time.UTCTime
+newtype Timestamp = Timestamp
+  { unwrapTimestamp :: Time.UTCTime
   } deriving (Eq, Ord, Show)
 
-instance Sql.FromField Iso8601 where
-  fromField = fromFieldVia $ fmap Iso8601 . Time.parseTimeM
+instance Sql.FromField Timestamp where
+  fromField = fromFieldVia $ fmap Timestamp . Time.parseTimeM
     False
     Time.defaultTimeLocale
     "%Y-%m-%dT%H:%M:%S%QZ"
 
-instance Sql.ToField Iso8601 where
+instance Sql.ToField Timestamp where
   toField =
     Sql.toField
       . Time.formatTime Time.defaultTimeLocale "%Y-%m-%dT%H:%M:%S%3QZ"
-      . unwrapIso8601
+      . unwrapTimestamp
 
 withConnection :: (Sql.Connection -> App a) -> App a
 withConnection app = do
