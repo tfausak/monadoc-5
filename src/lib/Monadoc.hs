@@ -32,6 +32,7 @@ import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified GHC.Stack as Stack
+import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
@@ -90,8 +91,8 @@ migrate = withConnection $ \connection -> Trans.lift $ do
 
 data MigrationMismatch = MigrationMismatch
   { migrationMismatchIso8601 :: Iso8601
-  , migrationMismatchExpectedSha256 :: Sha256
-  , migrationMismatchActualSha256 :: Sha256
+  , migrationMismatchExpectedSha256 :: Sha256.Sha256
+  , migrationMismatchActualSha256 :: Sha256.Sha256
   } deriving (Eq, Show)
 
 instance Exception.Exception MigrationMismatch
@@ -101,9 +102,13 @@ data Migration = Migration
   , migrationQuery :: Sql.Query
   } deriving (Eq, Show)
 
-migrationSha256 :: Migration -> Sha256
+migrationSha256 :: Migration -> Sha256.Sha256
 migrationSha256 =
-  Sha256 . Crypto.hash . Text.encodeUtf8 . Sql.fromQuery . migrationQuery
+  Sha256.fromDigest
+    . Crypto.hash
+    . Text.encodeUtf8
+    . Sql.fromQuery
+    . migrationQuery
 
 migrations :: [Migration]
 migrations =
@@ -173,16 +178,6 @@ makeIso8601 year month day hour minute second = Iso8601 Time.UTCTime
     , Time.todSec = second
     }
   }
-
-newtype Sha256 = Sha256
-  { unwrapSha256 :: Crypto.Digest Crypto.SHA256
-  } deriving (Eq, Show)
-
-instance Sql.FromField Sha256 where
-  fromField = fromFieldVia $ fmap Sha256 . Read.readMaybe
-
-instance Sql.ToField Sha256 where
-  toField = Sql.toField . show . unwrapSha256
 
 newtype Iso8601 = Iso8601
   { unwrapIso8601 :: Time.UTCTime
@@ -431,7 +426,7 @@ worker = Monad.forever $ do
         $ show response
       let
         body = LazyByteString.toStrict $ Client.responseBody response
-        sha256 = Sha256 $ Crypto.hash body
+        sha256 = Sha256.fromDigest $ Crypto.hash body
         etag =
           Etag
             . Maybe.fromMaybe ByteString.empty
@@ -466,7 +461,7 @@ worker = Monad.forever $ do
           say "index has changed"
           let
             body = LazyByteString.toStrict $ Client.responseBody response
-            newSha256 = Sha256 $ Crypto.hash body
+            newSha256 = Sha256.fromDigest $ Crypto.hash body
             newEtag =
               Etag
                 . Maybe.fromMaybe ByteString.empty
@@ -495,7 +490,7 @@ worker = Monad.forever $ do
           rows <- withConnection $ \connection -> Trans.lift $ Sql.query
             connection
             (query "select octets from blobs where sha256 = ?")
-            [sha256 :: Sha256]
+            [sha256 :: Sha256.Sha256]
           case rows of
             [] -> throwWithCallStack $ userError "missing index blob"
             row : _ -> pure . unwrapOctets $ Sql.fromOnly row
