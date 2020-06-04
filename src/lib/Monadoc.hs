@@ -160,15 +160,15 @@ fromFieldVia convert field = do
 instance Sql.ToField Etag where
   toField = Sql.toField . show . unwrapEtag
 
-newtype Octets = Octets
-  { unwrapOctets :: ByteString.ByteString
+newtype Binary = Binary
+  { unwrapBinary :: ByteString.ByteString
   } deriving (Eq, Show)
 
-instance Sql.FromField Octets where
-  fromField = fmap Octets . Sql.fromField
+instance Sql.FromField Binary where
+  fromField = fmap Binary . Sql.fromField
 
-instance Sql.ToField Octets where
-  toField = Sql.toField . unwrapOctets
+instance Sql.ToField Binary where
+  toField = Sql.toField . unwrapBinary
 
 makeTimestamp
   :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Timestamp.Timestamp
@@ -427,7 +427,7 @@ worker = Monad.forever $ do
             "insert into blobs (octets, sha256, size) \
             \ values (?, ?, ?) on conflict (sha256) do nothing"
           )
-          (Octets body, sha256, Size $ ByteString.length body)
+          (Binary body, sha256, Size $ ByteString.length body)
         Sql.execute
           connection
           (query
@@ -462,7 +462,7 @@ worker = Monad.forever $ do
                 "insert into blobs (octets, sha256, size) \
                 \ values (?, ?, ?) on conflict (sha256) do nothing"
               )
-              (Octets body, newSha256, Size $ ByteString.length body)
+              (Binary body, newSha256, Size $ ByteString.length body)
             Sql.execute
               connection
               (query
@@ -480,7 +480,7 @@ worker = Monad.forever $ do
             [sha256 :: Sha256.Sha256]
           case rows of
             [] -> throwWithCallStack $ userError "missing index blob"
-            row : _ -> pure . unwrapOctets $ Sql.fromOnly row
+            row : _ -> pure . unwrapBinary $ Sql.fromOnly row
         _ -> throwWithCallStack . userError $ show response
   say $ "index size: " <> show (ByteString.length contents)
   say
