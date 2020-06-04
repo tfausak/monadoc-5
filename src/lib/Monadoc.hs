@@ -33,6 +33,7 @@ import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Type.Sha256 as Sha256
+import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
@@ -90,7 +91,7 @@ migrate = withConnection $ \connection -> Trans.lift $ do
           $ MigrationMismatch timestamp expectedSha256 actualSha256
 
 data MigrationMismatch = MigrationMismatch
-  { migrationMismatchTimestamp :: Timestamp
+  { migrationMismatchTimestamp :: Timestamp.Timestamp
   , migrationMismatchExpectedSha256 :: Sha256.Sha256
   , migrationMismatchActualSha256 :: Sha256.Sha256
   } deriving (Eq, Show)
@@ -98,7 +99,7 @@ data MigrationMismatch = MigrationMismatch
 instance Exception.Exception MigrationMismatch
 
 data Migration = Migration
-  { migrationTimestamp :: Timestamp
+  { migrationTimestamp :: Timestamp.Timestamp
   , migrationQuery :: Sql.Query
   } deriving (Eq, Show)
 
@@ -169,31 +170,17 @@ instance Sql.FromField Octets where
 instance Sql.ToField Octets where
   toField = Sql.toField . unwrapOctets
 
-makeTimestamp :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Timestamp
-makeTimestamp year month day hour minute second = Timestamp Time.UTCTime
-  { Time.utctDay = Time.fromGregorian year month day
-  , Time.utctDayTime = Time.timeOfDayToTime Time.TimeOfDay
-    { Time.todHour = hour
-    , Time.todMin = minute
-    , Time.todSec = second
+makeTimestamp
+  :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Timestamp.Timestamp
+makeTimestamp year month day hour minute second = Timestamp.fromUtcTime
+  Time.UTCTime
+    { Time.utctDay = Time.fromGregorian year month day
+    , Time.utctDayTime = Time.timeOfDayToTime Time.TimeOfDay
+      { Time.todHour = hour
+      , Time.todMin = minute
+      , Time.todSec = second
+      }
     }
-  }
-
-newtype Timestamp = Timestamp
-  { unwrapTimestamp :: Time.UTCTime
-  } deriving (Eq, Ord, Show)
-
-instance Sql.FromField Timestamp where
-  fromField = fromFieldVia $ fmap Timestamp . Time.parseTimeM
-    False
-    Time.defaultTimeLocale
-    "%Y-%m-%dT%H:%M:%S%QZ"
-
-instance Sql.ToField Timestamp where
-  toField =
-    Sql.toField
-      . Time.formatTime Time.defaultTimeLocale "%Y-%m-%dT%H:%M:%S%3QZ"
-      . unwrapTimestamp
 
 withConnection :: (Sql.Connection -> App a) -> App a
 withConnection app = do

@@ -67,6 +67,7 @@ library
     Monadoc.Cabal
     Monadoc.Ghc
     Monadoc.Type.Sha256
+    Monadoc.Type.Timestamp
     Monadoc.Type.Url
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
@@ -87,6 +88,7 @@ test-suite test
     Monadoc.CabalSpec
     Monadoc.GhcSpec
     Monadoc.Type.Sha256Spec
+    Monadoc.Type.TimestampSpec
     Monadoc.Type.UrlSpec
     MonadocSpec
   type: exitcode-stdio-1.0
