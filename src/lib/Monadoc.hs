@@ -32,6 +32,7 @@ import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified GHC.Stack as Stack
+import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Network.HTTP.Client as Client
@@ -159,16 +160,6 @@ fromFieldVia convert field = do
 
 instance Sql.ToField Etag where
   toField = Sql.toField . show . unwrapEtag
-
-newtype Binary = Binary
-  { unwrapBinary :: ByteString.ByteString
-  } deriving (Eq, Show)
-
-instance Sql.FromField Binary where
-  fromField = fmap Binary . Sql.fromField
-
-instance Sql.ToField Binary where
-  toField = Sql.toField . unwrapBinary
 
 makeTimestamp
   :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Timestamp.Timestamp
@@ -427,7 +418,7 @@ worker = Monad.forever $ do
             "insert into blobs (octets, sha256, size) \
             \ values (?, ?, ?) on conflict (sha256) do nothing"
           )
-          (Binary body, sha256, Size $ ByteString.length body)
+          (Binary.fromByteString body, sha256, Size $ ByteString.length body)
         Sql.execute
           connection
           (query
@@ -462,7 +453,10 @@ worker = Monad.forever $ do
                 "insert into blobs (octets, sha256, size) \
                 \ values (?, ?, ?) on conflict (sha256) do nothing"
               )
-              (Binary body, newSha256, Size $ ByteString.length body)
+              ( Binary.fromByteString body
+              , newSha256
+              , Size $ ByteString.length body
+              )
             Sql.execute
               connection
               (query
@@ -480,7 +474,7 @@ worker = Monad.forever $ do
             [sha256 :: Sha256.Sha256]
           case rows of
             [] -> throwWithCallStack $ userError "missing index blob"
-            row : _ -> pure . unwrapBinary $ Sql.fromOnly row
+            row : _ -> pure . Binary.toByteString $ Sql.fromOnly row
         _ -> throwWithCallStack . userError $ show response
   say $ "index size: " <> show (ByteString.length contents)
   say
