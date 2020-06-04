@@ -31,7 +31,6 @@ common library
 common executable
   import: library
 
-  build-depends: base, monadoc
   ghc-options: -rtsopts -threaded
 
 library
@@ -66,23 +65,32 @@ library
     Monadoc
     Monadoc.Cabal
     Monadoc.Ghc
+    Monadoc.Type.Url
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
 
 executable monadoc
   import: executable
 
+  build-depends: base, monadoc
   hs-source-dirs: src/exe
   main-is: Main.hs
 
 test-suite test
   import: executable
 
-  build-depends: hspec >= 2.7.1 && < 2.8
+  build-depends:
+    base
+    , hspec >= 2.7.1 && < 2.8
+    , monadoc
+    , network-uri
+    , sqlite-simple
+    , text
   hs-source-dirs: src/test
   main-is: Main.hs
   other-modules:
     Monadoc.CabalSpec
     Monadoc.GhcSpec
+    Monadoc.Type.UrlSpec
     MonadocSpec
   type: exitcode-stdio-1.0

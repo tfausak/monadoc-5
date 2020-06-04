@@ -36,7 +36,6 @@ import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
-import qualified Network.URI as Uri
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Paths_monadoc as Package
@@ -154,16 +153,6 @@ fromFieldVia convert field = do
 
 instance Sql.ToField Etag where
   toField = Sql.toField . show . unwrapEtag
-
-newtype Url = Url
-  { unwrapUrl :: Uri.URI
-  } deriving (Eq, Show)
-
-instance Sql.FromField Url where
-  fromField = fromFieldVia $ fmap Url . Uri.parseURI
-
-instance Sql.ToField Url where
-  toField = Sql.toField . ($ "") . Uri.uriToString id . unwrapUrl
 
 newtype Octets = Octets
   { unwrapOctets :: ByteString.ByteString
