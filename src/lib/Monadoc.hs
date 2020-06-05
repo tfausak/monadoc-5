@@ -30,6 +30,7 @@ import qualified GHC.Stack as Stack
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Data.Version as Version
+import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
@@ -75,7 +76,7 @@ say message = IO.liftIO $ do
       Time.formatTime Time.defaultTimeLocale "%Y-%m-%dT%H:%M:%S%3QZ" now
   putStrLn $ unwords [timestamp, message]
 
-migrate :: App ()
+migrate :: App.App ()
 migrate = withConnection $ \connection -> Trans.lift $ do
   Sql.execute_ connection $ query "pragma journal_mode = wal"
   Sql.execute_ connection
@@ -103,7 +104,7 @@ migrate = withConnection $ \connection -> Trans.lift $ do
           , MigrationMismatch.timestamp = timestamp
           }
 
-withConnection :: (Sql.Connection -> App a) -> App a
+withConnection :: (Sql.Connection -> App.App a) -> App.App a
 withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
@@ -111,9 +112,7 @@ withConnection app = do
 query :: String -> Sql.Query
 query = Sql.Query . Text.pack
 
-type App a = Stack.HasCallStack => Reader.ReaderT Context.Context IO a
-
-runApp :: Stack.HasCallStack => Context.Context -> App a -> IO a
+runApp :: Stack.HasCallStack => Context.Context -> App.App a -> IO a
 runApp = flip Reader.runReaderT
 
 makeContext :: Config.Config -> IO Context.Context
@@ -203,7 +202,7 @@ getConfig = do
     Exit.exitSuccess
   pure config
 
-server :: App ()
+server :: App.App ()
 server = do
   context <- Reader.ask
   Trans.lift
@@ -269,7 +268,7 @@ serverName = toUtf8 $ "monadoc-" <> Version.string <> case Commit.hash of
   Nothing -> ""
   Just hash -> "-" <> hash
 
-worker :: App ()
+worker :: App.App ()
 worker = Monad.forever $ do
   say "updating hackage index"
   let url = "https://hackage.haskell.org/01-index.tar.gz"

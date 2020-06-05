@@ -70,6 +70,7 @@ library
     Monadoc.Data.Migrations
     Monadoc.Data.Version
     Monadoc.Ghc
+    Monadoc.Type.App
     Monadoc.Type.Binary
     Monadoc.Type.Config
     Monadoc.Type.Context
@@ -103,7 +104,6 @@ test-suite test
     Monadoc.GhcSpec
     Monadoc.Type.BinarySpec
     Monadoc.Type.ConfigSpec
-    Monadoc.Type.ContextSpec
     Monadoc.Type.EtagSpec
     Monadoc.Type.MigrationMismatchSpec
     Monadoc.Type.MigrationSpec
