@@ -17,7 +17,6 @@ source-repository head
 common library
   build-depends:
     base >= 4.14.0 && < 4.15
-    , githash >= 0.1.4 && < 0.2
     , async >= 2.2.2 && < 2.3
     , bytestring >= 0.10.10 && < 0.11
     , Cabal >= 3.2.0 && < 3.3
@@ -27,12 +26,14 @@ common library
     , filepath >= 1.4.2 && < 1.5
     , ghc >= 8.10.1 && < 8.11
     , ghc-paths >= 0.1.0 && < 0.2
+    , githash >= 0.1.4 && < 0.2
     , http-client >= 0.7.0 && < 0.8
     , http-client-tls >= 0.3.5 && < 0.4
     , http-types >= 0.12.3 && < 0.13
     , network-uri >= 2.6.3 && < 2.7
     , resource-pool >= 0.2.3 && < 0.3
     , sqlite-simple >= 0.4.18 && < 0.5
+    , stm >= 2.5.0 && < 2.6
     , tar >= 0.5.1 && < 0.6
     , text >= 1.2.3 && < 1.3
     , time >= 1.9.3 && < 1.10
@@ -66,6 +67,7 @@ library
   exposed-modules:
     Monadoc
     Monadoc.Cabal
+    Monadoc.Console
     Monadoc.Data.Commit
     Monadoc.Data.Migrations
     Monadoc.Data.Options

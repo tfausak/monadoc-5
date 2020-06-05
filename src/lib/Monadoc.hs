@@ -11,7 +11,6 @@ import qualified Control.Concurrent as Concurrent
 import qualified Control.Concurrent.Async as Async
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
-import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
@@ -23,9 +22,9 @@ import qualified Data.Pool as Pool
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
-import qualified Data.Time as Time
 import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
+import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Data.Options as Options
@@ -55,7 +54,7 @@ import qualified System.IO.Unsafe as Unsafe
 monadoc :: Stack.HasCallStack => IO ()
 monadoc = do
   config <- getConfig
-  say $ unwords
+  Console.info $ unwords
     ["Starting Monadoc version"
     , Version.string
     , "commit"
@@ -65,14 +64,6 @@ monadoc = do
   context <- Context.fromConfig config
   runApp context migrate
   Async.race_ (runApp context server) (runApp context worker)
-
-say :: IO.MonadIO m => String -> m ()
-say message = IO.liftIO $ do
-  now <- Time.getCurrentTime
-  let
-    timestamp =
-      Time.formatTime Time.defaultTimeLocale "%Y-%m-%dT%H:%M:%S%3QZ" now
-  putStrLn $ unwords [timestamp, message]
 
 migrate :: App.App ()
 migrate = withConnection $ \connection -> Trans.lift $ do
@@ -167,11 +158,11 @@ makeSettings config =
     $ Warp.setServerName serverName Warp.defaultSettings
 
 beforeMainLoop :: Config.Config -> IO ()
-beforeMainLoop config = say $ unwords
+beforeMainLoop config = Console.info $ unwords
   ["Listening on", show $ Config.host config, "port", show $ Config.port config]
 
 logger :: Wai.Request -> Http.Status -> Maybe Integer -> IO ()
-logger request status _ = say $ unwords
+logger request status _ = Console.info $ unwords
   [ show $ Http.statusCode status
   , fromUtf8 $ Wai.requestMethod request
   , fromUtf8 $ Wai.rawPathInfo request <> Wai.rawQueryString request
@@ -180,7 +171,7 @@ logger request status _ = say $ unwords
 onException :: Maybe Wai.Request -> Exception.SomeException -> IO ()
 onException _ someException@(Exception.SomeException exception) =
   Monad.when (Warp.defaultShouldDisplayException someException)
-    . IO.hPutStrLn IO.stderr
+    . Console.warn
     $ Exception.displayException exception
 
 onExceptionResponse :: Exception.SomeException -> Wai.Response
@@ -210,7 +201,7 @@ serverName = toUtf8 $ "monadoc-" <> Version.string <> case Commit.hash of
 
 worker :: App.App ()
 worker = Monad.forever $ do
-  say "updating hackage index"
+  Console.info "updating hackage index"
   let url = "https://hackage.haskell.org/01-index.tar.gz"
   result <- withConnection $ \connection -> Trans.lift $ Sql.query
     connection
@@ -218,7 +209,7 @@ worker = Monad.forever $ do
     [url]
   contents <- case result of
     [] -> do
-      say "index is not cached"
+      Console.info "index is not cached"
       request <- Client.parseRequest url
       manager <- Reader.asks Context.manager
       response <- Trans.lift $ Client.httpLbs request manager
@@ -234,7 +225,7 @@ worker = Monad.forever $ do
             . Maybe.fromMaybe ByteString.empty
             . lookup Http.hETag
             $ Client.responseHeaders response
-      say "got index, caching response"
+      Console.info "got index, caching response"
       withConnection $ \connection -> Trans.lift $ do
         Sql.execute
           connection
@@ -253,14 +244,14 @@ worker = Monad.forever $ do
           (etag, sha256, url)
       pure body
     (etag, sha256) : _ -> do
-      say "index is cached"
+      Console.info "index is cached"
       request <- addRequestHeader Http.hIfNoneMatch (Etag.toByteString etag)
         <$> Client.parseRequest url
       manager <- Reader.asks Context.manager
       response <- Trans.lift $ Client.httpLbs request manager
       case Http.statusCode $ Client.responseStatus response of
         200 -> do
-          say "index has changed"
+          Console.info "index has changed"
           let
             body = LazyByteString.toStrict $ Client.responseBody response
             newSha256 = Sha256.fromDigest $ Crypto.hash body
@@ -269,7 +260,7 @@ worker = Monad.forever $ do
                 . Maybe.fromMaybe ByteString.empty
                 . lookup Http.hETag
                 $ Client.responseHeaders response
-          say "got index, caching response"
+          Console.info "got index, caching response"
           withConnection $ \connection -> Trans.lift $ do
             Sql.execute
               connection
@@ -291,7 +282,7 @@ worker = Monad.forever $ do
               (newEtag, newSha256, url)
           pure body
         304 -> do
-          say "index has not changed"
+          Console.info "index has not changed"
           rows <- withConnection $ \connection -> Trans.lift $ Sql.query
             connection
             (query "select octets from blobs where sha256 = ?")
@@ -300,8 +291,8 @@ worker = Monad.forever $ do
             [] -> WithCallStack.throw $ userError "missing index blob"
             row : _ -> pure . Binary.toByteString $ Sql.fromOnly row
         _ -> WithCallStack.throw . userError $ show response
-  say $ "index size: " <> show (ByteString.length contents)
-  say
+  Console.info $ "index size: " <> show (ByteString.length contents)
+  Console.info
     . mappend "index entry count: "
     . show
     . length
