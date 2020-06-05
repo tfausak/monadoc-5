@@ -31,6 +31,7 @@ import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Type.Binary as Binary
+import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
@@ -115,15 +116,15 @@ runApp :: Stack.HasCallStack => Context -> App a -> IO a
 runApp = flip Reader.runReaderT
 
 data Context = Context
-  { contextConfig :: Config
+  { contextConfig :: Config.Config
   , contextManager :: Client.Manager
   , contextPool :: Pool.Pool Sql.Connection
   }
 
-makeContext :: Config -> IO Context
+makeContext :: Config.Config -> IO Context
 makeContext config = do
   manager <- Tls.newTlsManager
-  let database = configDatabase config
+  let database = Config.database config
   capabilities <- Concurrent.getNumCapabilities
   pool <- Pool.createPool
     (Sql.open database)
@@ -137,24 +138,7 @@ makeContext config = do
     , contextPool = pool
     }
 
-data Config = Config
-  { configDatabase :: String
-  , configHelp :: Bool
-  , configHost :: Warp.HostPreference
-  , configPort :: Warp.Port
-  , configVersion :: Bool
-  } deriving (Eq, Show)
-
-defaultConfig :: Config
-defaultConfig = Config
-  { configDatabase = "monadoc.sqlite3"
-  , configHelp = False
-  , configHost = String.fromString "127.0.0.1"
-  , configPort = 4444
-  , configVersion = False
-  }
-
-getConfig :: IO Config
+getConfig :: IO Config.Config
 getConfig = do
   arguments <- Environment.getArgs
   let
@@ -163,20 +147,20 @@ getConfig = do
         []
         ["database"]
         (GetOpt.ReqArg
-          (\database config -> Right config { configDatabase = database })
+          (\database config -> Right config { Config.database = database })
           "FILE"
         )
         "sets the database file (defaults to monadoc.sqlite3)"
       , GetOpt.Option
         ['h']
         ["help"]
-        (GetOpt.NoArg (\config -> Right config { configHelp = True }))
+        (GetOpt.NoArg (\config -> Right config { Config.help = True }))
         "shows the help and exits"
       , GetOpt.Option
         []
         ["host"]
         (GetOpt.ReqArg
-          (\host config -> Right config { configHost = String.fromString host }
+          (\host config -> Right config { Config.host = String.fromString host }
           )
           "STRING"
         )
@@ -187,7 +171,7 @@ getConfig = do
         (GetOpt.ReqArg
           (\rawPort config -> case Read.readMaybe rawPort of
             Nothing -> Left $ "invalid port: " <> show rawPort
-            Just port -> Right config { configPort = port }
+            Just port -> Right config { Config.port = port }
           )
           "NUMBER"
         )
@@ -195,7 +179,7 @@ getConfig = do
       , GetOpt.Option
         ['v']
         ["version"]
-        (GetOpt.NoArg (\config -> Right config { configVersion = True }))
+        (GetOpt.NoArg (\config -> Right config { Config.version = True }))
         "shows the version number and exits"
       ]
     (funs, args, opts, errs) = GetOpt.getOpt' GetOpt.Permute options arguments
@@ -205,19 +189,19 @@ getConfig = do
     IO.hPutStrLn IO.stderr $ "WARNING: option `" <> opt <> "' not recognized"
   Monad.forM_ errs $ \err -> IO.hPutStr IO.stderr $ "ERROR: " <> err
   Monad.unless (null errs) Exit.exitFailure
-  config <- case Monad.foldM (flip ($)) defaultConfig funs of
+  config <- case Monad.foldM (flip ($)) Config.initial funs of
     Left err -> do
       IO.hPutStrLn IO.stderr $ "ERROR: " <> err
       Exit.exitFailure
     Right cfg -> pure cfg
-  Monad.when (configHelp config) $ do
+  Monad.when (Config.help config) $ do
     name <- Environment.getProgName
     let extra = case Commit.hash of
           Nothing -> []
           Just hash -> ["commit", hash]
     putStr $ GetOpt.usageInfo (unwords $ [name, "version", Version.string] <> extra) options
     Exit.exitSuccess
-  Monad.when (configVersion config) $ do
+  Monad.when (Config.version config) $ do
     putStrLn $ Version.string <> case Commit.hash of
       Nothing -> ""
       Just hash -> "-" <> hash
@@ -238,19 +222,19 @@ server = do
           ("GET", ["throw"]) -> WithCallStack.throw $ userError "oh no"
           _ -> Trans.lift . respond $ statusResponse Http.notFound404 []
 
-makeSettings :: Config -> Warp.Settings
+makeSettings :: Config.Config -> Warp.Settings
 makeSettings config =
   Warp.setBeforeMainLoop (beforeMainLoop config)
-    . Warp.setHost (configHost config)
+    . Warp.setHost (Config.host config)
     . Warp.setLogger logger
     . Warp.setOnException onException
     . Warp.setOnExceptionResponse onExceptionResponse
-    . Warp.setPort (configPort config)
+    . Warp.setPort (Config.port config)
     $ Warp.setServerName serverName Warp.defaultSettings
 
-beforeMainLoop :: Config -> IO ()
+beforeMainLoop :: Config.Config -> IO ()
 beforeMainLoop config = say $ unwords
-  ["Listening on", show $ configHost config, "port", show $ configPort config]
+  ["Listening on", show $ Config.host config, "port", show $ Config.port config]
 
 logger :: Wai.Request -> Http.Status -> Maybe Integer -> IO ()
 logger request status _ = say $ unwords
