@@ -13,12 +13,12 @@ spec = do
 
     Hspec.it "formats a UTC time" $ do
       Time.formatTime "%Y %m %d %H %M %S %3Q" (Time.utcTime 2001 2 3 4 5 6.007)
-        `Hspec.shouldBe` "2001 02 03 04 05 06.007"
+        `Hspec.shouldBe` "2001 02 03 04 05 06 .007"
 
   Hspec.describe "parseTime" $ do
 
     Hspec.it "parses a UTC time" $ do
-      Time.parseTime "%Y %m %d %H %M %S %Q" "2001 02 03 04 05 06.007"
+      Time.parseTime "%Y %m %d %H %M %S %Q" "2001 02 03 04 05 06 .007"
         `Hspec.shouldBe` Just (Time.utcTime 2001 2 3 4 5 6.007)
 
     Hspec.it "returns nothing on failure" $ do
