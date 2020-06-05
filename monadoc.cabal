@@ -86,6 +86,7 @@ library
     Monadoc.Type.Timestamp
     Monadoc.Type.Url
     Monadoc.Type.WithCallStack
+    Monadoc.Worker.Main
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
 
