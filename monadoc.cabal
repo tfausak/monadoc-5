@@ -73,6 +73,7 @@ library
     Monadoc.Data.Options
     Monadoc.Data.Version
     Monadoc.Ghc
+    Monadoc.Server.Main
     Monadoc.Type.App
     Monadoc.Type.Binary
     Monadoc.Type.Config

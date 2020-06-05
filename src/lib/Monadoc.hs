@@ -20,8 +20,6 @@ import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
-import qualified Data.Text.Encoding.Error as Text
 import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
@@ -29,6 +27,7 @@ import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Data.Options as Options
 import qualified Monadoc.Data.Version as Version
+import qualified Monadoc.Server.Main as Server
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Config as Config
@@ -42,8 +41,6 @@ import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
-import qualified Network.Wai as Wai
-import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
@@ -63,7 +60,7 @@ monadoc = do
     ]
   context <- Context.fromConfig config
   runApp context migrate
-  Async.race_ (runApp context server) (runApp context worker)
+  Async.race_ (runApp context Server.run) (runApp context worker)
 
 migrate :: App.App ()
 migrate = withConnection $ \connection -> Trans.lift $ do
@@ -132,72 +129,6 @@ getConfig = do
       Just hash -> "-" <> hash
     Exit.exitSuccess
   pure config
-
-server :: App.App ()
-server = do
-  context <- Reader.ask
-  Trans.lift
-    . Warp.runSettings (makeSettings $ Context.config context)
-    $ \request respond -> runApp context $ do
-        let method = fromUtf8 $ Wai.requestMethod request
-        let path = Text.unpack <$> Wai.pathInfo request
-        case (method, path) of
-          ("GET", ["health-check"]) ->
-            Trans.lift . respond $ statusResponse Http.ok200 []
-          ("GET", ["throw"]) -> WithCallStack.throw $ userError "oh no"
-          _ -> Trans.lift . respond $ statusResponse Http.notFound404 []
-
-makeSettings :: Config.Config -> Warp.Settings
-makeSettings config =
-  Warp.setBeforeMainLoop (beforeMainLoop config)
-    . Warp.setHost (Config.host config)
-    . Warp.setLogger logger
-    . Warp.setOnException onException
-    . Warp.setOnExceptionResponse onExceptionResponse
-    . Warp.setPort (Config.port config)
-    $ Warp.setServerName serverName Warp.defaultSettings
-
-beforeMainLoop :: Config.Config -> IO ()
-beforeMainLoop config = Console.info $ unwords
-  ["Listening on", show $ Config.host config, "port", show $ Config.port config]
-
-logger :: Wai.Request -> Http.Status -> Maybe Integer -> IO ()
-logger request status _ = Console.info $ unwords
-  [ show $ Http.statusCode status
-  , fromUtf8 $ Wai.requestMethod request
-  , fromUtf8 $ Wai.rawPathInfo request <> Wai.rawQueryString request
-  ]
-
-onException :: Maybe Wai.Request -> Exception.SomeException -> IO ()
-onException _ someException@(Exception.SomeException exception) =
-  Monad.when (Warp.defaultShouldDisplayException someException)
-    . Console.warn
-    $ Exception.displayException exception
-
-onExceptionResponse :: Exception.SomeException -> Wai.Response
-onExceptionResponse _ = statusResponse Http.internalServerError500 []
-
-statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
-statusResponse status headers = stringResponse status headers
-  $ unwords
-      [show $ Http.statusCode status, fromUtf8 $ Http.statusMessage status]
-
-stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
-stringResponse status headers string = Wai.responseLBS
-  status
-  ((Http.hContentType, toUtf8 "text/plain; charset=utf-8") : headers)
-  (LazyByteString.fromStrict $ toUtf8 string)
-
-fromUtf8 :: ByteString.ByteString -> String
-fromUtf8 = Text.unpack . Text.decodeUtf8With Text.lenientDecode
-
-toUtf8 :: String -> ByteString.ByteString
-toUtf8 = Text.encodeUtf8 . Text.pack
-
-serverName :: ByteString.ByteString
-serverName = toUtf8 $ "monadoc-" <> Version.string <> case Commit.hash of
-  Nothing -> ""
-  Just hash -> "-" <> hash
 
 worker :: App.App ()
 worker = Monad.forever $ do
