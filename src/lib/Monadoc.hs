@@ -168,7 +168,7 @@ data SomeExceptionWithCallStack
 
 instance Exception.Exception SomeExceptionWithCallStack where
   displayException (SomeExceptionWithCallStack e s) =
-    unlines [Exception.displayException e, Stack.prettyCallStack s]
+    Exception.displayException e <> "\n" <> Stack.prettyCallStack s
 
 addCallStack
   :: Stack.HasCallStack => Exception.SomeException -> Exception.SomeException
