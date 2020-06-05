@@ -125,6 +125,7 @@ test-suite test
     Monadoc.Type.UrlSpec
     Monadoc.Type.WithCallStackSpec
     Monadoc.Utility.Utf8Spec
+    Monadoc.Vendor.SqliteSpec
     Monadoc.Vendor.TimeSpec
     MonadocSpec
   type: exitcode-stdio-1.0

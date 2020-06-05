@@ -11,7 +11,6 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
-import qualified Data.Text as Text
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
@@ -47,13 +46,13 @@ monadoc = do
 
 migrate :: Stack.HasCallStack => App.App ()
 migrate = withConnection $ \connection -> Trans.lift $ do
-  Sql.execute_ connection $ query "pragma journal_mode = wal"
+  Sql.execute_ connection $ Sql.sql "pragma journal_mode = wal"
   Sql.execute_ connection
-    $ query
+    $ Sql.sql
         "create table if not exists migrations \
         \( iso8601 text not null primary key \
         \, sha256 text not null )"
-  digests <- fmap Map.fromList . Sql.query_ connection $ query
+  digests <- fmap Map.fromList . Sql.query_ connection $ Sql.sql
     "select iso8601, sha256 from migrations"
   Monad.forM_ Migrations.migrations $ \migration -> do
     let timestamp = Migration.timestamp migration
@@ -63,7 +62,7 @@ migrate = withConnection $ \connection -> Trans.lift $ do
         Sql.execute_ connection $ Migration.query migration
         Sql.execute
           connection
-          (query "insert into migrations (iso8601, sha256) values (?, ?)")
+          (Sql.sql "insert into migrations (iso8601, sha256) values (?, ?)")
           migration
       Just expectedSha256 ->
         Monad.when (actualSha256 /= expectedSha256)
@@ -77,9 +76,6 @@ withConnection :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App
 withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
-
-query :: String -> Sql.Query
-query = Sql.Query . Text.pack
 
 getConfig :: Stack.HasCallStack => IO Config.Config
 getConfig = do

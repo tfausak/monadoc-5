@@ -19,7 +19,7 @@ spec = do
     Hspec.it "returns the digest of the query" $ do
       let
         migration = Monadoc.Migration
-          { Monadoc.query = Sql.Query $ Text.pack ""
+          { Monadoc.query = Sql.sql ""
           , Monadoc.timestamp = Monadoc.fromUtcTime $ Time.posixSecondsToUTCTime 0
           }
       Monadoc.sha256 migration `Hspec.shouldBe` Monadoc.fromDigest (read "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
@@ -29,7 +29,7 @@ spec = do
     Hspec.it "converts into a SQL row" $ do
       let
         migration = Monadoc.Migration
-          { Monadoc.query = Sql.Query $ Text.pack ""
+          { Monadoc.query = Sql.sql ""
           , Monadoc.timestamp = Monadoc.fromUtcTime $ Time.posixSecondsToUTCTime 0
           }
       Sql.toRow migration `Hspec.shouldBe`

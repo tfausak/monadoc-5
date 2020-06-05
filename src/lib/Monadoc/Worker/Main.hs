@@ -14,7 +14,6 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
-import qualified Data.Text as Text
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
@@ -36,16 +35,13 @@ withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
 
-query :: String -> Sql.Query
-query = Sql.Query . Text.pack
-
 run :: Stack.HasCallStack => App.App ()
 run = Monad.forever $ do
   Console.info "updating hackage index"
   let url = "https://hackage.haskell.org/01-index.tar.gz"
   result <- withConnection $ \connection -> Trans.lift $ Sql.query
     connection
-    (query "select etag, sha256 from cache where url = ?")
+    (Sql.sql "select etag, sha256 from cache where url = ?")
     [url]
   contents <- case result of
     [] -> do
@@ -69,14 +65,14 @@ run = Monad.forever $ do
       withConnection $ \connection -> Trans.lift $ do
         Sql.execute
           connection
-          (query
+          (Sql.sql
             "insert into blobs (octets, sha256, size) \
             \ values (?, ?, ?) on conflict (sha256) do nothing"
           )
           (Binary.fromByteString body, sha256, Size.fromInt $ ByteString.length body)
         Sql.execute
           connection
-          (query
+          (Sql.sql
             "insert into cache (etag, sha256, url) values (?, ?, ?) \
             \ on conflict (url) do update set \
             \ etag = excluded.etag, sha256 = excluded.sha256"
@@ -104,7 +100,7 @@ run = Monad.forever $ do
           withConnection $ \connection -> Trans.lift $ do
             Sql.execute
               connection
-              (query
+              (Sql.sql
                 "insert into blobs (octets, sha256, size) \
                 \ values (?, ?, ?) on conflict (sha256) do nothing"
               )
@@ -114,7 +110,7 @@ run = Monad.forever $ do
               )
             Sql.execute
               connection
-              (query
+              (Sql.sql
                 "insert into cache (etag, sha256, url) values (?, ?, ?) \
                 \ on conflict (url) do update set \
                 \ etag = excluded.etag, sha256 = excluded.sha256"
@@ -125,7 +121,7 @@ run = Monad.forever $ do
           Console.info "index has not changed"
           rows <- withConnection $ \connection -> Trans.lift $ Sql.query
             connection
-            (query "select octets from blobs where sha256 = ?")
+            (Sql.sql "select octets from blobs where sha256 = ?")
             [sha256 :: Sha256.Sha256]
           case rows of
             [] -> WithCallStack.throw $ userError "missing index blob"

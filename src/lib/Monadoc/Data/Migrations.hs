@@ -5,7 +5,6 @@ where
 
 import qualified Data.Fixed as Fixed
 import qualified Data.Set as Set
-import qualified Data.Text as Text
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sqlite as Sql
@@ -28,6 +27,6 @@ migrations = Set.fromList
 
 makeMigration :: (Integer, Int, Int, Int, Int, Fixed.Pico) -> String -> Migration.Migration
 makeMigration (year, month, day, hour, minute, second) query = Migration.Migration
-  { Migration.query = Sql.Query $ Text.pack query
+  { Migration.query = Sql.sql query
   , Migration.timestamp = Timestamp.fromUtcTime $ Time.utcTime year month day hour minute second
   }
