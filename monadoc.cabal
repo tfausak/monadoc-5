@@ -74,6 +74,7 @@ library
     Monadoc.Data.Version
     Monadoc.Ghc
     Monadoc.Server.Main
+    Monadoc.Server.Settings
     Monadoc.Type.App
     Monadoc.Type.Binary
     Monadoc.Type.Config
@@ -86,6 +87,7 @@ library
     Monadoc.Type.Timestamp
     Monadoc.Type.Url
     Monadoc.Type.WithCallStack
+    Monadoc.Utility.Utf8
     Monadoc.Worker.Main
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
@@ -107,6 +109,7 @@ test-suite test
     Monadoc.Data.CommitSpec
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
+    Monadoc.Server.SettingsSpec
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
     Monadoc.Type.ConfigSpec
@@ -119,5 +122,6 @@ test-suite test
     Monadoc.Type.TimestampSpec
     Monadoc.Type.UrlSpec
     Monadoc.Type.WithCallStackSpec
+    Monadoc.Utility.Utf8Spec
     MonadocSpec
   type: exitcode-stdio-1.0
