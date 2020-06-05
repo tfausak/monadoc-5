@@ -107,6 +107,7 @@ test-suite test
     Monadoc.Data.CommitSpec
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
+    Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
     Monadoc.Type.ConfigSpec
     Monadoc.Type.ContextSpec
