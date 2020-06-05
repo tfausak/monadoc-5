@@ -35,6 +35,7 @@ import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
+import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Version as Version
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
@@ -106,32 +107,6 @@ type App a = Stack.HasCallStack => Reader.ReaderT Context IO a
 
 runApp :: Stack.HasCallStack => Context -> App a -> IO a
 runApp = flip Reader.runReaderT
-
-data SomeExceptionWithCallStack
-  = SomeExceptionWithCallStack Exception.SomeException Stack.CallStack
-  deriving Show
-
-instance Exception.Exception SomeExceptionWithCallStack where
-  displayException (SomeExceptionWithCallStack e s) =
-    Exception.displayException e <> "\n" <> Stack.prettyCallStack s
-
-addCallStack
-  :: Stack.HasCallStack => Exception.SomeException -> Exception.SomeException
-addCallStack e = case Exception.fromException e of
-  Just (SomeExceptionWithCallStack _ _) -> e
-  Nothing ->
-    Exception.toException $ SomeExceptionWithCallStack e Stack.callStack
-
--- removeCallStack :: Exception.SomeException -> Exception.SomeException
--- removeCallStack e = case Exception.fromException e of
---   Just (SomeExceptionWithCallStack f _) -> removeCallStack f
---   Nothing -> e
-
-throwWithCallStack
-  :: (Stack.HasCallStack, Exception.Exception e, Exception.MonadThrow m)
-  => e
-  -> m a
-throwWithCallStack = Exception.throwM . addCallStack . Exception.toException
 
 data Context = Context
   { contextConfig :: Config
@@ -254,7 +229,7 @@ server = do
         case (method, path) of
           ("GET", ["health-check"]) ->
             Trans.lift . respond $ statusResponse Http.ok200 []
-          ("GET", ["throw"]) -> throwWithCallStack $ userError "oh no"
+          ("GET", ["throw"]) -> WithCallStack.throw $ userError "oh no"
           _ -> Trans.lift . respond $ statusResponse Http.notFound404 []
 
 makeSettings :: Config -> Warp.Settings
@@ -324,7 +299,7 @@ worker = Monad.forever $ do
       manager <- Reader.asks contextManager
       response <- Trans.lift $ Client.httpLbs request manager
       Monad.when (Client.responseStatus response /= Http.ok200)
-        . throwWithCallStack
+        . WithCallStack.throw
         . userError
         $ show response
       let
@@ -398,9 +373,9 @@ worker = Monad.forever $ do
             (query "select octets from blobs where sha256 = ?")
             [sha256 :: Sha256.Sha256]
           case rows of
-            [] -> throwWithCallStack $ userError "missing index blob"
+            [] -> WithCallStack.throw $ userError "missing index blob"
             row : _ -> pure . Binary.toByteString $ Sql.fromOnly row
-        _ -> throwWithCallStack . userError $ show response
+        _ -> WithCallStack.throw . userError $ show response
   say $ "index size: " <> show (ByteString.length contents)
   say
     . mappend "index entry count: "
@@ -414,13 +389,13 @@ worker = Monad.forever $ do
               ".cabal" -> entry : entries
               ".json" -> entries -- ignore
               _ ->
-                Unsafe.unsafePerformIO . throwWithCallStack . userError $ show
+                Unsafe.unsafePerformIO . WithCallStack.throw . userError $ show
                   entry
-          _ -> Unsafe.unsafePerformIO . throwWithCallStack . userError $ show
+          _ -> Unsafe.unsafePerformIO . WithCallStack.throw . userError $ show
             entry
         )
         []
-        (Unsafe.unsafePerformIO . throwWithCallStack)
+        (Unsafe.unsafePerformIO . WithCallStack.throw)
     . Tar.read
     . Gzip.decompress
     $ LazyByteString.fromStrict contents
