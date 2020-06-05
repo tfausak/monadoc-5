@@ -32,6 +32,7 @@ import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Config as Config
+import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
@@ -104,24 +105,18 @@ migrate = withConnection $ \connection -> Trans.lift $ do
 
 withConnection :: (Sql.Connection -> App a) -> App a
 withConnection app = do
-  pool <- Reader.asks contextPool
+  pool <- Reader.asks Context.pool
   Pool.withResource pool app
 
 query :: String -> Sql.Query
 query = Sql.Query . Text.pack
 
-type App a = Stack.HasCallStack => Reader.ReaderT Context IO a
+type App a = Stack.HasCallStack => Reader.ReaderT Context.Context IO a
 
-runApp :: Stack.HasCallStack => Context -> App a -> IO a
+runApp :: Stack.HasCallStack => Context.Context -> App a -> IO a
 runApp = flip Reader.runReaderT
 
-data Context = Context
-  { contextConfig :: Config.Config
-  , contextManager :: Client.Manager
-  , contextPool :: Pool.Pool Sql.Connection
-  }
-
-makeContext :: Config.Config -> IO Context
+makeContext :: Config.Config -> IO Context.Context
 makeContext config = do
   manager <- Tls.newTlsManager
   let database = Config.database config
@@ -132,10 +127,10 @@ makeContext config = do
     1
     60
     (if null database || database == ":memory:" then 1 else capabilities + 1)
-  pure Context
-    { contextConfig = config
-    , contextManager = manager
-    , contextPool = pool
+  pure Context.Context
+    { Context.config = config
+    , Context.manager = manager
+    , Context.pool = pool
     }
 
 getConfig :: IO Config.Config
@@ -212,7 +207,7 @@ server :: App ()
 server = do
   context <- Reader.ask
   Trans.lift
-    . Warp.runSettings (makeSettings $ contextConfig context)
+    . Warp.runSettings (makeSettings $ Context.config context)
     $ \request respond -> runApp context $ do
         let method = fromUtf8 $ Wai.requestMethod request
         let path = Text.unpack <$> Wai.pathInfo request
@@ -286,7 +281,7 @@ worker = Monad.forever $ do
     [] -> do
       say "index is not cached"
       request <- Client.parseRequest url
-      manager <- Reader.asks contextManager
+      manager <- Reader.asks Context.manager
       response <- Trans.lift $ Client.httpLbs request manager
       Monad.when (Client.responseStatus response /= Http.ok200)
         . WithCallStack.throw
@@ -322,7 +317,7 @@ worker = Monad.forever $ do
       say "index is cached"
       request <- addRequestHeader Http.hIfNoneMatch (Etag.toByteString etag)
         <$> Client.parseRequest url
-      manager <- Reader.asks contextManager
+      manager <- Reader.asks Context.manager
       response <- Trans.lift $ Client.httpLbs request manager
       case Http.statusCode $ Client.responseStatus response of
         200 -> do
