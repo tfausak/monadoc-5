@@ -31,6 +31,7 @@ import qualified GHC.Stack as Stack
 import qualified Monadoc.Commit as Commit
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Etag as Etag
+import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.Timestamp as Timestamp
@@ -76,15 +77,15 @@ migrate = withConnection $ \connection -> Trans.lift $ do
   digests <- fmap Map.fromList . Sql.query_ connection $ query
     "select iso8601, sha256 from migrations"
   Monad.forM_ migrations $ \migration -> do
-    let timestamp = migrationTimestamp migration
-    let actualSha256 = migrationSha256 migration
+    let timestamp = Migration.timestamp migration
+    let actualSha256 = Migration.sha256 migration
     case Map.lookup timestamp digests of
       Nothing -> Sql.withTransaction connection $ do
-        Sql.execute_ connection $ migrationQuery migration
+        Sql.execute_ connection $ Migration.query migration
         Sql.execute
           connection
           (query "insert into migrations (iso8601, sha256) values (?, ?)")
-          (timestamp, actualSha256)
+          migration
       Just expectedSha256 ->
         Monad.when (actualSha256 /= expectedSha256)
           . Exception.throwM
@@ -98,37 +99,24 @@ data MigrationMismatch = MigrationMismatch
 
 instance Exception.Exception MigrationMismatch
 
-data Migration = Migration
-  { migrationTimestamp :: Timestamp.Timestamp
-  , migrationQuery :: Sql.Query
-  } deriving (Eq, Show)
-
-migrationSha256 :: Migration -> Sha256.Sha256
-migrationSha256 =
-  Sha256.fromDigest
-    . Crypto.hash
-    . Text.encodeUtf8
-    . Sql.fromQuery
-    . migrationQuery
-
-migrations :: [Migration]
+migrations :: [Migration.Migration]
 migrations =
-  [ Migration
-    { migrationTimestamp = makeTimestamp 2020 5 31 13 38 0
-    , migrationQuery = query "select 1"
+  [ Migration.Migration
+    { Migration.timestamp = makeTimestamp 2020 5 31 13 38 0
+    , Migration.query = query "select 1"
     }
-  , Migration
-    { migrationTimestamp = makeTimestamp 2020 6 2 13 43 0
-    , migrationQuery =
+  , Migration.Migration
+    { Migration.timestamp = makeTimestamp 2020 6 2 13 43 0
+    , Migration.query =
       query
         " create table blobs \
         \( octets blob not null \
         \, sha256 text not null primary key \
         \, size integer not null )"
     }
-  , Migration
-    { migrationTimestamp = makeTimestamp 2020 6 2 13 50 0
-    , migrationQuery =
+  , Migration.Migration
+    { Migration.timestamp = makeTimestamp 2020 6 2 13 50 0
+    , Migration.query =
       query
         " create table cache \
         \( etag text not null \
