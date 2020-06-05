@@ -6,8 +6,7 @@ module Monadoc.Type.Sha256
 where
 
 import qualified Crypto.Hash as Crypto
-import qualified Database.SQLite.Simple.FromField as Sql
-import qualified Database.SQLite.Simple.ToField as Sql
+import qualified Monadoc.Vendor.Sqlite as Sql
 import qualified Text.Read as Read
 
 -- | A 256-bit digest from the Secure Hash Algorithm 2 (SHA-2). This is backed

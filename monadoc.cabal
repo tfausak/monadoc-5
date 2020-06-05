@@ -88,6 +88,7 @@ library
     Monadoc.Type.Url
     Monadoc.Type.WithCallStack
     Monadoc.Utility.Utf8
+    Monadoc.Vendor.Sqlite
     Monadoc.Vendor.Time
     Monadoc.Worker.Main
   hs-source-dirs: src/lib

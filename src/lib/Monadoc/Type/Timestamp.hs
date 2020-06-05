@@ -5,8 +5,7 @@ module Monadoc.Type.Timestamp
   )
 where
 
-import qualified Database.SQLite.Simple.FromField as Sql
-import qualified Database.SQLite.Simple.ToField as Sql
+import qualified Monadoc.Vendor.Sqlite as Sql
 import qualified Monadoc.Vendor.Time as Time
 
 -- | A moment in time. This is a wrapper around 'Time.UTCTime'. Use

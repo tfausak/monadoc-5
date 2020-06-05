@@ -12,7 +12,6 @@ import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
 import qualified Data.Text as Text
-import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
@@ -25,6 +24,7 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
+import qualified Monadoc.Vendor.Sqlite as Sql
 import qualified Monadoc.Worker.Main as Worker
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment

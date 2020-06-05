@@ -5,12 +5,8 @@ where
 
 import qualified Data.Text as Text
 import qualified Data.Time as Time
-import qualified Database.SQLite.Simple as Sql
-import qualified Database.SQLite.Simple.FromField as Sql
-import qualified Database.SQLite.Simple.Internal as Sql
-import qualified Database.SQLite.Simple.Ok as Sql
-import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Timestamp as Monadoc
+import qualified Monadoc.Vendor.Sqlite as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec

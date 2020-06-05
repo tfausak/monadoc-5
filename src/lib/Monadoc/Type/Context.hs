@@ -6,9 +6,9 @@ where
 
 import qualified Control.Concurrent as Concurrent
 import qualified Data.Pool as Pool
-import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Type.Config as Config
+import qualified Monadoc.Vendor.Sqlite as Sql
 import qualified Monadoc.Vendor.Time as Time
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
