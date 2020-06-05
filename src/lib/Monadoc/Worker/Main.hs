@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Monadoc.Worker.Main
   ( run
   )
@@ -18,6 +16,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
 import qualified Data.Text as Text
 import qualified Database.SQLite.Simple as Sql
+import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -32,7 +31,7 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
-withConnection :: (Sql.Connection -> App.App a) -> App.App a
+withConnection :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App a
 withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
@@ -40,7 +39,7 @@ withConnection app = do
 query :: String -> Sql.Query
 query = Sql.Query . Text.pack
 
-run :: App.App ()
+run :: Stack.HasCallStack => App.App ()
 run = Monad.forever $ do
   Console.info "updating hackage index"
   let url = "https://hackage.haskell.org/01-index.tar.gz"

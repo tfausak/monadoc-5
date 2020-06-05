@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Monadoc
   ( monadoc
   )
@@ -44,10 +42,10 @@ monadoc = do
     , "..."
     ]
   context <- Context.fromConfig config
-  runApp context migrate
-  Async.race_ (runApp context Server.run) (runApp context Worker.run)
+  App.run context migrate
+  Async.race_ (App.run context Server.run) (App.run context Worker.run)
 
-migrate :: App.App ()
+migrate :: Stack.HasCallStack => App.App ()
 migrate = withConnection $ \connection -> Trans.lift $ do
   Sql.execute_ connection $ query "pragma journal_mode = wal"
   Sql.execute_ connection
@@ -75,7 +73,7 @@ migrate = withConnection $ \connection -> Trans.lift $ do
           , MigrationMismatch.timestamp = timestamp
           }
 
-withConnection :: (Sql.Connection -> App.App a) -> App.App a
+withConnection :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App a
 withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
@@ -83,10 +81,7 @@ withConnection app = do
 query :: String -> Sql.Query
 query = Sql.Query . Text.pack
 
-runApp :: Stack.HasCallStack => Context.Context -> App.App a -> IO a
-runApp = flip Reader.runReaderT
-
-getConfig :: IO Config.Config
+getConfig :: Stack.HasCallStack => IO Config.Config
 getConfig = do
   arguments <- Environment.getArgs
   let (funs, args, opts, errs) = GetOpt.getOpt' GetOpt.Permute Options.options arguments

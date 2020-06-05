@@ -8,6 +8,7 @@ import qualified Control.Concurrent as Concurrent
 import qualified Data.Pool as Pool
 import qualified Data.Time as Time
 import qualified Database.SQLite.Simple as Sql
+import qualified GHC.Stack as Stack
 import qualified Monadoc.Type.Config as Config
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
@@ -26,7 +27,7 @@ data Context = Context
 
 -- | Converts a config into a context. This involves acquiring any resources
 -- described in the config.
-fromConfig :: Config.Config -> IO Context
+fromConfig :: Stack.HasCallStack => Config.Config -> IO Context
 fromConfig theConfig = do
   theManager <- Tls.newTlsManager
   let database = Config.database theConfig

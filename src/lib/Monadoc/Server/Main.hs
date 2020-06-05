@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Monadoc.Server.Main
   ( run
   )
@@ -26,15 +24,12 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 
-runApp :: Stack.HasCallStack => Context.Context -> App.App a -> IO a
-runApp = flip Reader.runReaderT
-
-run :: App.App ()
+run :: Stack.HasCallStack => App.App ()
 run = do
   context <- Reader.ask
   Trans.lift
     . Warp.runSettings (makeSettings $ Context.config context)
-    $ \request respond -> runApp context $ do
+    $ \request respond -> App.run context $ do
         let method = fromUtf8 $ Wai.requestMethod request
         let path = Text.unpack <$> Wai.pathInfo request
         case (method, path) of
