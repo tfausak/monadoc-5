@@ -69,6 +69,7 @@ library
     Monadoc.Type.Binary
     Monadoc.Type.Etag
     Monadoc.Type.Sha256
+    Monadoc.Type.Size
     Monadoc.Type.Timestamp
     Monadoc.Type.Url
   hs-source-dirs: src/lib
@@ -92,6 +93,7 @@ test-suite test
     Monadoc.Type.BinarySpec
     Monadoc.Type.EtagSpec
     Monadoc.Type.Sha256Spec
+    Monadoc.Type.SizeSpec
     Monadoc.Type.TimestampSpec
     Monadoc.Type.UrlSpec
     MonadocSpec

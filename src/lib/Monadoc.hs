@@ -28,11 +28,11 @@ import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Time as Time
 import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
-import qualified Database.SQLite.Simple.ToField as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Sha256 as Sha256
+import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
@@ -394,7 +394,7 @@ worker = Monad.forever $ do
             "insert into blobs (octets, sha256, size) \
             \ values (?, ?, ?) on conflict (sha256) do nothing"
           )
-          (Binary.fromByteString body, sha256, Size $ ByteString.length body)
+          (Binary.fromByteString body, sha256, Size.fromInt $ ByteString.length body)
         Sql.execute
           connection
           (query
@@ -431,7 +431,7 @@ worker = Monad.forever $ do
               )
               ( Binary.fromByteString body
               , newSha256
-              , Size $ ByteString.length body
+              , Size.fromInt $ ByteString.length body
               )
             Sql.execute
               connection
@@ -476,13 +476,6 @@ worker = Monad.forever $ do
     . Gzip.decompress
     $ LazyByteString.fromStrict contents
   Trans.lift $ Concurrent.threadDelay 60000000
-
-newtype Size = Size
-  { unwrapSize :: Int
-  } deriving (Eq, Show)
-
-instance Sql.ToField Size where
-  toField = Sql.toField . unwrapSize
 
 addRequestHeader
   :: Http.HeaderName
