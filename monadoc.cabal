@@ -72,6 +72,7 @@ library
     Monadoc.Type.Binary
     Monadoc.Type.Etag
     Monadoc.Type.Migration
+    Monadoc.Type.MigrationMismatch
     Monadoc.Type.Sha256
     Monadoc.Type.Size
     Monadoc.Type.Timestamp
@@ -99,6 +100,7 @@ test-suite test
     Monadoc.Type.BinarySpec
     Monadoc.Type.EtagSpec
     Monadoc.Type.MigrationSpec
+    Monadoc.Type.MigrationMismatchSpec
     Monadoc.Type.Sha256Spec
     Monadoc.Type.SizeSpec
     Monadoc.Type.TimestampSpec

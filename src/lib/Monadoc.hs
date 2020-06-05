@@ -32,9 +32,9 @@ import qualified Monadoc.Migrations as Migrations
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Migration as Migration
+import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
-import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Version as Version
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
@@ -88,16 +88,11 @@ migrate = withConnection $ \connection -> Trans.lift $ do
           migration
       Just expectedSha256 ->
         Monad.when (actualSha256 /= expectedSha256)
-          . Exception.throwM
-          $ MigrationMismatch timestamp expectedSha256 actualSha256
-
-data MigrationMismatch = MigrationMismatch
-  { migrationMismatchTimestamp :: Timestamp.Timestamp
-  , migrationMismatchExpectedSha256 :: Sha256.Sha256
-  , migrationMismatchActualSha256 :: Sha256.Sha256
-  } deriving (Eq, Show)
-
-instance Exception.Exception MigrationMismatch
+        $ Exception.throwM MigrationMismatch.MigrationMismatch
+          { MigrationMismatch.actual = actualSha256
+          , MigrationMismatch.expected = expectedSha256
+          , MigrationMismatch.timestamp = timestamp
+          }
 
 withConnection :: (Sql.Connection -> App a) -> App a
 withConnection app = do
