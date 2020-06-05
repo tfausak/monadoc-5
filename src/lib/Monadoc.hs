@@ -41,7 +41,6 @@ import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.HTTP.Client as Client
-import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
@@ -63,7 +62,7 @@ monadoc = do
     , Maybe.fromMaybe "unknown" Commit.hash
     , "..."
     ]
-  context <- makeContext config
+  context <- Context.fromConfig config
   runApp context migrate
   Async.race_ (runApp context server) (runApp context worker)
 
@@ -113,23 +112,6 @@ query = Sql.Query . Text.pack
 
 runApp :: Stack.HasCallStack => Context.Context -> App.App a -> IO a
 runApp = flip Reader.runReaderT
-
-makeContext :: Config.Config -> IO Context.Context
-makeContext config = do
-  manager <- Tls.newTlsManager
-  let database = Config.database config
-  capabilities <- Concurrent.getNumCapabilities
-  pool <- Pool.createPool
-    (Sql.open database)
-    Sql.close
-    1
-    60
-    (if null database || database == ":memory:" then 1 else capabilities + 1)
-  pure Context.Context
-    { Context.config = config
-    , Context.manager = manager
-    , Context.pool = pool
-    }
 
 getConfig :: IO Config.Config
 getConfig = do
