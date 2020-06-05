@@ -7,7 +7,7 @@ import qualified Data.Fixed as Fixed
 import qualified Data.Set as Set
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Timestamp as Timestamp
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
 
 migrations :: Set.Set Migration.Migration

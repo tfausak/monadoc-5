@@ -1,4 +1,4 @@
-module Monadoc.Vendor.Sqlite
+module Monadoc.Vendor.Sql
   ( Database.SQLite.Simple.Connection
   , Database.SQLite.Simple.FromField.FromField(..)
   , Database.SQLite.Simple.FromField.ResultError(..)

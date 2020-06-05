@@ -23,7 +23,7 @@ import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.WithCallStack as WithCallStack
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http

@@ -6,7 +6,7 @@ where
 import qualified Data.Text as Text
 import qualified Data.Time as Time
 import qualified Monadoc.Type.Timestamp as Monadoc
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec

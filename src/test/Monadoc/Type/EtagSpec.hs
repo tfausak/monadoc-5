@@ -6,7 +6,7 @@ where
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Monadoc.Type.Etag as Monadoc
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec

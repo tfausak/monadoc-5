@@ -6,7 +6,7 @@ module Monadoc.Type.Etag
 where
 
 import qualified Data.ByteString as ByteString
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Text.Read as Read
 
 -- | An HTTP entity tag (ETag). Values typically come from HTTP headers, so

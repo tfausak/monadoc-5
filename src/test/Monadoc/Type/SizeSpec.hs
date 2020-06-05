@@ -4,7 +4,7 @@ module Monadoc.Type.SizeSpec
 where
 
 import qualified Monadoc.Type.Size as Monadoc
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec

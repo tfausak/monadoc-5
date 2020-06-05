@@ -9,7 +9,7 @@ import qualified Data.Ord as Ord
 import qualified Data.Text.Encoding as Text
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 
 -- | A database migration. This is a single SQL statement along with a
 -- timestamp. The timestamp is used both to order the migrations and as a

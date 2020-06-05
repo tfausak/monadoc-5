@@ -7,7 +7,7 @@ import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.Text as Text
 import qualified Monadoc.Type.Sha256 as Monadoc
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec

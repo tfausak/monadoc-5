@@ -5,7 +5,7 @@ module Monadoc.Type.Url
   )
 where
 
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.URI as Uri
 
 -- | A uniform resource locator. Behind the scenes this is a 'Uri.URI'. Use

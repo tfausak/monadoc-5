@@ -5,7 +5,7 @@ where
 
 import qualified Data.ByteString as ByteString
 import qualified Monadoc.Type.Binary as Monadoc
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec

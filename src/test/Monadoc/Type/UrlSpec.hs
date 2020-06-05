@@ -5,7 +5,7 @@ where
 
 import qualified Data.Text as Text
 import qualified Monadoc.Type.Url as Monadoc
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.URI as Uri
 import qualified Test.Hspec as Hspec
 

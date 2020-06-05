@@ -1,11 +1,11 @@
-module Monadoc.Vendor.SqliteSpec
+module Monadoc.Vendor.SqlSpec
   ( spec
   )
 where
 
 import qualified Data.Text as Text
 import qualified Database.SQLite.Simple as Sqlite
-import qualified Monadoc.Vendor.Sqlite as Sql
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
