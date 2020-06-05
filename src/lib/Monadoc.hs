@@ -26,7 +26,6 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Time as Time
-import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Type.Binary as Binary
@@ -34,13 +33,13 @@ import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.Timestamp as Timestamp
+import qualified Monadoc.Version as Version
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Paths_monadoc as Package
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
@@ -286,15 +285,12 @@ getConfig = do
     Right cfg -> pure cfg
   Monad.when (configHelp config) $ do
     name <- Environment.getProgName
-    putStr $ GetOpt.usageInfo (unwords [name, "version", version]) options
+    putStr $ GetOpt.usageInfo (unwords [name, "version", Version.string]) options
     Exit.exitSuccess
   Monad.when (configVersion config) $ do
-    putStrLn version
+    putStrLn Version.string
     Exit.exitSuccess
   pure config
-
-version :: String
-version = Version.showVersion Package.version
 
 server :: App ()
 server = do
@@ -358,7 +354,7 @@ toUtf8 :: String -> ByteString.ByteString
 toUtf8 = Text.encodeUtf8 . Text.pack
 
 serverName :: ByteString.ByteString
-serverName = toUtf8 $ "monadoc-" <> version
+serverName = toUtf8 $ "monadoc-" <> Version.string
 
 worker :: App ()
 worker = Monad.forever $ do

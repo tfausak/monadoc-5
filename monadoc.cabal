@@ -72,6 +72,7 @@ library
     Monadoc.Type.Size
     Monadoc.Type.Timestamp
     Monadoc.Type.Url
+    Monadoc.Version
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
 
@@ -96,5 +97,6 @@ test-suite test
     Monadoc.Type.SizeSpec
     Monadoc.Type.TimestampSpec
     Monadoc.Type.UrlSpec
+    Monadoc.VersionSpec
     MonadocSpec
   type: exitcode-stdio-1.0
