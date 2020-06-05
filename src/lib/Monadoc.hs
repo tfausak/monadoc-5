@@ -17,7 +17,6 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
-import qualified Data.Fixed as Fixed
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
@@ -29,6 +28,7 @@ import qualified Data.Time as Time
 import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Commit as Commit
+import qualified Monadoc.Migrations as Migrations
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Migration as Migration
@@ -76,7 +76,7 @@ migrate = withConnection $ \connection -> Trans.lift $ do
         \, sha256 text not null )"
   digests <- fmap Map.fromList . Sql.query_ connection $ query
     "select iso8601, sha256 from migrations"
-  Monad.forM_ migrations $ \migration -> do
+  Monad.forM_ Migrations.migrations $ \migration -> do
     let timestamp = Migration.timestamp migration
     let actualSha256 = Migration.sha256 migration
     case Map.lookup timestamp digests of
@@ -98,44 +98,6 @@ data MigrationMismatch = MigrationMismatch
   } deriving (Eq, Show)
 
 instance Exception.Exception MigrationMismatch
-
-migrations :: [Migration.Migration]
-migrations =
-  [ Migration.Migration
-    { Migration.timestamp = makeTimestamp 2020 5 31 13 38 0
-    , Migration.query = query "select 1"
-    }
-  , Migration.Migration
-    { Migration.timestamp = makeTimestamp 2020 6 2 13 43 0
-    , Migration.query =
-      query
-        " create table blobs \
-        \( octets blob not null \
-        \, sha256 text not null primary key \
-        \, size integer not null )"
-    }
-  , Migration.Migration
-    { Migration.timestamp = makeTimestamp 2020 6 2 13 50 0
-    , Migration.query =
-      query
-        " create table cache \
-        \( etag text not null \
-        \, sha256 text not null \
-        \, url text not null primary key )"
-    }
-  ]
-
-makeTimestamp
-  :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Timestamp.Timestamp
-makeTimestamp year month day hour minute second = Timestamp.fromUtcTime
-  Time.UTCTime
-    { Time.utctDay = Time.fromGregorian year month day
-    , Time.utctDayTime = Time.timeOfDayToTime Time.TimeOfDay
-      { Time.todHour = hour
-      , Time.todMin = minute
-      , Time.todSec = second
-      }
-    }
 
 withConnection :: (Sql.Connection -> App a) -> App a
 withConnection app = do

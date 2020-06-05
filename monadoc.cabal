@@ -68,6 +68,7 @@ library
     Monadoc.Cabal
     Monadoc.Commit
     Monadoc.Ghc
+    Monadoc.Migrations
     Monadoc.Type.Binary
     Monadoc.Type.Etag
     Monadoc.Type.Migration
