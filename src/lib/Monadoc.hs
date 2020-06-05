@@ -54,7 +54,13 @@ import qualified Text.Read as Read
 monadoc :: Stack.HasCallStack => IO ()
 monadoc = do
   config <- getConfig
-  say "starting up"
+  say $ unwords
+    ["Starting Monadoc version"
+    , Version.string
+    , "commit"
+    , Maybe.fromMaybe "unknown" Commit.hash
+    , "..."
+    ]
   context <- makeContext config
   runApp context migrate
   Async.race_ (runApp context server) (runApp context worker)
