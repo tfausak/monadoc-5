@@ -7,7 +7,7 @@ where
 import qualified Control.Concurrent.STM as Stm
 import qualified Control.Exception as Exception
 import qualified Control.Monad.IO.Class as IO
-import qualified Data.Time as Time
+import qualified Monadoc.Vendor.Time as Time
 import qualified System.IO as IO
 import qualified System.IO.Unsafe as Unsafe
 
@@ -28,7 +28,7 @@ logOn handle message = do
     (Stm.atomically $ Stm.takeTMVar logVar)
     (Stm.atomically . Stm.putTMVar logVar)
     $ \ () -> IO.liftIO . IO.hPutStrLn handle $ unwords
-      [ Time.formatTime Time.defaultTimeLocale "%Y-%m-%dT%H:%M:%S%3QZ" now
+      [ Time.formatTime "%Y-%m-%dT%H:%M:%S%3QZ" now
       , message
       ]
 
