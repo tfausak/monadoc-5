@@ -17,6 +17,7 @@ source-repository head
 common library
   build-depends:
     base >= 4.14.0 && < 4.15
+    , githash >= 0.1.4 && < 0.2
     , async >= 2.2.2 && < 2.3
     , bytestring >= 0.10.10 && < 0.11
     , Cabal >= 3.2.0 && < 3.3
@@ -65,6 +66,7 @@ library
   exposed-modules:
     Monadoc
     Monadoc.Cabal
+    Monadoc.Commit
     Monadoc.Ghc
     Monadoc.Type.Binary
     Monadoc.Type.Etag
@@ -90,6 +92,7 @@ test-suite test
   main-is: Main.hs
   other-modules:
     Monadoc.CabalSpec
+    Monadoc.CommitSpec
     Monadoc.GhcSpec
     Monadoc.Type.BinarySpec
     Monadoc.Type.EtagSpec

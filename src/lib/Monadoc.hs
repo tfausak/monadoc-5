@@ -28,6 +28,7 @@ import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Time as Time
 import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
+import qualified Monadoc.Commit as Commit
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Sha256 as Sha256
@@ -285,10 +286,15 @@ getConfig = do
     Right cfg -> pure cfg
   Monad.when (configHelp config) $ do
     name <- Environment.getProgName
-    putStr $ GetOpt.usageInfo (unwords [name, "version", Version.string]) options
+    let extra = case Commit.hash of
+          Nothing -> []
+          Just hash -> ["commit", hash]
+    putStr $ GetOpt.usageInfo (unwords $ [name, "version", Version.string] <> extra) options
     Exit.exitSuccess
   Monad.when (configVersion config) $ do
-    putStrLn Version.string
+    putStrLn $ Version.string <> case Commit.hash of
+      Nothing -> ""
+      Just hash -> "-" <> hash
     Exit.exitSuccess
   pure config
 
@@ -354,7 +360,9 @@ toUtf8 :: String -> ByteString.ByteString
 toUtf8 = Text.encodeUtf8 . Text.pack
 
 serverName :: ByteString.ByteString
-serverName = toUtf8 $ "monadoc-" <> Version.string
+serverName = toUtf8 $ "monadoc-" <> Version.string <> case Commit.hash of
+  Nothing -> ""
+  Just hash -> "-" <> hash
 
 worker :: App ()
 worker = Monad.forever $ do
