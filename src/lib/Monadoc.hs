@@ -26,13 +26,12 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Time as Time
-import qualified Data.Typeable as Typeable
 import qualified Data.Version as Version
 import qualified Database.SQLite.Simple as Sql
-import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Type.Binary as Binary
+import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Network.HTTP.Client as Client
@@ -137,29 +136,6 @@ migrations =
         \, url text not null primary key )"
     }
   ]
-
-newtype Etag = Etag
-  { unwrapEtag :: ByteString.ByteString
-  } deriving (Eq, Show)
-
-instance Sql.FromField Etag where
-  fromField = fromFieldVia $ fmap Etag . Read.readMaybe
-
-fromFieldVia
-  :: (Sql.FromField a, Show a, Typeable.Typeable b)
-  => (a -> Maybe b)
-  -> Sql.FieldParser b
-fromFieldVia convert field = do
-  before <- Sql.fromField field
-  case convert before of
-    Nothing ->
-      Sql.returnError Sql.ConversionFailed field
-        $ "failed to convert: "
-        <> show before
-    Just after -> pure after
-
-instance Sql.ToField Etag where
-  toField = Sql.toField . show . unwrapEtag
 
 makeTimestamp
   :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Timestamp.Timestamp
@@ -406,7 +382,7 @@ worker = Monad.forever $ do
         body = LazyByteString.toStrict $ Client.responseBody response
         sha256 = Sha256.fromDigest $ Crypto.hash body
         etag =
-          Etag
+          Etag.fromByteString
             . Maybe.fromMaybe ByteString.empty
             . lookup Http.hETag
             $ Client.responseHeaders response
@@ -430,7 +406,7 @@ worker = Monad.forever $ do
       pure body
     (etag, sha256) : _ -> do
       say "index is cached"
-      request <- addRequestHeader Http.hIfNoneMatch (unwrapEtag etag)
+      request <- addRequestHeader Http.hIfNoneMatch (Etag.toByteString etag)
         <$> Client.parseRequest url
       manager <- Reader.asks contextManager
       response <- Trans.lift $ Client.httpLbs request manager
@@ -441,7 +417,7 @@ worker = Monad.forever $ do
             body = LazyByteString.toStrict $ Client.responseBody response
             newSha256 = Sha256.fromDigest $ Crypto.hash body
             newEtag =
-              Etag
+              Etag.fromByteString
                 . Maybe.fromMaybe ByteString.empty
                 . lookup Http.hETag
                 $ Client.responseHeaders response

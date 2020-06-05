@@ -67,6 +67,7 @@ library
     Monadoc.Cabal
     Monadoc.Ghc
     Monadoc.Type.Binary
+    Monadoc.Type.Etag
     Monadoc.Type.Sha256
     Monadoc.Type.Timestamp
     Monadoc.Type.Url
@@ -89,6 +90,7 @@ test-suite test
     Monadoc.CabalSpec
     Monadoc.GhcSpec
     Monadoc.Type.BinarySpec
+    Monadoc.Type.EtagSpec
     Monadoc.Type.Sha256Spec
     Monadoc.Type.TimestampSpec
     Monadoc.Type.UrlSpec

@@ -7,8 +7,8 @@ import qualified Data.Text as Text
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.Internal as Sql
-import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Database.SQLite.Simple.Ok as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Url as Monadoc
 import qualified Network.URI as Uri
 import qualified Test.Hspec as Hspec
