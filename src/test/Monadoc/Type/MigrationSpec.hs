@@ -4,11 +4,11 @@ module Monadoc.Type.MigrationSpec
 where
 
 import qualified Data.Text as Text
-import qualified Data.Time.Clock.POSIX as Time
 import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc.Type.Migration as Monadoc
 import qualified Monadoc.Type.Sha256 as Monadoc
 import qualified Monadoc.Type.Timestamp as Monadoc
+import qualified Monadoc.Vendor.Time as Time
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec

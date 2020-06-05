@@ -8,6 +8,7 @@ module Monadoc.Vendor.Time
   , Time.fromGregorian
   , Time.getCurrentTime
   , parseTime
+  , Time.posixSecondsToUTCTime
   , Time.timeOfDayToTime
   , utcTime
   )
@@ -15,6 +16,7 @@ where
 
 import qualified Data.Fixed as Fixed
 import qualified Data.Time as Time
+import qualified Data.Time.Clock.POSIX as Time
 
 -- | Uses a format string to format a time value. Uses the
 -- 'Time.defaultTimeLocale'.

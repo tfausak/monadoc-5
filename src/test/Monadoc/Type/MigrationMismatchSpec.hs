@@ -4,10 +4,10 @@ module Monadoc.Type.MigrationMismatchSpec
 where
 
 import qualified Control.Exception as Exception
-import qualified Data.Time.Clock.POSIX as Time
 import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
+import qualified Monadoc.Vendor.Time as Time
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
