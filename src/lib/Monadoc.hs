@@ -20,7 +20,6 @@ import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
-import qualified Data.String as String
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
@@ -29,6 +28,7 @@ import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Migrations as Migrations
+import qualified Monadoc.Data.Options as Options
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -52,7 +52,6 @@ import qualified System.Exit as Exit
 import qualified System.FilePath as FilePath
 import qualified System.IO as IO
 import qualified System.IO.Unsafe as Unsafe
-import qualified Text.Read as Read
 
 monadoc :: Stack.HasCallStack => IO ()
 monadoc = do
@@ -135,48 +134,7 @@ makeContext config = do
 getConfig :: IO Config.Config
 getConfig = do
   arguments <- Environment.getArgs
-  let
-    options =
-      [ GetOpt.Option
-        []
-        ["database"]
-        (GetOpt.ReqArg
-          (\database config -> Right config { Config.database = database })
-          "FILE"
-        )
-        "sets the database file (defaults to monadoc.sqlite3)"
-      , GetOpt.Option
-        ['h']
-        ["help"]
-        (GetOpt.NoArg (\config -> Right config { Config.help = True }))
-        "shows the help and exits"
-      , GetOpt.Option
-        []
-        ["host"]
-        (GetOpt.ReqArg
-          (\host config -> Right config { Config.host = String.fromString host }
-          )
-          "STRING"
-        )
-        "sets the server host (defaults to 127.0.0.1)"
-      , GetOpt.Option
-        []
-        ["port"]
-        (GetOpt.ReqArg
-          (\rawPort config -> case Read.readMaybe rawPort of
-            Nothing -> Left $ "invalid port: " <> show rawPort
-            Just port -> Right config { Config.port = port }
-          )
-          "NUMBER"
-        )
-        "sets the server port (defaults to 4444)"
-      , GetOpt.Option
-        ['v']
-        ["version"]
-        (GetOpt.NoArg (\config -> Right config { Config.version = True }))
-        "shows the version number and exits"
-      ]
-    (funs, args, opts, errs) = GetOpt.getOpt' GetOpt.Permute options arguments
+  let (funs, args, opts, errs) = GetOpt.getOpt' GetOpt.Permute Options.options arguments
   Monad.forM_ args $ \arg ->
     IO.hPutStrLn IO.stderr $ "WARNING: argument `" <> arg <> "' not expected"
   Monad.forM_ opts $ \opt ->
@@ -193,7 +151,7 @@ getConfig = do
     let extra = case Commit.hash of
           Nothing -> []
           Just hash -> ["commit", hash]
-    putStr $ GetOpt.usageInfo (unwords $ [name, "version", Version.string] <> extra) options
+    putStr $ GetOpt.usageInfo (unwords $ [name, "version", Version.string] <> extra) Options.options
     Exit.exitSuccess
   Monad.when (Config.version config) $ do
     putStrLn $ Version.string <> case Commit.hash of
