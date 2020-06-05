@@ -1,9 +1,9 @@
-module Monadoc.CommitSpec
+module Monadoc.Data.CommitSpec
   ( spec
   )
 where
 
-import qualified Monadoc.Commit as Monadoc
+import qualified Monadoc.Data.Commit as Monadoc
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec

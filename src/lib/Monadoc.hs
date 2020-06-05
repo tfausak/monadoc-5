@@ -27,8 +27,9 @@ import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Time as Time
 import qualified Database.SQLite.Simple as Sql
 import qualified GHC.Stack as Stack
-import qualified Monadoc.Commit as Commit
-import qualified Monadoc.Migrations as Migrations
+import qualified Monadoc.Data.Commit as Commit
+import qualified Monadoc.Data.Migrations as Migrations
+import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Migration as Migration
@@ -36,7 +37,6 @@ import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.WithCallStack as WithCallStack
-import qualified Monadoc.Version as Version
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types as Http

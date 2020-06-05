@@ -1,4 +1,4 @@
-module Monadoc.Version
+module Monadoc.Data.Version
   ( string
   , version
   )

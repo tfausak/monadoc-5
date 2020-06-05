@@ -1,4 +1,4 @@
-module Monadoc.Migrations
+module Monadoc.Data.Migrations
   ( migrations
   )
 where

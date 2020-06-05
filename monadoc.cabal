@@ -66,9 +66,10 @@ library
   exposed-modules:
     Monadoc
     Monadoc.Cabal
-    Monadoc.Commit
+    Monadoc.Data.Commit
+    Monadoc.Data.Migrations
+    Monadoc.Data.Version
     Monadoc.Ghc
-    Monadoc.Migrations
     Monadoc.Type.Binary
     Monadoc.Type.Etag
     Monadoc.Type.Migration
@@ -78,7 +79,6 @@ library
     Monadoc.Type.Timestamp
     Monadoc.Type.Url
     Monadoc.Type.WithCallStack
-    Monadoc.Version
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
 
@@ -96,7 +96,8 @@ test-suite test
   main-is: Main.hs
   other-modules:
     Monadoc.CabalSpec
-    Monadoc.CommitSpec
+    Monadoc.Data.CommitSpec
+    Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
     Monadoc.Type.BinarySpec
     Monadoc.Type.EtagSpec
@@ -107,6 +108,5 @@ test-suite test
     Monadoc.Type.TimestampSpec
     Monadoc.Type.UrlSpec
     Monadoc.Type.WithCallStackSpec
-    Monadoc.VersionSpec
     MonadocSpec
   type: exitcode-stdio-1.0

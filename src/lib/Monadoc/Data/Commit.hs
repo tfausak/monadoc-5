@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Monadoc.Commit
+module Monadoc.Data.Commit
   ( hash
   )
 where

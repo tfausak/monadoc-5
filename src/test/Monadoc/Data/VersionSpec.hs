@@ -1,10 +1,10 @@
-module Monadoc.VersionSpec
+module Monadoc.Data.VersionSpec
   ( spec
   )
 where
 
 import qualified Data.Version as Version
-import qualified Monadoc.Version as Monadoc
+import qualified Monadoc.Data.Version as Monadoc
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
