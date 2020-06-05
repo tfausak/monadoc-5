@@ -4,14 +4,15 @@ module Monadoc.Data.Migrations
 where
 
 import qualified Data.Fixed as Fixed
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Time as Time
 import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Timestamp as Timestamp
 
-migrations :: [Migration.Migration]
-migrations =
+migrations :: Set.Set Migration.Migration
+migrations = Set.fromList
   [ makeMigration (2020, 5, 31, 13, 38, 0) "select 1"
   , makeMigration (2020, 6, 2, 13, 43, 0)
     " create table blobs \

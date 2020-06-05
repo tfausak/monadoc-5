@@ -5,6 +5,7 @@ module Monadoc.Type.Migration
 where
 
 import qualified Crypto.Hash as Crypto
+import qualified Data.Ord as Ord
 import qualified Data.Text.Encoding as Text
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
@@ -18,6 +19,9 @@ data Migration = Migration
   { query :: Sql.Query
   , timestamp :: Timestamp.Timestamp
   } deriving (Eq, Show)
+
+instance Ord Migration where
+  compare x y = Ord.comparing timestamp x y <> Ord.comparing query x y
 
 instance Sql.ToRow Migration where
   toRow migration =
