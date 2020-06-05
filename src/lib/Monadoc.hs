@@ -51,8 +51,8 @@ import qualified Text.Read as Read
 
 monadoc :: Stack.HasCallStack => IO ()
 monadoc = do
-  say "starting up"
   config <- getConfig
+  say "starting up"
   context <- makeContext config
   runApp context migrate
   Async.race_ (runApp context server) (runApp context worker)
