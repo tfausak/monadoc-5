@@ -16,14 +16,8 @@ newtype Timestamp
   deriving (Eq, Ord, Show)
 
 instance Sql.FromField Timestamp where
-  fromField field = do
-    string <- Sql.fromField field
-    case Time.parseTime "%Y-%m-%dT%H:%M:%S%QZ" string of
-      Nothing ->
-        Sql.returnError Sql.ConversionFailed field
-          $ "invalid Timestamp: "
-          <> show string
-      Just utcTime -> pure $ fromUtcTime utcTime
+  fromField =
+    Sql.fromFieldVia $ fmap fromUtcTime . Time.parseTime "%Y-%m-%dT%H:%M:%S%QZ"
 
 instance Sql.ToField Timestamp where
   toField = Sql.toField . Time.formatTime "%Y-%m-%dT%H:%M:%S%3QZ" . toUtcTime

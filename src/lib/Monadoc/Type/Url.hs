@@ -16,14 +16,7 @@ newtype Url
   deriving (Eq, Show)
 
 instance Sql.FromField Url where
-  fromField field = do
-    string <- Sql.fromField field
-    case Uri.parseURI string of
-      Nothing ->
-        Sql.returnError Sql.ConversionFailed field
-          $ "invalid Url: "
-          <> show string
-      Just uri -> pure $ fromUri uri
+  fromField = Sql.fromFieldVia $ fmap fromUri . Uri.parseURI
 
 instance Sql.ToField Url where
   toField = Sql.toField . ($ "") . Uri.uriToString id . toUri

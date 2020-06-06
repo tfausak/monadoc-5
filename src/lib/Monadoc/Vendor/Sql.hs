@@ -12,6 +12,7 @@ module Monadoc.Vendor.Sql
   , Database.SQLite.Simple.close
   , Database.SQLite.Simple.execute
   , Database.SQLite.Simple.execute_
+  , fromFieldVia
   , Database.SQLite.Simple.open
   , Database.SQLite.Simple.query
   , Database.SQLite.Simple.query_
@@ -27,6 +28,28 @@ import qualified Database.SQLite.Simple.Internal
 import qualified Database.SQLite.Simple.Ok
 import qualified Database.SQLite.Simple.ToField
 import qualified Data.Text as Text
+import qualified Data.Typeable as Typeable
+
+-- | Converts from a SQL field into a value using the given function. This is
+-- mostly used to avoid all the boilerplate.
+fromFieldVia
+  :: ( Database.SQLite.Simple.FromField.FromField a
+     , Show a
+     , Typeable.Typeable b
+     )
+  => (a -> Maybe b)
+  -> Database.SQLite.Simple.FromField.Field
+  -> Database.SQLite.Simple.Ok.Ok b
+fromFieldVia f field = do
+  x <- Database.SQLite.Simple.FromField.fromField field
+  case f x of
+    Nothing ->
+      Database.SQLite.Simple.FromField.returnError
+          Database.SQLite.Simple.ConversionFailed
+          field
+        $ "failed to convert "
+        <> show x
+    Just y -> pure y
 
 -- | Converts a string into a SQL query. This is purely for convenience when
 -- avoiding @OverloadedStrings@.

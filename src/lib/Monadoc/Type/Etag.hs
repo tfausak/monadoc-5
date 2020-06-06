@@ -18,14 +18,7 @@ newtype Etag
   deriving (Eq, Show)
 
 instance Sql.FromField Etag where
-  fromField field = do
-    string <- Sql.fromField field
-    case Read.readMaybe string of
-      Nothing ->
-        Sql.returnError Sql.ConversionFailed field
-          $ "invalid Etag: "
-          <> show string
-      Just byteString -> pure $ fromByteString byteString
+  fromField = Sql.fromFieldVia $ fmap fromByteString . Read.readMaybe
 
 instance Sql.ToField Etag where
   toField = Sql.toField . show . toByteString

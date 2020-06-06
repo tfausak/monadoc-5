@@ -19,14 +19,7 @@ newtype Sha256
   deriving (Eq, Show)
 
 instance Sql.FromField Sha256 where
-  fromField field = do
-    string <- Sql.fromField field
-    case Read.readMaybe string of
-      Nothing ->
-        Sql.returnError Sql.ConversionFailed field
-          $ "invalid Sha256: "
-          <> show string
-      Just digest -> pure $ fromDigest digest
+  fromField = Sql.fromFieldVia $ fmap fromDigest . Read.readMaybe
 
 instance Sql.ToField Sha256 where
   toField = Sql.toField . show . toDigest
