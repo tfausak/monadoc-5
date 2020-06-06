@@ -7,6 +7,7 @@ on:
       - master
 
 jobs:
+
   ci:
     strategy:
       matrix:
@@ -37,3 +38,15 @@ jobs:
         with:
           path: artifacts/monadoc*
           name: monadoc-${{ matrix.os }}-${{ github.sha }}
+
+  docker:
+    needs: ci
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: monadoc-${{ runner.os }}-${{ github.sha }}
+          path: docker
+      - run: ls -l docker
+      - run: docker build --tag docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }} docker
