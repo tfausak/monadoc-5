@@ -73,6 +73,7 @@ library
     Monadoc.Data.Options
     Monadoc.Data.Version
     Monadoc.Ghc
+    Monadoc.Main
     Monadoc.Server.Main
     Monadoc.Server.Settings
     Monadoc.Type.App
@@ -114,6 +115,7 @@ test-suite test
     Monadoc.Data.OptionsSpec
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
+    Monadoc.MainSpec
     Monadoc.Server.MainSpec
     Monadoc.Server.SettingsSpec
     Monadoc.Type.AppSpec
