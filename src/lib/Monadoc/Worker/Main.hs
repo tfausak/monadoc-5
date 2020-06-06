@@ -14,7 +14,6 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -30,13 +29,12 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
-withConnection
-  :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App a
+withConnection :: (Sql.Connection -> App.App a) -> App.App a
 withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
 
-run :: Stack.HasCallStack => App.App ()
+run :: App.App ()
 run = Monad.forever $ do
   Console.info "updating hackage index"
   let url = "https://hackage.haskell.org/01-index.tar.gz"

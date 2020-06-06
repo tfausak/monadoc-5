@@ -5,7 +5,6 @@ where
 
 import qualified Control.Monad as Monad
 import qualified Data.Maybe as Maybe
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Options as Options
@@ -19,7 +18,7 @@ import qualified System.Environment as Environment
 import qualified System.Exit as Exit
 import qualified System.IO as IO
 
-monadoc :: Stack.HasCallStack => IO ()
+monadoc :: IO ()
 monadoc = do
   config <- getConfig
   Console.info $ unwords
@@ -32,7 +31,7 @@ monadoc = do
   context <- Context.fromConfig config
   App.run context Main.run
 
-getConfig :: Stack.HasCallStack => IO Config.Config
+getConfig :: IO Config.Config
 getConfig = do
   arguments <- Environment.getArgs
   let

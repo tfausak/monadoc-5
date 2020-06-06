@@ -9,7 +9,6 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text as Text
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
@@ -21,7 +20,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Internal as Wai
 
-run :: Stack.HasCallStack => App.App ()
+run :: App.App ()
 run = do
   context <- Reader.ask
   Trans.lift
@@ -72,9 +71,8 @@ addContentLength handle request respond = handle request $ \oldResponse ->
     _ -> oldResponse
 
 handleExceptions :: Wai.Middleware
-handleExceptions handle request respond = Exception.catch
-  (handle request respond)
-  $ \ someException -> do
+handleExceptions handle request respond =
+  Exception.catch (handle request respond) $ \someException -> do
     Settings.onException (Just request) someException
     respond $ Settings.onExceptionResponse someException
 

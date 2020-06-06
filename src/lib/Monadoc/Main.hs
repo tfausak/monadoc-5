@@ -10,7 +10,6 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.Pool as Pool
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Server.Main as Server
 import qualified Monadoc.Type.App as App
@@ -20,14 +19,14 @@ import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Worker.Main as Worker
 
-run :: Stack.HasCallStack => App.App ()
+run :: App.App ()
 run = do
   migrate
   context <- Reader.ask
   Trans.lift
     $ Async.race_ (App.run context Server.run) (App.run context Worker.run)
 
-migrate :: Stack.HasCallStack => App.App ()
+migrate :: App.App ()
 migrate = withConnection $ \connection -> Trans.lift $ do
   Sql.execute_ connection $ Sql.sql "pragma journal_mode = wal"
   Sql.execute_ connection
@@ -55,8 +54,7 @@ migrate = withConnection $ \connection -> Trans.lift $ do
             , MigrationMismatch.timestamp = timestamp
             }
 
-withConnection
-  :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App a
+withConnection :: (Sql.Connection -> App.App a) -> App.App a
 withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
