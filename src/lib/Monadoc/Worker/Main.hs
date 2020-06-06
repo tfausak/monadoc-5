@@ -30,7 +30,8 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
-withConnection :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App a
+withConnection
+  :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App a
 withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
@@ -69,7 +70,10 @@ run = Monad.forever $ do
             "insert into blobs (octets, sha256, size) \
             \ values (?, ?, ?) on conflict (sha256) do nothing"
           )
-          (Binary.fromByteString body, sha256, Size.fromInt $ ByteString.length body)
+          ( Binary.fromByteString body
+          , sha256
+          , Size.fromInt $ ByteString.length body
+          )
         Sql.execute
           connection
           (Sql.sql

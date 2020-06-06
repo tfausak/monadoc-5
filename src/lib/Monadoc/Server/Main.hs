@@ -32,9 +32,8 @@ run = do
           _ -> Trans.lift . respond $ statusResponse Http.notFound404 []
 
 statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
-statusResponse status headers = stringResponse status headers
-  $ unwords
-      [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
+statusResponse status headers = stringResponse status headers $ unwords
+  [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
 
 stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
 stringResponse status headers string = Wai.responseLBS

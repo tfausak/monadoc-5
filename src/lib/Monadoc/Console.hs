@@ -24,13 +24,12 @@ warn = logOn IO.stderr
 logOn :: IO.MonadIO m => IO.Handle -> String -> m ()
 logOn handle message = do
   now <- IO.liftIO Time.getCurrentTime
-  IO.liftIO . Exception.bracket
-    (Stm.atomically $ Stm.takeTMVar logVar)
-    (Stm.atomically . Stm.putTMVar logVar)
-    $ \ () -> IO.liftIO . IO.hPutStrLn handle $ unwords
-      [ Time.formatTime "%Y-%m-%dT%H:%M:%S%3QZ" now
-      , message
-      ]
+  IO.liftIO
+    . Exception.bracket
+        (Stm.atomically $ Stm.takeTMVar logVar)
+        (Stm.atomically . Stm.putTMVar logVar)
+    $ \() -> IO.liftIO . IO.hPutStrLn handle $ unwords
+        [Time.formatTime "%Y-%m-%dT%H:%M:%S%3QZ" now, message]
 
 logVar :: Stm.TMVar ()
 logVar = Unsafe.unsafePerformIO $ Stm.newTMVarIO ()

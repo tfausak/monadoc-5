@@ -18,7 +18,9 @@ spec = do
   Hspec.describe "version" $ do
 
     Hspec.it "has four branches" $ do
-      Version.versionBranch Monadoc.version `Hspec.shouldSatisfy` (== 4) . length
+      Version.versionBranch Monadoc.version
+        `Hspec.shouldSatisfy` (== 4)
+        . length
 
     Hspec.it "has no tags" $ do
       let Version.Version _ tags = Monadoc.version

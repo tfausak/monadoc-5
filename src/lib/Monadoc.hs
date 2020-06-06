@@ -34,7 +34,7 @@ monadoc :: Stack.HasCallStack => IO ()
 monadoc = do
   config <- getConfig
   Console.info $ unwords
-    ["Starting Monadoc version"
+    [ "Starting Monadoc version"
     , Version.string
     , "commit"
     , Maybe.fromMaybe "unknown" Commit.hash
@@ -65,14 +65,15 @@ migrate = withConnection $ \connection -> Trans.lift $ do
           (Sql.sql "insert into migrations (iso8601, sha256) values (?, ?)")
           migration
       Just expectedSha256 ->
-        Monad.when (actualSha256 /= expectedSha256)
-        $ Exception.throwM MigrationMismatch.MigrationMismatch
-          { MigrationMismatch.actual = actualSha256
-          , MigrationMismatch.expected = expectedSha256
-          , MigrationMismatch.timestamp = timestamp
-          }
+        Monad.when (actualSha256 /= expectedSha256) $ Exception.throwM
+          MigrationMismatch.MigrationMismatch
+            { MigrationMismatch.actual = actualSha256
+            , MigrationMismatch.expected = expectedSha256
+            , MigrationMismatch.timestamp = timestamp
+            }
 
-withConnection :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App a
+withConnection
+  :: Stack.HasCallStack => (Sql.Connection -> App.App a) -> App.App a
 withConnection app = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool app
@@ -80,7 +81,9 @@ withConnection app = do
 getConfig :: Stack.HasCallStack => IO Config.Config
 getConfig = do
   arguments <- Environment.getArgs
-  let (funs, args, opts, errs) = GetOpt.getOpt' GetOpt.Permute Options.options arguments
+  let
+    (funs, args, opts, errs) =
+      GetOpt.getOpt' GetOpt.Permute Options.options arguments
   Monad.forM_ args $ \arg ->
     IO.hPutStrLn IO.stderr $ "WARNING: argument `" <> arg <> "' not expected"
   Monad.forM_ opts $ \opt ->
@@ -94,10 +97,13 @@ getConfig = do
     Right cfg -> pure cfg
   Monad.when (Config.help config) $ do
     name <- Environment.getProgName
-    let extra = case Commit.hash of
-          Nothing -> []
-          Just hash -> ["commit", hash]
-    putStr $ GetOpt.usageInfo (unwords $ [name, "version", Version.string] <> extra) Options.options
+    let
+      extra = case Commit.hash of
+        Nothing -> []
+        Just hash -> ["commit", hash]
+    putStr $ GetOpt.usageInfo
+      (unwords $ [name, "version", Version.string] <> extra)
+      Options.options
     Exit.exitSuccess
   Monad.when (Config.version config) $ do
     putStrLn $ Version.string <> case Commit.hash of

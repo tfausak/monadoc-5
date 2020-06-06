@@ -33,7 +33,7 @@ options =
   ]
 
 option
-  :: [Char] -> [String] -> String -> GetOpt.ArgDescr a -> GetOpt.OptDescr a
+  :: String -> [String] -> String -> GetOpt.ArgDescr a -> GetOpt.OptDescr a
 option c s = flip $ GetOpt.Option c s
 
 argument :: String -> (String -> a) -> GetOpt.ArgDescr a

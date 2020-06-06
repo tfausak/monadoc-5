@@ -24,9 +24,7 @@ instance Ord Migration where
 
 instance Sql.ToRow Migration where
   toRow migration =
-    [ Sql.toField $ timestamp migration
-    , Sql.toField $ sha256 migration
-    ]
+    [Sql.toField $ timestamp migration, Sql.toField $ sha256 migration]
 
 -- | Computes a digest of the 'Migration' 'query'. This is used to make sure
 -- that the migration hasn't changed since it was ran.

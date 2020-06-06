@@ -29,7 +29,11 @@ fromConfig config =
 
 beforeMainLoop :: Config.Config -> IO ()
 beforeMainLoop config = Console.info $ unwords
-  ["Listening on", show $ Config.host config, "port", show $ Config.port config]
+  [ "Listening on"
+  , show $ Config.host config
+  , "port"
+  , show $ Config.port config
+  ]
 
 logger :: Wai.Request -> Http.Status -> Maybe Integer -> IO ()
 logger request status _ = Console.info $ unwords
@@ -48,9 +52,8 @@ onExceptionResponse :: Exception.SomeException -> Wai.Response
 onExceptionResponse _ = statusResponse Http.internalServerError500 []
 
 statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
-statusResponse status headers = stringResponse status headers
-  $ unwords
-      [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
+statusResponse status headers = stringResponse status headers $ unwords
+  [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
 
 stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
 stringResponse status headers string = Wai.responseLBS
@@ -59,6 +62,7 @@ stringResponse status headers string = Wai.responseLBS
   (LazyByteString.fromStrict $ Utf8.fromString string)
 
 serverName :: ByteString.ByteString
-serverName = Utf8.fromString $ "monadoc-" <> Version.string <> case Commit.hash of
-  Nothing -> ""
-  Just hash -> "-" <> hash
+serverName =
+  Utf8.fromString $ "monadoc-" <> Version.string <> case Commit.hash of
+    Nothing -> ""
+    Just hash -> "-" <> hash

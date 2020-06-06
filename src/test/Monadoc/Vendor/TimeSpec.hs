@@ -22,7 +22,8 @@ spec = do
         `Hspec.shouldBe` Just (Time.utcTime 2001 2 3 4 5 6.007)
 
     Hspec.it "returns nothing on failure" $ do
-      Time.parseTime "%Y" "invalid" `Hspec.shouldBe` (Nothing :: Maybe Time.UTCTime)
+      Time.parseTime "%Y" "invalid"
+        `Hspec.shouldBe` (Nothing :: Maybe Time.UTCTime)
 
   Hspec.describe "utcTime" $ do
 

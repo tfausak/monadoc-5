@@ -20,9 +20,13 @@ spec = do
       let
         migration = Monadoc.Migration
           { Monadoc.query = Sql.sql ""
-          , Monadoc.timestamp = Monadoc.fromUtcTime $ Time.posixSecondsToUTCTime 0
+          , Monadoc.timestamp = Monadoc.fromUtcTime
+            $ Time.posixSecondsToUTCTime 0
           }
-      Monadoc.sha256 migration `Hspec.shouldBe` Monadoc.fromDigest (read "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+      Monadoc.sha256 migration `Hspec.shouldBe` Monadoc.fromDigest
+        (read
+          "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        )
 
   Hspec.describe "toRow" $ do
 
@@ -30,9 +34,12 @@ spec = do
       let
         migration = Monadoc.Migration
           { Monadoc.query = Sql.sql ""
-          , Monadoc.timestamp = Monadoc.fromUtcTime $ Time.posixSecondsToUTCTime 0
+          , Monadoc.timestamp = Monadoc.fromUtcTime
+            $ Time.posixSecondsToUTCTime 0
           }
-      Sql.toRow migration `Hspec.shouldBe`
-        [ Sql.SQLText $ Text.pack "1970-01-01T00:00:00.000Z"
-        , Sql.SQLText $ Text.pack "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        ]
+      Sql.toRow migration
+        `Hspec.shouldBe` [ Sql.SQLText $ Text.pack "1970-01-01T00:00:00.000Z"
+                         , Sql.SQLText
+                           $ Text.pack
+                               "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                         ]

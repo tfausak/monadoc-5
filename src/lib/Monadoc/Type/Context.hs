@@ -38,11 +38,7 @@ fromConfig theConfig = do
     stripCount
     idleTime
     maxResources
-  pure Context
-    { config = theConfig
-    , manager = theManager
-    , pool = thePool
-    }
+  pure Context { config = theConfig, manager = theManager, pool = thePool }
 
 stripCount :: Int
 stripCount = 1
@@ -51,9 +47,7 @@ idleTime :: Time.NominalDiffTime
 idleTime = 60
 
 getMaxResources :: IO Int
-getMaxResources = do
-  threadCount <- Concurrent.getNumCapabilities
-  pure $ max 1 threadCount
+getMaxResources = max 1 <$> Concurrent.getNumCapabilities
 
 isInMemory :: FilePath -> Bool
 isInMemory database = case database of

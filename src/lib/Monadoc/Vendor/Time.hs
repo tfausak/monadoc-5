@@ -31,7 +31,8 @@ parseTime = Data.Time.parseTimeM False Data.Time.defaultTimeLocale
 -- | Builds a 'Data.Time.UTCTime' using the given year, month, day, hour,
 -- minute, and second. Date values that are out of bounds will be clamped.
 -- Time values that are out of bounds will be left alone.
-utcTime :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Data.Time.UTCTime
+utcTime
+  :: Integer -> Int -> Int -> Int -> Int -> Fixed.Pico -> Data.Time.UTCTime
 utcTime year month day hour minute second = Data.Time.UTCTime
   { Data.Time.utctDay = Data.Time.fromGregorian year month day
   , Data.Time.utctDayTime = Data.Time.timeOfDayToTime Data.Time.TimeOfDay
