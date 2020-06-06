@@ -7,7 +7,7 @@ on:
       - master
 
 env:
-  CABAL_DIR: ${{ env.HOME }}/.cabal
+  CABAL_DIR: $HOME/.cabal
 
 jobs:
 
