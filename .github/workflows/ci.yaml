@@ -49,7 +49,7 @@ jobs:
         with:
           name: monadoc-ubuntu-18.04-${{ github.sha }}
           path: docker
-      - run: ls -l docker
+      - run: chmod +x docker/monadoc
       - run: docker build --tag docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }} docker
-      - run: docker login --username tfausak --password ${{ github.token }}
+      - run: echo -n ${{ github.token }} | docker login --username tfausak --password-stdin
       - run: docker push docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }}
