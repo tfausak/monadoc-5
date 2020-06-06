@@ -18,7 +18,9 @@ jobs:
           cabal-version: ${{ matrix.cabal }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cabal dist-newstyle
+          path: |
+            ~/.cabal
+            dist-newstyle
           key: ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-${{ hashFiles('*.cabal') }}
           restore-keys: |
             ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
