@@ -1,0 +1,14 @@
+on:
+  - push
+  - pull_request
+
+jobs:
+  my-job:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-haskell@v1.1
+        with:
+          ghc-version: 8.10
+          cabal-version: 3.2
+      - cabal test
