@@ -23,4 +23,6 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
             ${{ matrix.os }}-${{ matrix.ghc }}-
+      - run: cabal build --enable-tests --only-dependencies
+      - run: cabal build --enable-tests
       - run: cabal test
