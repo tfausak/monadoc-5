@@ -28,4 +28,7 @@ jobs:
       - run: cabal build --enable-tests --only-dependencies
       - run: cabal build --enable-tests
       - run: cabal test --test-show-details direct
-      - run: cabal install --install-method copy --installdir .
+      - run: cabal install --install-method copy --installdir artifacts
+      - uses: actions/upload-artifact@v2
+        with:
+          path: artifacts/monadoc
