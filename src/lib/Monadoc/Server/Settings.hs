@@ -1,5 +1,7 @@
 module Monadoc.Server.Settings
   ( fromConfig
+  , onException
+  , onExceptionResponse
   )
 where
 

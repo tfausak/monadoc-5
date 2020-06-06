@@ -3,6 +3,7 @@ module Monadoc.Server.Main
   )
 where
 
+import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.ByteString.Builder as Builder
@@ -58,7 +59,7 @@ notFoundHandler :: Handler.Handler
 notFoundHandler = pure $ statusResponse Http.notFound404 []
 
 middleware :: Wai.Middleware
-middleware = addContentLength
+middleware = addContentLength . handleExceptions
 
 addContentLength :: Wai.Middleware
 addContentLength handle request respond = handle request $ \oldResponse ->
@@ -69,6 +70,13 @@ addContentLength handle request respond = handle request $ \oldResponse ->
         header = (Http.hContentLength, Utf8.fromString $ show size)
       in Wai.ResponseBuilder status (header : headers) builder
     _ -> oldResponse
+
+handleExceptions :: Wai.Middleware
+handleExceptions handle request respond = Exception.catch
+  (handle request respond)
+  $ \ someException -> do
+    Settings.onException (Just request) someException
+    respond $ Settings.onExceptionResponse someException
 
 statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
 statusResponse status headers = stringResponse status headers $ unwords
