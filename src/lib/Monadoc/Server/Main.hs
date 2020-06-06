@@ -12,6 +12,7 @@ import qualified GHC.Stack as Stack
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.Handler as Handler
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
@@ -24,15 +25,40 @@ run = do
   context <- Reader.ask
   Trans.lift
     . Warp.runSettings (Settings.fromConfig $ Context.config context)
-    . addContentLength
-    $ \request respond -> App.run context $ do
-        let method = Utf8.toString $ Wai.requestMethod request
-        let path = Text.unpack <$> Wai.pathInfo request
-        case (method, path) of
-          ("GET", ["health-check"]) ->
-            Trans.lift . respond $ statusResponse Http.ok200 []
-          ("GET", ["throw"]) -> WithCallStack.throw $ userError "oh no"
-          _ -> Trans.lift . respond $ statusResponse Http.notFound404 []
+    . middleware
+    $ application context
+
+application :: Context.Context -> Wai.Application
+application context request respond = do
+  response <- App.run context . runHandler request $ route request
+  respond response
+
+runHandler :: Wai.Request -> Handler.Handler -> App.App Wai.Response
+runHandler request handler = do
+  context <- Reader.ask
+  Trans.lift $ Handler.run context request handler
+
+route :: Wai.Request -> Handler.Handler
+route request =
+  let
+    method = Utf8.toString $ Wai.requestMethod request
+    path = Text.unpack <$> Wai.pathInfo request
+  in case (method, path) of
+    ("GET", ["health-check"]) -> healthCheckHandler
+    ("GET", ["throw"]) -> throwHandler
+    _ -> notFoundHandler
+
+healthCheckHandler :: Handler.Handler
+healthCheckHandler = pure $ statusResponse Http.ok200 []
+
+throwHandler :: Handler.Handler
+throwHandler = WithCallStack.throw $ userError "oh no"
+
+notFoundHandler :: Handler.Handler
+notFoundHandler = pure $ statusResponse Http.notFound404 []
+
+middleware :: Wai.Middleware
+middleware = addContentLength
 
 addContentLength :: Wai.Middleware
 addContentLength handle request respond = handle request $ \oldResponse ->

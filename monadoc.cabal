@@ -81,6 +81,7 @@ library
     Monadoc.Type.Config
     Monadoc.Type.Context
     Monadoc.Type.Etag
+    Monadoc.Type.Handler
     Monadoc.Type.Migration
     Monadoc.Type.MigrationMismatch
     Monadoc.Type.Sha256
@@ -123,6 +124,7 @@ test-suite test
     Monadoc.Type.ConfigSpec
     Monadoc.Type.ContextSpec
     Monadoc.Type.EtagSpec
+    Monadoc.Type.HandlerSpec
     Monadoc.Type.MigrationMismatchSpec
     Monadoc.Type.MigrationSpec
     Monadoc.Type.Sha256Spec
