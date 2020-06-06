@@ -4,9 +4,9 @@ module Monadoc.Type.MigrationSpec
 where
 
 import qualified Data.Text as Text
-import qualified Monadoc.Type.Migration as Monadoc
-import qualified Monadoc.Type.Sha256 as Monadoc
-import qualified Monadoc.Type.Timestamp as Monadoc
+import qualified Monadoc.Type.Migration as Migration
+import qualified Monadoc.Type.Sha256 as Sha256
+import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
 import qualified Test.Hspec as Hspec
@@ -18,12 +18,12 @@ spec = do
 
     Hspec.it "returns the digest of the query" $ do
       let
-        migration = Monadoc.Migration
-          { Monadoc.query = Sql.sql ""
-          , Monadoc.timestamp = Monadoc.fromUtcTime
+        migration = Migration.Migration
+          { Migration.query = Sql.sql ""
+          , Migration.timestamp = Timestamp.fromUtcTime
             $ Time.posixSecondsToUTCTime 0
           }
-      Monadoc.sha256 migration `Hspec.shouldBe` Monadoc.fromDigest
+      Migration.sha256 migration `Hspec.shouldBe` Sha256.fromDigest
         (read
           "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         )
@@ -32,9 +32,9 @@ spec = do
 
     Hspec.it "converts into a SQL row" $ do
       let
-        migration = Monadoc.Migration
-          { Monadoc.query = Sql.sql ""
-          , Monadoc.timestamp = Monadoc.fromUtcTime
+        migration = Migration.Migration
+          { Migration.query = Sql.sql ""
+          , Migration.timestamp = Timestamp.fromUtcTime
             $ Time.posixSecondsToUTCTime 0
           }
       Sql.toRow migration
