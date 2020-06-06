@@ -11,9 +11,11 @@ import qualified Test.Hspec as Hspec
 spec :: Hspec.Spec
 spec = do
 
-  Hspec.it "parses an empty package" $ do
-    Cabal.parse (ByteString.pack "name:x\nversion:0")
-      `Hspec.shouldSatisfy` Either.isRight
+  Hspec.describe "parse" $ do
 
-  Hspec.it "fails to parse an invalid package" $ do
-    Cabal.parse ByteString.empty `Hspec.shouldSatisfy` Either.isLeft
+    Hspec.it "parses an empty package" $ do
+      Cabal.parse (ByteString.pack "name:x\nversion:0")
+        `Hspec.shouldSatisfy` Either.isRight
+
+    Hspec.it "fails to parse an invalid package" $ do
+      Cabal.parse ByteString.empty `Hspec.shouldSatisfy` Either.isLeft

@@ -108,9 +108,13 @@ test-suite test
   main-is: Main.hs
   other-modules:
     Monadoc.CabalSpec
+    Monadoc.ConsoleSpec
     Monadoc.Data.CommitSpec
+    Monadoc.Data.MigrationsSpec
+    Monadoc.Data.OptionsSpec
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
+    Monadoc.Server.MainSpec
     Monadoc.Server.SettingsSpec
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
@@ -127,5 +131,6 @@ test-suite test
     Monadoc.Utility.Utf8Spec
     Monadoc.Vendor.SqlSpec
     Monadoc.Vendor.TimeSpec
+    Monadoc.Worker.MainSpec
     MonadocSpec
   type: exitcode-stdio-1.0
