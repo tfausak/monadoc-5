@@ -27,4 +27,4 @@ jobs:
             ${{ matrix.os }}-${{ matrix.ghc }}-
       - run: cabal build --enable-tests --only-dependencies
       - run: cabal build --enable-tests
-      - run: cabal test
+      - run: cabal test --test-show-details direct
