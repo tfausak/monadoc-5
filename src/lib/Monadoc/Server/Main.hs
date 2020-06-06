@@ -5,6 +5,7 @@ where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text as Text
 import qualified GHC.Stack as Stack
@@ -16,12 +17,14 @@ import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Network.Wai.Internal as Wai
 
 run :: Stack.HasCallStack => App.App ()
 run = do
   context <- Reader.ask
   Trans.lift
     . Warp.runSettings (Settings.fromConfig $ Context.config context)
+    . addContentLength
     $ \request respond -> App.run context $ do
         let method = Utf8.toString $ Wai.requestMethod request
         let path = Text.unpack <$> Wai.pathInfo request
@@ -30,6 +33,16 @@ run = do
             Trans.lift . respond $ statusResponse Http.ok200 []
           ("GET", ["throw"]) -> WithCallStack.throw $ userError "oh no"
           _ -> Trans.lift . respond $ statusResponse Http.notFound404 []
+
+addContentLength :: Wai.Middleware
+addContentLength handle request respond = handle request $ \oldResponse ->
+  respond $ case oldResponse of
+    Wai.ResponseBuilder status headers builder ->
+      let
+        size = LazyByteString.length $ Builder.toLazyByteString builder
+        header = (Http.hContentLength, Utf8.fromString $ show size)
+      in Wai.ResponseBuilder status (header : headers) builder
+    _ -> oldResponse
 
 statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
 statusResponse status headers = stringResponse status headers $ unwords
