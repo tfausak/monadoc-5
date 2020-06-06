@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
         with:
-          name: monadoc-${{ runner.os }}-${{ github.sha }}
+          name: monadoc-ubuntu-18.04-${{ github.sha }}
           path: docker
       - run: ls -l docker
       - run: docker build --tag docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }} docker
