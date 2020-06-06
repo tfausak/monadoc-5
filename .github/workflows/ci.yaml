@@ -51,5 +51,5 @@ jobs:
           path: docker
       - run: chmod +x docker/monadoc
       - run: docker build --tag docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }} docker
-      - run: echo -n ${{ secrets.DOCKER_PASSWORD }} | docker login --username tfausak --password-stdin
+      - run: echo -n ${{ github.token }} | docker login docker.pkg.github.com --username tfausak --password-stdin
       - run: docker push docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }}
