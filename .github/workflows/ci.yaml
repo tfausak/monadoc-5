@@ -35,5 +35,5 @@ jobs:
       - run: cabal install --install-method copy --installdir artifacts
       - uses: actions/upload-artifact@v2
         with:
-          path: artifacts/monadoc
+          path: artifacts/monadoc*
           name: monadoc-${{ matrix.os }}-${{ github.sha }}
