@@ -50,3 +50,5 @@ jobs:
           path: docker
       - run: ls -l docker
       - run: docker build --tag docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }} docker
+      - run: docker login --username tfausak --password ${{ github.token }}
+      - run: docker push docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }}
