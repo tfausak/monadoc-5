@@ -11,4 +11,4 @@ jobs:
         with:
           ghc-version: 8.10
           cabal-version: 3.2
-      - cabal test
+      - run: cabal test
