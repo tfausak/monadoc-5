@@ -1,32 +1,17 @@
 Parameters:
 
-  CommitSha:
+  Commit:
     Type: String
     Description:
       The Git commit SHA to deploy. Usually this is the HEAD of the default
       branch, but it can be anything with a tagged image in the registry.
 
-  GitHubPersonalAccessToken:
+  Package:
     Type: String
     Description:
-      A GitHub Personal Access Token used to authenticate with their Docker
-      registry (docker.pkg.github.com) and pull container images.
-    NoEcho: true
-
-  GitHubRepository:
-    Type: String
-    Description:
-      The project name, which is used to name associated resources. This is
-      just the repository without the organization or username. Note that
-      changing this will probably force replacement on most resources.
+      The name of the package to get from the GitHub repository's Docker
+      registry.
     Default: monadoc
-
-  GitHubUsername:
-    Type: String
-    Description:
-      The GitHub username to use for various tasks. This is mostly used to
-      avoid repeating yourself.
-    Default: tfausak
 
   Port:
     Type: Number
@@ -42,34 +27,56 @@ Parameters:
       whatever you've configured the AWS CLI to use.
     Default: us-east-1
 
+  Repo:
+    Type: String
+    Description:
+      The project name, which is used to name associated resources. This is
+      just the repository without the organization or username. Note that
+      changing this will probably force replacement on most resources.
+    Default: monadoc
+
+  Token:
+    Type: String
+    Description:
+      A GitHub Personal Access Token used to authenticate with their Docker
+      registry (docker.pkg.github.com) and pull container images.
+    NoEcho: true
+
+  User:
+    Type: String
+    Description:
+      The GitHub username to use for various tasks. This is mostly used to
+      avoid repeating yourself.
+    Default: tfausak
+
 Resources:
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-secretsmanager-secret.html
   DockerCredentials:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub ${GitHubRepository}-docker-credentials
+      Name: !Sub ${Repo}-docker-credentials
       Description:
         Credentials used to authenticate with GitHub's Docker registry.
       SecretString: !Sub >
-        { "username": "${GitHubUsername}"
-        , "password": "${GitHubPersonalAccessToken}"
+        { "username": "${User}"
+        , "password": "${Token}"
         }
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub ${GitHubRepository}-log-group
+      LogGroupName: !Sub ${Repo}-log-group
       RetentionInDays: 30
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
   Role:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${GitHubRepository}-role-${AWS::Region}
+      RoleName: !Sub ${Repo}-role-${AWS::Region}
       Description: !Sub
-        Role used to launch ECS tasks for the ${GitHubRepository} project.
+        Role used to launch ECS tasks for the ${Repo} project.
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -83,7 +90,7 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
       Policies:
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html#private-auth-iam
-        - PolicyName: !Sub ${GitHubRepository}-get-secret-value
+        - PolicyName: !Sub ${Repo}-get-secret-value
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -99,16 +106,16 @@ Resources:
   Task:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Sub ${GitHubRepository}-task-definition
+      Family: !Sub ${Repo}-task-definition
       Cpu: 256
       Memory: 512
       RequiresCompatibilities: [ FARGATE ]
       NetworkMode: awsvpc
       ExecutionRoleArn: !Ref Role
       ContainerDefinitions:
-        - Name: !Sub ${GitHubRepository}-container
+        - Name: !Sub ${Repo}-container
           Essential: true
-          Image: !Sub docker.pkg.github.com/${GitHubUsername}/${GitHubRepository}/${GitHubRepository}:${CommitSha}
+          Image: !Sub docker.pkg.github.com/${User}/${Repo}/${Package}:${Commit}
           RepositoryCredentials:
             CredentialsParameter: !Ref DockerCredentials
           Command:
@@ -122,13 +129,13 @@ Resources:
             Options:
               awslogs-region: !Ref Region
               awslogs-group: !Ref LogGroup
-              awslogs-stream-prefix: !Ref CommitSha
+              awslogs-stream-prefix: !Ref Commit
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-cluster.html
   Cluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub ${GitHubRepository}-cluster
+      ClusterName: !Sub ${Repo}-cluster
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
   Vpc:
@@ -148,7 +155,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref Vpc
-      GroupName: !Sub ${GitHubRepository}-security-group
+      GroupName: !Sub ${Repo}-security-group
       GroupDescription:
         Allows everything.
       SecurityGroupEgress:
@@ -198,7 +205,7 @@ Resources:
   Service:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub ${GitHubRepository}-service
+      ServiceName: !Sub ${Repo}-service
       Cluster: !Ref Cluster
       DesiredCount: 1
       LaunchType: FARGATE
