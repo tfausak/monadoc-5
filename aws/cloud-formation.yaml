@@ -35,6 +35,13 @@ Parameters:
       need to change this.
     Default: 4444
 
+  Region:
+    Type: String
+    Description:
+      The region to use for various AWS operations. Make sure this matches
+      whatever you've configured the AWS CLI to use.
+    Default: us-east-1
+
 Resources:
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-secretsmanager-secret.html
@@ -74,6 +81,19 @@ Resources:
             Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html#private-auth-iam
+        - PolicyName: !Sub ${GitHubRepository}-get-secret-value
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - kms:Decrypt
+                Resource:
+                  - !Ref DockerCredentials
+                  - !Sub arn:aws:kms:${Region}:${AWS::AccountId}:key/key_id
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html
   Task:
@@ -100,7 +120,7 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-region: us-east-1
+              awslogs-region: !Ref Region
               awslogs-group: !Ref LogGroup
               awslogs-stream-prefix: !Ref CommitSha
 
