@@ -1,0 +1,53 @@
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+
+  ci:
+    strategy:
+      matrix:
+        os: [ ubuntu-18.04, macos-10.15, windows-2019 ]
+        ghc: [ '8.10' ]
+        cabal: [ '3.2' ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - id: setup-haskell
+        uses: actions/setup-haskell@v1.1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+      - uses: actions/cache@v2
+        with:
+          path: ${{ steps.setup-haskell.outputs.cabal-store  }}
+          key: ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-${{ hashFiles('*.cabal') }}
+          restore-keys: |
+            ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
+            ${{ matrix.os }}-${{ matrix.ghc }}-
+      - run: cabal build --enable-tests --jobs --only-dependencies
+      - run: cabal build --enable-tests --jobs
+      - run: cabal test --jobs --test-show-details direct
+      - run: cabal install --install-method copy --installdir artifacts --jobs
+      - uses: actions/upload-artifact@v2
+        with:
+          path: artifacts/monadoc*
+          name: monadoc-${{ matrix.os }}-${{ github.sha }}
+
+  docker:
+    needs: ci
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: monadoc-ubuntu-18.04-${{ github.sha }}
+          path: docker
+      - run: chmod +x docker/monadoc
+      - run: docker build --tag docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }} docker
+      - run: echo -n ${{ github.token }} | docker login docker.pkg.github.com --username tfausak --password-stdin
+      - run: docker push docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }}
