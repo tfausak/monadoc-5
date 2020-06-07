@@ -11,6 +11,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+      - run: mkdir .git
+      - run: echo ${{ github.sha }} > .git/HEAD
       - id: setup-haskell
         uses: actions/setup-haskell@v1.1
         with:
@@ -42,18 +44,14 @@ jobs:
           name: monadoc-ubuntu-18.04-${{ github.sha }}
           path: docker
       - run: chmod +x docker/monadoc
-      - uses: docker/build-push-action@v1
-        with:
-          username: taylorfausak
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: taylorfausak/monadoc
-          tags: ${{ github.sha }}
-          path: docker
+      - run: docker build --tag docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }} docker
+      - run: echo ${{ github.token }} | docker login docker.pkg.github.com --username tfausak --password-stdin
+      - run: docker push docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }}
 
   deploy:
     needs: push
     runs-on: ubuntu-18.04
     steps:
+      # TODO
       - run: echo ${{ github.ref }}
-      - run: curl -X POST ${{ secrets.RENDER_URL }}
-        # TODO if: github.ref == 'master'
+      - run: echo ${{ github.sha }}

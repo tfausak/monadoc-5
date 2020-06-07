@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: monadoc
-    env: docker
-    dockerfilePath: ./render/Dockerfile
-    dockerContext: ./render
-    healthCheckPath: /health-check
