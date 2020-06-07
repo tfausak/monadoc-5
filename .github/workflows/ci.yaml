@@ -16,7 +16,7 @@ jobs:
         cabal: [ '3.2' ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
       - id: setup-haskell
         uses: actions/setup-haskell@v1.1
         with:
@@ -48,12 +48,9 @@ jobs:
           name: monadoc-ubuntu-18.04-${{ github.sha }}
           path: docker
       - run: chmod +x docker/monadoc
-      - run: docker build --tag docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }} docker
-      - run: echo -n ${{ github.token }} | docker login docker.pkg.github.com --username tfausak --password-stdin
-      - run: docker push docker.pkg.github.com/tfausak/monadoc/monadoc:${{ github.sha }}
       - uses: docker/build-push-action@v1
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
+          username: taylorfausak
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: taylorfausak/monadoc
           tags: ${{ github.sha }}
