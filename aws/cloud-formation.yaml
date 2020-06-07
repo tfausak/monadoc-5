@@ -1,11 +1,25 @@
 Parameters:
 
+  CommitSha:
+    Type: String
+    Description:
+      The Git commit SHA to deploy. Usually this is the HEAD of the default
+      branch, but it can be anything with a tagged image in the registry.
+
   GitHubPersonalAccessToken:
     Type: String
     Description:
       A GitHub Personal Access Token used to authenticate with their Docker
       registry (docker.pkg.github.com) and pull container images.
     NoEcho: true
+
+  GitHubRepository:
+    Type: String
+    Description:
+      The project name, which is used to name associated resources. This is
+      just the repository without the organization or username. Note that
+      changing this will probably force replacement on most resources.
+    Default: monadoc
 
   GitHubUsername:
     Type: String
@@ -14,12 +28,12 @@ Parameters:
       avoid repeating yourself.
     Default: tfausak
 
-  ProjectName:
-    Type: String
+  Port:
+    Type: Number
     Description:
-      The project name, which is used to name associated resources. Note that
-      changing this will probably force replacement on most resources.
-    Default: monadoc
+      The port number to bind inside the container. It's unlikely that you'll
+      need to change this.
+    Default: 4444
 
 Resources:
 
@@ -27,7 +41,7 @@ Resources:
   DockerCredentials:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub ${ProjectName}-docker-credentials
+      Name: !Sub ${GitHubRepository}-docker-credentials
       Description:
         Credentials used to authenticate with GitHub's Docker registry.
       SecretString: !Sub >
@@ -39,16 +53,16 @@ Resources:
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub ${ProjectName}-log-group
+      LogGroupName: !Sub ${GitHubRepository}-log-group
       RetentionInDays: 30
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
   Role:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ProjectName}-role-${AWS::Region}
+      RoleName: !Sub ${GitHubRepository}-role-${AWS::Region}
       Description: !Sub
-        Role used to launch ECS tasks for the ${ProjectName} project.
+        Role used to launch ECS tasks for the ${GitHubRepository} project.
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -60,3 +74,32 @@ Resources:
             Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html
+  Task:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${GitHubRepository}-task-definition
+      Cpu: 256
+      Memory: 512
+      RequiresCompatibilities: [ FARGATE ]
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !Ref Role
+      ContainerDefinitions:
+        - Name: !Sub ${GitHubRepository}-container
+          Essential: true
+          Image: !Sub docker.pkg.github.com/${GitHubUsername}/${GitHubRepository}/${GitHubRepository}:${CommitSha}
+          RepositoryCredentials:
+            CredentialsParameter: !Ref DockerCredentials
+          Command:
+            - monadoc
+            - --host=*
+            - !Sub --port=${Port}
+          PortMappings:
+            - ContainerPort: !Ref Port
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: us-east-1
+              awslogs-group: !Ref LogGroup
+              awslogs-stream-prefix: !Ref CommitSha
