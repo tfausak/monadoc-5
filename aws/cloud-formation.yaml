@@ -27,7 +27,7 @@ Resources:
   DockerCredentials:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: DockerCredentials
+      Name: !Sub ${ProjectName}-docker-credentials
       Description:
         Credentials used to authenticate with GitHub's Docker registry.
       SecretString: !Sub >
