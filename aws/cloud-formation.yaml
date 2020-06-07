@@ -1,0 +1,22 @@
+Parameters:
+
+  GitHubPersonalAccessToken:
+    Type: String
+    Description:
+      A GitHub Personal Access Token used to authenticate with their Docker
+      registry (docker.pkg.github.com) and pull container images.
+    NoEcho: true
+
+Resources:
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-secretsmanager-secret.html
+  DockerCredentials:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DockerCredentials
+      Description:
+        Credentials used to authenticate with GitHub's Docker registry.
+      SecretString: !Sub >
+        { "username": "tfausak"
+        , "password": "${GitHubPersonalAccessToken}"
+        }
