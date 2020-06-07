@@ -2,7 +2,7 @@ on: push
 
 jobs:
 
-  ci:
+  build:
     strategy:
       matrix:
         os: [ ubuntu-18.04 ] # TODO , macos-10.15, windows-2019 ]
@@ -10,13 +10,7 @@ jobs:
         cabal: [ '3.2' ]
     runs-on: ${{ matrix.os }}
     steps:
-      - run: env
-      - run: echo ${{ github.sha }}
-      - run: echo $GITHUB_SHA
-      - uses: actions/checkout@v1
-      - run: env
-      - run: echo ${{ github.sha }}
-      - run: echo $GITHUB_SHA
+      - uses: actions/checkout@v2
       - id: setup-haskell
         uses: actions/setup-haskell@v1.1
         with:
@@ -32,14 +26,14 @@ jobs:
       - run: cabal build --enable-tests --jobs --only-dependencies
       - run: cabal build --enable-tests --jobs
       - run: cabal test --jobs --test-show-details direct
-      - run: cabal install --install-method copy --installdir artifacts --jobs
+      - run: cabal install --install-method copy --installdir docker --jobs
       - uses: actions/upload-artifact@v2
         with:
-          path: artifacts/monadoc*
+          path: docker/monadoc*
           name: monadoc-${{ matrix.os }}-${{ github.sha }}
 
-  docker:
-    needs: ci
+  push:
+    needs: build
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
