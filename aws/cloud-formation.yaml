@@ -122,3 +122,22 @@ Resources:
     Properties:
       VpcId: !Ref Vpc
       CidrBlock: 10.10.0.0/24
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Vpc
+      GroupName: !Sub ${GitHubRepository}-security-group
+      GroupDescription:
+        Allows everything.
+      SecurityGroupEgress:
+        CidrIp: 0.0.0.0/0
+        IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+      SecurityGroupIngress:
+        CidrIp: 0.0.0.0/0
+        IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
