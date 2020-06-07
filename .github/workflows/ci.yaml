@@ -11,8 +11,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - run: mkdir .git
-      - run: echo ${{ github.sha }} > .git/HEAD
       - id: setup-haskell
         uses: actions/setup-haskell@v1.1
         with:
