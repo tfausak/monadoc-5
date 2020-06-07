@@ -8,7 +8,7 @@ import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Utility.Utf8" $ do
 
   Hspec.describe "fromString" $ do
 

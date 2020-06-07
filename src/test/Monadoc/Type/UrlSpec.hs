@@ -10,7 +10,7 @@ import qualified Network.URI as Uri
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Type.Url" $ do
 
   Hspec.describe "fromField" $ do
 

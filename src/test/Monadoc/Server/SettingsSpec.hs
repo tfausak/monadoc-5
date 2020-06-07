@@ -10,7 +10,7 @@ import qualified Network.Wai.Handler.Warp as Warp
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Server.Settings" $ do
 
   Hspec.describe "fromConfig" $ do
 

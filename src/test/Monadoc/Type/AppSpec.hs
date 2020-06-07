@@ -9,7 +9,7 @@ import qualified Monadoc.Type.Context as Context
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Type.App" $ do
 
   Hspec.describe "run" $ do
 

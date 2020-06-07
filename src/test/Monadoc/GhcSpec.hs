@@ -9,7 +9,7 @@ import qualified Monadoc.Ghc as Ghc
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Ghc" $ do
 
   Hspec.describe "parse" $ do
 

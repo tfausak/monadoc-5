@@ -8,7 +8,7 @@ import qualified System.Console.GetOpt as GetOpt
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Data.Options" $ do
 
   Hspec.describe "options" $ do
 

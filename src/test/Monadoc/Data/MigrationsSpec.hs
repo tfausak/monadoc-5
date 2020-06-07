@@ -7,7 +7,7 @@ import qualified Monadoc.Data.Migrations as Migrations
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Data.Migrations" $ do
 
   Hspec.describe "migrations" $ do
 

@@ -7,7 +7,7 @@ import qualified Monadoc.Vendor.Time as Time
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Vendor.Time" $ do
 
   Hspec.describe "formatTime" $ do
 

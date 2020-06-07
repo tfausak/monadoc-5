@@ -8,7 +8,7 @@ import qualified Monadoc.Data.Version as Monadoc.Version
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Data.Version" $ do
 
   Hspec.describe "string" $ do
 

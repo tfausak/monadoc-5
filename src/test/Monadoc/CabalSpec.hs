@@ -9,7 +9,7 @@ import qualified Monadoc.Cabal as Cabal
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Cabal" $ do
 
   Hspec.describe "parse" $ do
 

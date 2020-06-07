@@ -8,7 +8,7 @@ import qualified Monadoc.Type.Config as Config
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Type.Config" $ do
 
   Hspec.describe "initial" $ do
 

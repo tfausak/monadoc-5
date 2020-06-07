@@ -9,7 +9,7 @@ import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Type.Binary" $ do
 
   Hspec.describe "fromField" $ do
 

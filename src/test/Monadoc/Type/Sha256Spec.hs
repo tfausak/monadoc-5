@@ -11,7 +11,7 @@ import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Type.Sha256" $ do
 
   Hspec.describe "fromField" $ do
 

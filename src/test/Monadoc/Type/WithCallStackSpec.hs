@@ -10,7 +10,7 @@ import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Type.WithCallStack" $ do
 
   Hspec.describe "catch" $ do
 

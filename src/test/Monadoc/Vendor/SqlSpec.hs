@@ -10,7 +10,7 @@ import qualified Test.Hspec as Hspec
 import qualified Text.Read as Read
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Vendor.Sql" $ do
 
   Hspec.describe "fromFieldVia" $ do
 

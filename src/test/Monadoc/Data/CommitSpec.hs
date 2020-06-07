@@ -7,7 +7,7 @@ import qualified Monadoc.Data.Commit as Commit
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = do
+spec = Hspec.describe "Monadoc.Data.Commit" $ do
 
   Hspec.describe "hash" $ do
 
