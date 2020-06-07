@@ -103,3 +103,9 @@ Resources:
               awslogs-region: us-east-1
               awslogs-group: !Ref LogGroup
               awslogs-stream-prefix: !Ref CommitSha
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-cluster.html
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${GitHubRepository}-cluster
