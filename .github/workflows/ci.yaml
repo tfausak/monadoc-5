@@ -49,3 +49,11 @@ jobs:
           repository: taylorfausak/monadoc
           tags: ${{ github.sha }}
           path: docker
+
+  deploy:
+    needs: push
+    runs-on: ubuntu-18.04
+    steps:
+      - run: echo ${{ github.ref }}
+      - run: curl -X POST ${{ secrets.RENDER_URL }}
+        # TODO if: github.ref == 'master'
