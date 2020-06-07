@@ -115,3 +115,10 @@ Resources:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.10.0.0/16
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.10.0.0/24
