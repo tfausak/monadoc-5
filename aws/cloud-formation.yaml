@@ -41,3 +41,22 @@ Resources:
     Properties:
       LogGroupName: !Sub ${ProjectName}-log-group
       RetentionInDays: 30
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-role-${AWS::Region}
+      Description: !Sub
+        Role used to launch ECS tasks for the ${ProjectName} project.
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+            Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
