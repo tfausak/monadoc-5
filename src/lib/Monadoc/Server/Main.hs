@@ -3,17 +3,20 @@ module Monadoc.Server.Main
   )
 where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Pool as Pool
 import qualified Data.Text as Text
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Handler as Handler
 import qualified Monadoc.Type.WithCallStack as WithCallStack
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
@@ -49,7 +52,12 @@ route request =
     _ -> notFoundHandler
 
 healthCheckHandler :: Handler.Handler
-healthCheckHandler = pure $ statusResponse Http.ok200 []
+healthCheckHandler = do
+  pool <- Reader.asks $ Context.pool . fst
+  Trans.lift . Pool.withResource pool $ \connection -> do
+    rows <- Sql.query_ connection $ Sql.sql "select 1"
+    Monad.guard $ rows == [Sql.Only (1 :: Int)]
+  pure $ statusResponse Http.ok200 []
 
 throwHandler :: Handler.Handler
 throwHandler = WithCallStack.throw $ userError "oh no"
