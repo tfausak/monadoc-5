@@ -36,12 +36,12 @@ application context request respond = do
   response <- App.run context . runHandler request $ route request
   respond response
 
-runHandler :: Wai.Request -> Handler.Handler -> App.App Wai.Response
+runHandler :: Wai.Request -> Handler.Handler a -> App.App a
 runHandler request handler = do
   context <- Reader.ask
   Trans.lift $ Handler.run context request handler
 
-route :: Wai.Request -> Handler.Handler
+route :: Wai.Request -> Handler.Handler Wai.Response
 route request =
   let
     method = Utf8.toString $ Wai.requestMethod request
@@ -51,7 +51,7 @@ route request =
     ("GET", ["throw"]) -> throwHandler
     _ -> notFoundHandler
 
-healthCheckHandler :: Handler.Handler
+healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
   pool <- Reader.asks $ Context.pool . fst
   Trans.lift . Pool.withResource pool $ \connection -> do
@@ -59,10 +59,10 @@ healthCheckHandler = do
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
   pure $ statusResponse Http.ok200 []
 
-throwHandler :: Handler.Handler
+throwHandler :: Handler.Handler a
 throwHandler = WithCallStack.throw $ userError "oh no"
 
-notFoundHandler :: Handler.Handler
+notFoundHandler :: Handler.Handler Wai.Response
 notFoundHandler = pure $ statusResponse Http.notFound404 []
 
 middleware :: Wai.Middleware

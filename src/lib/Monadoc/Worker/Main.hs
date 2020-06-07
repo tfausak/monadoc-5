@@ -13,7 +13,6 @@ import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
-import qualified Data.Pool as Pool
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -29,16 +28,11 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
-withConnection :: (Sql.Connection -> App.App a) -> App.App a
-withConnection app = do
-  pool <- Reader.asks Context.pool
-  Pool.withResource pool app
-
 run :: App.App ()
 run = Monad.forever $ do
   Console.info "updating hackage index"
   let url = "https://hackage.haskell.org/01-index.tar.gz"
-  result <- withConnection $ \connection -> Trans.lift $ Sql.query
+  result <- App.withConnection $ \connection -> Trans.lift $ Sql.query
     connection
     (Sql.sql "select etag, sha256 from cache where url = ?")
     [url]
@@ -61,7 +55,7 @@ run = Monad.forever $ do
             . lookup Http.hETag
             $ Client.responseHeaders response
       Console.info "got index, caching response"
-      withConnection $ \connection -> Trans.lift $ do
+      App.withConnection $ \connection -> Trans.lift $ do
         Sql.execute
           connection
           (Sql.sql
@@ -99,7 +93,7 @@ run = Monad.forever $ do
                 . lookup Http.hETag
                 $ Client.responseHeaders response
           Console.info "got index, caching response"
-          withConnection $ \connection -> Trans.lift $ do
+          App.withConnection $ \connection -> Trans.lift $ do
             Sql.execute
               connection
               (Sql.sql
@@ -121,7 +115,7 @@ run = Monad.forever $ do
           pure body
         304 -> do
           Console.info "index has not changed"
-          rows <- withConnection $ \connection -> Trans.lift $ Sql.query
+          rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
             connection
             (Sql.sql "select octets from blobs where sha256 = ?")
             [sha256 :: Sha256.Sha256]
