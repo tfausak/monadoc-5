@@ -29,10 +29,10 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
             ${{ matrix.os }}-${{ matrix.ghc }}-
-      - run: cabal build --enable-tests --only-dependencies
-      - run: cabal build --enable-tests
-      - run: cabal test --test-show-details direct
-      - run: cabal install --install-method copy --installdir artifacts
+      - run: cabal build --enable-tests --jobs --only-dependencies
+      - run: cabal build --enable-tests --jobs
+      - run: cabal test --jobs --test-show-details direct
+      - run: cabal install --install-method copy --installdir artifacts --jobs
       - uses: actions/upload-artifact@v2
         with:
           path: artifacts/monadoc*
