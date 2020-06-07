@@ -7,6 +7,20 @@ Parameters:
       registry (docker.pkg.github.com) and pull container images.
     NoEcho: true
 
+  GitHubUsername:
+    Type: String
+    Description:
+      The GitHub username to use for various tasks. This is mostly used to
+      avoid repeating yourself.
+    Default: tfausak
+
+  ProjectName:
+    Type: String
+    Description:
+      The project name, which is used to name associated resources. Note that
+      changing this will probably force replacement on most resources.
+    Default: monadoc
+
 Resources:
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-secretsmanager-secret.html
@@ -17,6 +31,13 @@ Resources:
       Description:
         Credentials used to authenticate with GitHub's Docker registry.
       SecretString: !Sub >
-        { "username": "tfausak"
+        { "username": "${GitHubUsername}"
         , "password": "${GitHubPersonalAccessToken}"
         }
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub ${ProjectName}-log-group
+      RetentionInDays: 30
