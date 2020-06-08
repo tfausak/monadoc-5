@@ -146,7 +146,7 @@ run = Monad.forever $ do
     . Tar.read
     . Gzip.decompress
     $ LazyByteString.fromStrict contents
-  Trans.lift $ Concurrent.threadDelay 60000000
+  Trans.lift . Concurrent.threadDelay $ 15 * 60 * 1000000
 
 addRequestHeader
   :: Http.HeaderName
