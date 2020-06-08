@@ -1,3 +1,7 @@
+# Be sure to update the domain's name servers to point to the hosted zone's
+# name servers, otherwise DNS resolution won't work. This step is manual
+# because the domain isn't managed by CloudFormation.
+
 Parameters:
 
   AvailabilityZone1:
@@ -19,6 +23,13 @@ Parameters:
     Description:
       The Git commit SHA to deploy. Usually this is the HEAD of the default
       branch, but it can be anything with a tagged image in the registry.
+
+  Domain:
+    Type: String
+    Description:
+      The root (apex) domain name. You can include the final period after the
+      TLD here, but you don't need to.
+    Default: monadoc.com
 
   Package:
     Type: String
@@ -282,3 +293,9 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-route53-hostedzone.html
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref Domain
