@@ -299,3 +299,14 @@ Resources:
     Type: AWS::Route53::HostedZone
     Properties:
       Name: !Ref Domain
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-recordset.html
+  RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget:
+        DNSName: !GetAtt LoadBalancer.DNSName
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub www.${Domain}
+      Type: A
