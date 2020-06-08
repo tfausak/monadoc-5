@@ -213,7 +213,7 @@ Resources:
   Service:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub ${Repo}-service
+      ServiceName: !Sub ${Repo}-service-2
       Cluster: !Ref Cluster
       DesiredCount: 1
       LaunchType: FARGATE
@@ -226,6 +226,10 @@ Resources:
             - !Ref Subnet2
           SecurityGroups:
             - !GetAtt Vpc.DefaultSecurityGroup
+      LoadBalancers:
+        - ContainerName: !Sub ${Repo}-container
+          ContainerPort: !Ref Port
+          TargetGroupArn: !Ref TargetGroup
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-loadbalancer.html
   LoadBalancer:
