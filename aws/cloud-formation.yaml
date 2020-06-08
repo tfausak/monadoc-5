@@ -172,6 +172,25 @@ Resources:
       CidrBlock: 10.10.2.0/24
       AvailabilityZone: !Ref AvailabilityZone2
 
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Vpc
+      GroupName: !Sub ${Repo}-security-group
+      GroupDescription:
+        Allows everything.
+      SecurityGroupEgress:
+        CidrIp: 0.0.0.0/0
+        IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+      SecurityGroupIngress:
+        CidrIp: 0.0.0.0/0
+        IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-internetgateway.html
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -225,7 +244,7 @@ Resources:
             - !Ref Subnet1
             - !Ref Subnet2
           SecurityGroups:
-            - !GetAtt Vpc.DefaultSecurityGroup
+            - !Ref SecurityGroup
       LoadBalancers:
         - ContainerName: !Sub ${Repo}-container
           ContainerPort: !Ref Port
@@ -237,7 +256,7 @@ Resources:
     Properties:
       Name: !Sub ${Repo}-load-balancer
       SecurityGroups:
-        - !GetAtt Vpc.DefaultSecurityGroup
+        - !Ref SecurityGroup
       Subnets:
         - !Ref Subnet1
         - !Ref Subnet2
