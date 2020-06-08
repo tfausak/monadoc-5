@@ -20,6 +20,7 @@ import qualified System.IO as IO
 
 monadoc :: IO ()
 monadoc = do
+  mapM_ (flip IO.hSetBuffering IO.LineBuffering) [IO.stderr, IO.stdout]
   config <- getConfig
   Console.info $ unwords
     [ "Starting Monadoc version"
