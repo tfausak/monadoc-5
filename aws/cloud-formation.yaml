@@ -237,3 +237,14 @@ Resources:
       Subnets:
         - !Ref Subnet1
         - !Ref Subnet2
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-targetgroup.html
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /health-check
+      Name: !Sub ${Repo}-target-group
+      Port: !Ref Port
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref Vpc
