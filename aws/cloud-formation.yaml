@@ -123,10 +123,8 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                  - kms:Decrypt
                 Resource:
                   - !Ref DockerCredentials
-                  - !Sub arn:aws:kms:${Region}:${AWS::AccountId}:key/key_id
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html
   Task:
@@ -168,6 +166,7 @@ Resources:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.10.0.0/16
+      EnableDnsHostnames: true
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
   Subnet1:
@@ -315,3 +314,18 @@ Resources:
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-filesystem.html
   FileSystem:
     Type: AWS::EFS::FileSystem
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpcendpoint.html
+  Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref Vpc
+      ServiceName: !Sub com.amazonaws.${Region}.secretsmanager
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      # RouteTableIds:
+      #   - !Ref RouteTable
