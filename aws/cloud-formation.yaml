@@ -243,7 +243,7 @@ Resources:
   Service:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub ${Repo}-service-2
+      ServiceName: !Sub ${Repo}-service
       Cluster: !Ref Cluster
       DesiredCount: 1
       LaunchType: FARGATE
@@ -260,6 +260,7 @@ Resources:
         - ContainerName: !Sub ${Repo}-container
           ContainerPort: !Ref Port
           TargetGroupArn: !Ref TargetGroup
+      PlatformVersion: 1.4.0
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-loadbalancer.html
   LoadBalancer:
@@ -310,3 +311,7 @@ Resources:
       HostedZoneId: !Ref HostedZone
       Name: !Sub www.${Domain}
       Type: A
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-filesystem.html
+  FileSystem:
+    Type: AWS::EFS::FileSystem
