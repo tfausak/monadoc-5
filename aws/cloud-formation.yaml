@@ -4,26 +4,6 @@
 
 Parameters:
 
-  AvailabilityZone1:
-    Type: AWS::EC2::AvailabilityZone::Name
-    Description:
-      One of the availability zones. Be sure to keep this in sync with the
-      region and the other availability zone.
-    Default: us-east-1a
-
-  AvailabilityZone2:
-    Type: AWS::EC2::AvailabilityZone::Name
-    Description:
-      One of the availability zones. Be sure to keep this in sync with the
-      region and the other availability zone.
-    Default: us-east-1b
-
-  Commit:
-    Type: String
-    Description:
-      The Git commit SHA to deploy. Usually this is the HEAD of the default
-      branch, but it can be anything with a tagged image in the registry.
-
   Domain:
     Type: String
     Description:
@@ -31,12 +11,12 @@ Parameters:
       TLD here, but you don't need to.
     Default: monadoc.com
 
-  Package:
+  Image:
     Type: String
     Description:
-      The name of the package to get from the GitHub repository's Docker
-      registry.
-    Default: monadoc
+      The Docker image to use. Note that the tag is set separately. This can
+      be pretty much anything, but the image must be public.
+    Default: taylorfausak/monadoc
 
   Port:
     Type: Number
@@ -45,161 +25,114 @@ Parameters:
       need to change this.
     Default: 4444
 
-  Region:
+  Tag:
     Type: String
     Description:
-      The region to use for various AWS operations. Make sure this matches
-      whatever you've configured the AWS CLI to use. Be sure to keep this in
-      sync with the availability zones.
-    Default: us-east-1
-
-  Repo:
-    Type: String
-    Description:
-      The project name, which is used to name associated resources. This is
-      just the repository without the organization or username. Note that
-      changing this will probably force replacement on most resources.
-    Default: monadoc
-
-  Token:
-    Type: String
-    Description:
-      A GitHub Personal Access Token used to authenticate with their Docker
-      registry (docker.pkg.github.com) and pull container images.
-    NoEcho: true
-
-  User:
-    Type: String
-    Description:
-      The GitHub username to use for various tasks. This is mostly used to
-      avoid repeating yourself.
-    Default: tfausak
+      The Docker image tag to deploy. Usually this is the HEAD of the default
+      branch, but it can be any tag that exists for the image in the registry.
 
 Resources:
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-secretsmanager-secret.html
-  DockerCredentials:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Sub ${Repo}-docker-credentials
-      Description:
-        Credentials used to authenticate with GitHub's Docker registry.
-      SecretString: !Sub >
-        { "username": "${User}"
-        , "password": "${Token}"
-        }
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub ${Repo}-log-group
+      LogGroupName: !Sub ${AWS::StackName}-log-group
       RetentionInDays: 30
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
   Role:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${Repo}-role-${AWS::Region}
-      Description: !Sub
-        Role used to launch ECS tasks for the ${Repo} project.
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
         Statement:
-          - Principal:
-              Service:
-                - ecs-tasks.amazonaws.com
-            Action:
+          - Action:
               - sts:AssumeRole
             Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+        Version: 2012-10-17
+      Description: Role used to launch ECS tasks.
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-      Policies:
-        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html#private-auth-iam
-        - PolicyName: !Sub ${Repo}-get-secret-value
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource:
-                  - !Ref DockerCredentials
+      RoleName: !Sub ${AWS::StackName}-role-${AWS::Region}
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html
   Task:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Sub ${Repo}-task-definition
       Cpu: 256
-      Memory: 512
-      RequiresCompatibilities: [ FARGATE ]
-      NetworkMode: awsvpc
-      ExecutionRoleArn: !Ref Role
       ContainerDefinitions:
-        - Name: !Sub ${Repo}-container
-          Essential: true
-          Image: !Sub docker.pkg.github.com/${User}/${Repo}/${Package}:${Commit}
-          RepositoryCredentials:
-            CredentialsParameter: !Ref DockerCredentials
-          Command:
+        - Command:
             - monadoc
             - --host=*
             - !Sub --port=${Port}
-          PortMappings:
-            - ContainerPort: !Ref Port
+          Image: !Sub ${Image}:${Tag}
+          Name: !Sub ${AWS::StackName}-container
+          Essential: true
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-region: !Ref Region
               awslogs-group: !Ref LogGroup
-              awslogs-stream-prefix: !Ref Commit
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Ref Tag
+          PortMappings:
+            - ContainerPort: !Ref Port
+      ExecutionRoleArn: !Ref Role
+      Family: !Sub ${AWS::StackName}-task-definition
+      Memory: 512
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-cluster.html
   Cluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub ${Repo}-cluster
+      ClusterName: !Sub ${AWS::StackName}-cluster
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
   Vpc:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.10.0.0/16
-      EnableDnsHostnames: true
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
   Subnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref Vpc
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
       CidrBlock: 10.10.1.0/24
-      AvailabilityZone: !Ref AvailabilityZone1
+      VpcId: !Ref Vpc
   Subnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref Vpc
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref AWS::Region
       CidrBlock: 10.10.2.0/24
-      AvailabilityZone: !Ref AvailabilityZone2
+      VpcId: !Ref Vpc
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId: !Ref Vpc
-      GroupName: !Sub ${Repo}-security-group
-      GroupDescription:
-        Allows everything.
+      GroupName: !Sub ${AWS::StackName}-security-group
+      GroupDescription: Allows everything.
       SecurityGroupEgress:
         CidrIp: 0.0.0.0/0
-        IpProtocol: -1
         FromPort: -1
+        IpProtocol: -1
         ToPort: -1
       SecurityGroupIngress:
         CidrIp: 0.0.0.0/0
-        IpProtocol: -1
         FromPort: -1
+        IpProtocol: -1
         ToPort: -1
+      VpcId: !Ref Vpc
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-internetgateway.html
   InternetGateway:
@@ -242,30 +175,30 @@ Resources:
   Service:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub ${Repo}-service
       Cluster: !Ref Cluster
       DesiredCount: 1
       LaunchType: FARGATE
-      TaskDefinition: !Ref Task
+      LoadBalancers:
+        - ContainerName: !Sub ${AWS::StackName}-container
+          ContainerPort: !Ref Port
+          TargetGroupArn: !Ref TargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroup
           Subnets:
             - !Ref Subnet1
             - !Ref Subnet2
-          SecurityGroups:
-            - !Ref SecurityGroup
-      LoadBalancers:
-        - ContainerName: !Sub ${Repo}-container
-          ContainerPort: !Ref Port
-          TargetGroupArn: !Ref TargetGroup
+      ServiceName: !Sub ${AWS::StackName}-service
+      TaskDefinition: !Ref Task
       PlatformVersion: 1.4.0
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-loadbalancer.html
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub ${Repo}-load-balancer
+      Name: !Sub ${AWS::StackName}-load-balancer
       SecurityGroups:
         - !Ref SecurityGroup
       Subnets:
@@ -277,7 +210,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckPath: /health-check
-      Name: !Sub ${Repo}-target-group
+      Name: !Sub ${AWS::StackName}-target-group
       Port: !Ref Port
       Protocol: HTTP
       TargetType: ip
@@ -314,18 +247,3 @@ Resources:
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-filesystem.html
   FileSystem:
     Type: AWS::EFS::FileSystem
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpcendpoint.html
-  Endpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      VpcId: !Ref Vpc
-      ServiceName: !Sub com.amazonaws.${Region}.secretsmanager
-      VpcEndpointType: Interface
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      SecurityGroupIds:
-        - !Ref SecurityGroup
-      # RouteTableIds:
-      #   - !Ref RouteTable
