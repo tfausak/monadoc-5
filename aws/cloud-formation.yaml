@@ -1,5 +1,19 @@
 Parameters:
 
+  AvailabilityZone1:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Description:
+      One of the availability zones. Be sure to keep this in sync with the
+      region and the other availability zone.
+    Default: us-east-1a
+
+  AvailabilityZone2:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Description:
+      One of the availability zones. Be sure to keep this in sync with the
+      region and the other availability zone.
+    Default: us-east-1b
+
   Commit:
     Type: String
     Description:
@@ -24,7 +38,8 @@ Parameters:
     Type: String
     Description:
       The region to use for various AWS operations. Make sure this matches
-      whatever you've configured the AWS CLI to use.
+      whatever you've configured the AWS CLI to use. Be sure to keep this in
+      sync with the availability zones.
     Default: us-east-1
 
   Repo:
@@ -144,11 +159,18 @@ Resources:
       CidrBlock: 10.10.0.0/16
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
-  Subnet:
+  Subnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref Vpc
-      CidrBlock: 10.10.0.0/24
+      CidrBlock: 10.10.1.0/24
+      AvailabilityZone: !Ref AvailabilityZone1
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.10.2.0/24
+      AvailabilityZone: !Ref AvailabilityZone2
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-internetgateway.html
   InternetGateway:
@@ -176,11 +198,16 @@ Resources:
       RouteTableId: !Ref RouteTable
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html
-  RouteTableAssociation:
+  RouteTableAssociation1:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref RouteTable
-      SubnetId: !Ref Subnet
+      SubnetId: !Ref Subnet1
+  RouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet2
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-service.html
   Service:
@@ -195,6 +222,18 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           Subnets:
-            - !Ref Subnet
+            - !Ref Subnet1
+            - !Ref Subnet2
           SecurityGroups:
             - !GetAtt Vpc.DefaultSecurityGroup
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-loadbalancer.html
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${Repo}-load-balancer
+      SecurityGroups:
+        - !GetAtt Vpc.DefaultSecurityGroup
+      Subnets:
+        - !Ref Subnet1
+        - !Ref Subnet2
