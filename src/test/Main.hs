@@ -17,6 +17,7 @@ import qualified Monadoc.Server.MainSpec
 import qualified Monadoc.Server.SettingsSpec
 import qualified Monadoc.Type.AppSpec
 import qualified Monadoc.Type.BinarySpec
+import qualified Monadoc.Type.ConfigResultSpec
 import qualified Monadoc.Type.ConfigSpec
 import qualified Monadoc.Type.ContextSpec
 import qualified Monadoc.Type.EtagSpec
@@ -48,6 +49,7 @@ main = Hspec.hspec $ do
   Monadoc.Server.SettingsSpec.spec
   Monadoc.Type.AppSpec.spec
   Monadoc.Type.BinarySpec.spec
+  Monadoc.Type.ConfigResultSpec.spec
   Monadoc.Type.ConfigSpec.spec
   Monadoc.Type.ContextSpec.spec
   Monadoc.Type.EtagSpec.spec
