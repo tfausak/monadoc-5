@@ -29,8 +29,8 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
             ${{ matrix.os }}-${{ matrix.ghc }}-
-      - run: 'echo -e "package monadoc\n ghc-options: -DMONADOC_COMMIT_HASH=${{ github.sha }}" >> cabal.project'
-      - run: cat cabal.project
+      - run: runghc tools/set-commit-hash.hs src/lib/Monadoc/Data/Commit.hs ${{ github.sha }}
+      - run: cat src/lib/Monadoc/Data/Commit.hs
       - run: cabal build --only-dependencies
       - run: cabal build
       - run: cabal test --test-show-details direct
