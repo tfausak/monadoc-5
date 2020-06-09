@@ -57,7 +57,7 @@ jobs:
           path: docker
 
   deploy:
-    # if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
     needs: push
     runs-on: ubuntu-18.04
     steps:
