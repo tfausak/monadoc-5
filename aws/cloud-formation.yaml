@@ -154,6 +154,7 @@ Resources:
         containerDefinitions:
           - command:
               - monadoc
+              - --database=/efs/monadoc.sqlite3
               - --host=*
               - !Sub --port=${Port}
             image: !Sub ${Image}:${Tag}
@@ -165,6 +166,9 @@ Resources:
                 awslogs-group: !Ref LogGroup
                 awslogs-region: !Ref AWS::Region
                 awslogs-stream-prefix: !Ref Tag
+            mountPoints:
+              - containerPath: /efs
+                sourceVolume: !Sub ${AWS::StackName}-efs
             portMappings:
               - containerPort: !Ref Port
         executionRoleArn: !Ref Role
@@ -173,34 +177,10 @@ Resources:
         networkMode: awsvpc
         requiresCompatibilities:
           - FARGATE
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html
-  Task:
-    Type: AWS::ECS::TaskDefinition
-    Properties:
-      Cpu: 256
-      ContainerDefinitions:
-        - Command:
-            - monadoc
-            - --host=*
-            - !Sub --port=${Port}
-          Image: !Sub ${Image}:${Tag}
-          Name: !Sub ${AWS::StackName}-container
-          Essential: true
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-group: !Ref LogGroup
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: !Ref Tag
-          PortMappings:
-            - ContainerPort: !Ref Port
-      ExecutionRoleArn: !Ref Role
-      Family: !Sub ${AWS::StackName}-task-definition
-      Memory: 512
-      NetworkMode: awsvpc
-      RequiresCompatibilities:
-        - FARGATE
+        volumes:
+          - efsVolumeConfiguration:
+              fileSystemId: !Ref FileSystem
+            name: !Sub ${AWS::StackName}-efs
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-cluster.html
   Cluster:
@@ -213,6 +193,7 @@ Resources:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.10.0.0/16
+      EnableDnsHostnames: true
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
   Subnet1:
@@ -363,3 +344,25 @@ Resources:
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-filesystem.html
   FileSystem:
     Type: AWS::EFS::FileSystem
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-mounttarget.html
+  MountTarget1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !Ref Subnet1
+  MountTarget2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !Ref Subnet2
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-accesspoint.html
+  AccessPoint:
+    Type: AWS::EFS::AccessPoint
+    Properties:
+      FileSystemId: !Ref FileSystem
