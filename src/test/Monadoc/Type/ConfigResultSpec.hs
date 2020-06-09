@@ -1,4 +1,4 @@
-module Monadoc.Type.ContextSpec
+module Monadoc.Type.ConfigResultSpec
   ( spec
   )
 where
@@ -6,6 +6,6 @@ where
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.Context" $ do
+spec = Hspec.describe "Monadoc.Type.ConfigResult" $ do
 
   Hspec.it "needs tests" Hspec.pending

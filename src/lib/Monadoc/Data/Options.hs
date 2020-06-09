@@ -8,6 +8,8 @@ import qualified Monadoc.Type.Config as Config
 import qualified System.Console.GetOpt as GetOpt
 import qualified Text.Read as Read
 
+-- | Collection of command-line options. Run the app with @--help@ to see what
+-- they are.
 options :: [GetOpt.OptDescr (Config.Config -> Either String Config.Config)]
 options =
   [ option

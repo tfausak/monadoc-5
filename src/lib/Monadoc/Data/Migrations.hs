@@ -10,6 +10,12 @@ import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
 
+-- | Collection of migrations to run. The app automatically performs migrations
+-- when it starts. They are run ordered by their timestamps.
+--
+-- Because an old version of the app may be running when a new version
+-- launches, migrations needs to be compatible. Both old and new code must be
+-- able to deal with both old and new databases.
 migrations :: Set.Set Migration.Migration
 migrations = Set.fromList
   [ makeMigration (2020, 5, 31, 13, 38, 0) "select 1"
