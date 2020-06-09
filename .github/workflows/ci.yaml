@@ -30,7 +30,6 @@ jobs:
             ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
             ${{ matrix.os }}-${{ matrix.ghc }}-
       - run: runghc src/script/set-commit-hash.hs src/lib/Monadoc/Data/Commit.hs ${{ github.sha }}
-      - run: cat src/lib/Monadoc/Data/Commit.hs
       - run: cabal build --only-dependencies
       - run: cabal build
       - run: cabal test --test-show-details direct
@@ -58,11 +57,21 @@ jobs:
           tags: ${{ github.sha }}
           path: docker
 
-
   deploy:
+    if: github.ref == 'refs/heads/master'
     needs: push
     runs-on: ubuntu-18.04
     steps:
-      # TODO
-      - run: echo ${{ github.ref }}
-      - run: echo ${{ github.sha }}
+      - uses: actions/checkout@v2
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: monadoc
+          template: aws/cloud-formation.yaml
+          parameter-overrides: Tag=${{ github.sha }}
+          no-fail-on-empty-changeset: '1'
+          capabilities: CAPABILITY_NAMED_IAM
