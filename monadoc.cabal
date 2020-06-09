@@ -26,7 +26,6 @@ common library
     , filepath >= 1.4.2 && < 1.5
     , ghc >= 8.10.1 && < 8.11
     , ghc-paths >= 0.1.0 && < 0.2
-    , githash >= 0.1.4 && < 0.2
     , http-client >= 0.7.0 && < 0.8
     , http-client-tls >= 0.3.5 && < 0.4
     , http-types >= 0.12.3 && < 0.13
@@ -64,6 +63,7 @@ library
   import: library
 
   autogen-modules: Paths_monadoc
+  build-tool-depends: cpphs:cpphs >= 1.20.9 && < 1.21
   exposed-modules:
     Monadoc
     Monadoc.Cabal
@@ -93,6 +93,7 @@ library
     Monadoc.Vendor.Sql
     Monadoc.Vendor.Time
     Monadoc.Worker.Main
+  ghc-options: -pgmP cpphs -optP --cpp
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
 

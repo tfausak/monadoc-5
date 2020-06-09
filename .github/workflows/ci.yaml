@@ -30,7 +30,7 @@ jobs:
             ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
             ${{ matrix.os }}-${{ matrix.ghc }}-
       - run: cabal build --enable-tests --jobs --only-dependencies
-      - run: cabal build --enable-tests --jobs
+      - run: cabal build --ghc-options -DMONADOC_COMMIT_HASH=${{ github.sha }} --enable-tests --jobs
       - run: cabal test --jobs --test-show-details direct
       - run: cabal install --install-method copy --installdir docker --jobs
       - uses: actions/upload-artifact@v2
