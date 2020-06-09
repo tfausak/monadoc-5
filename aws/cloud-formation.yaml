@@ -58,6 +58,122 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
       RoleName: !Sub ${AWS::StackName}-role-${AWS::Region}
 
+  # Unfortunately CloudFormation does not currently support attaching EFS
+  # volumes to task definitions. That means we have to jump through some hoops
+  # to get that set up. Keep an eye on this issue:
+  # <https://github.com/aws/containers-roadmap/issues/825>.
+  #
+  # Instead of defining a normal `AWS::ECS::TaskDefinition` we have to make a
+  # custom resource. Custom resources need to be executed by something, so we
+  # have to make a Lambda for that. And doing all this needs the right
+  # permissions, so we also have to make a new role. This was all adapted from
+  # the following gist:
+  # <https://gist.github.com/guillaumesmo/4782e26500a3ac768888daab3c55b139>.
+  CustomResourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: 2012-10-17
+      Description: Manages custom task definition resources.
+      Policies:
+        - PolicyDocument:
+            Statement:
+            - Action:
+                - ecs:DeregisterTaskDefinition
+                - ecs:RegisterTaskDefinition
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Effect: Allow
+              Resource: '*'
+            - Action:
+                - iam:PassRole
+              Effect: Allow
+              Resource: !GetAtt Role.Arn
+          PolicyName: !Sub ${AWS::StackName}-custom-policy
+      RoleName: !Sub ${AWS::StackName}-custom-role-${AWS::Region}
+  CustomResourceFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          const aws = require('aws-sdk')
+          const response = require('cfn-response')
+          const ecs = new aws.ECS({apiVersion: '2014-11-13'})
+          exports.handler = function(event, context) {
+            console.log("REQUEST RECEIVED:\n" + JSON.stringify(event))
+            if (event.RequestType === 'Create' || event.RequestType === 'Update') {
+              const taskDefinition = event.ResourceProperties.TaskDefinition;
+              taskDefinition.containerDefinitions[0].essential = taskDefinition.containerDefinitions[0].essential === 'true';
+              ecs.registerTaskDefinition(taskDefinition, function(err, data) {
+                if (err) {
+                  console.error(err);
+                  response.send(event, context, response.FAILED)
+                } else {
+                  console.log(`Created/Updated task definition ${data.taskDefinition.taskDefinitionArn}`)
+                  response.send(event, context, response.SUCCESS, {}, data.taskDefinition.taskDefinitionArn)
+                }
+              })
+            } else if (event.RequestType === 'Delete') {
+              ecs.deregisterTaskDefinition({taskDefinition: event.PhysicalResourceId}, function(err) {
+                if (err) {
+                  if (err.code === 'InvalidParameterException') {
+                    console.log(`Task definition: ${event.PhysicalResourceId} does not exist. Skipping deletion.`)
+                    response.send(event, context, response.SUCCESS)
+                  } else {
+                    console.error(err)
+                    response.send(event, context, response.FAILED)
+                  }
+                } else {
+                  console.log(`Removed task definition ${event.PhysicalResourceId}`)
+                  response.send(event, context, response.SUCCESS)
+                }
+              })
+            } else {
+              console.error(`Unsupported request type: ${event.RequestType}`)
+              response.send(event, context, response.FAILED)
+            }
+          }
+      Description: Manages custom task definition resources.
+      FunctionName: !Sub ${AWS::StackName}-custom-function
+      Handler: index.handler
+      Role: !GetAtt CustomResourceRole.Arn
+      Runtime: nodejs12.x
+      Timeout: 30
+  CustomTask:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt CustomResourceFunction.Arn
+      TaskDefinition:
+        cpu: 256
+        containerDefinitions:
+          - command:
+              - monadoc
+              - --host=*
+              - !Sub --port=${Port}
+            image: !Sub ${Image}:${Tag}
+            name: !Sub ${AWS::StackName}-custom-container
+            essential: true
+            logConfiguration:
+              logDriver: awslogs
+              options:
+                awslogs-group: !Ref LogGroup
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: !Ref Tag
+            portMappings:
+              - containerPort: !Ref Port
+        executionRoleArn: !Ref Role
+        family: !Sub ${AWS::StackName}-custom-task-definition
+        memory: 512
+        networkMode: awsvpc
+        requiresCompatibilities:
+          - FARGATE
+
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html
   Task:
     Type: AWS::ECS::TaskDefinition
@@ -179,7 +295,7 @@ Resources:
       DesiredCount: 1
       LaunchType: FARGATE
       LoadBalancers:
-        - ContainerName: !Sub ${AWS::StackName}-container
+        - ContainerName: !Sub ${AWS::StackName}-custom-container
           ContainerPort: !Ref Port
           TargetGroupArn: !Ref TargetGroup
       NetworkConfiguration:
@@ -190,8 +306,8 @@ Resources:
           Subnets:
             - !Ref Subnet1
             - !Ref Subnet2
-      ServiceName: !Sub ${AWS::StackName}-service
-      TaskDefinition: !Ref Task
+      ServiceName: !Sub ${AWS::StackName}-custom-service
+      TaskDefinition: !Ref CustomTask
       PlatformVersion: 1.4.0
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-loadbalancer.html
