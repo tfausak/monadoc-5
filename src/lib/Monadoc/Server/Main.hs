@@ -4,14 +4,11 @@ module Monadoc.Server.Main
 where
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Pool as Pool
-import qualified GHC.Clock as Clock
-import qualified Monadoc.Console as Console
+import qualified Monadoc.Server.Middleware as Middleware
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
@@ -22,16 +19,13 @@ import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Network.Wai.Internal as Wai
-import qualified System.Mem as Mem
-import qualified Text.Printf as Printf
 
 run :: App.App ()
 run = do
   context <- Reader.ask
   Trans.lift
     . Warp.runSettings (Settings.fromConfig $ Context.config context)
-    . middleware
+    . Middleware.middleware
     $ application context
 
 application :: Context.Context -> Wai.Application
@@ -67,42 +61,6 @@ throwHandler = WithCallStack.throw $ userError "oh no"
 
 notFoundHandler :: Handler.Handler Wai.Response
 notFoundHandler = pure $ statusResponse Http.notFound404 []
-
-middleware :: Wai.Middleware
-middleware = logRequests . addContentLength . handleExceptions
-
-logRequests :: Wai.Middleware
-logRequests handle request respond = do
-  timeBefore <- Clock.getMonotonicTime
-  allocationsBefore <- Mem.getAllocationCounter
-  handle request $ \response -> do
-    allocationsAfter <- Mem.getAllocationCounter
-    timeAfter <- Clock.getMonotonicTime
-    Console.info $ Printf.printf
-      "%d %s %s%s %.3f %d"
-      (Http.statusCode $ Wai.responseStatus response)
-      (Utf8.toString $ Wai.requestMethod request)
-      (Utf8.toString $ Wai.rawPathInfo request)
-      (Utf8.toString $ Wai.rawQueryString request)
-      (timeAfter - timeBefore)
-      (div (allocationsBefore - allocationsAfter) 1024)
-    respond response
-
-addContentLength :: Wai.Middleware
-addContentLength handle request respond = handle request $ \oldResponse ->
-  respond $ case oldResponse of
-    Wai.ResponseBuilder status headers builder ->
-      let
-        size = LazyByteString.length $ Builder.toLazyByteString builder
-        header = (Http.hContentLength, Utf8.fromString $ show size)
-      in Wai.ResponseBuilder status (header : headers) builder
-    _ -> oldResponse
-
-handleExceptions :: Wai.Middleware
-handleExceptions handle request respond =
-  Exception.catch (handle request respond) $ \someException -> do
-    Settings.onException (Just request) someException
-    respond $ Settings.onExceptionResponse someException
 
 statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
 statusResponse status headers = stringResponse status headers $ unwords
