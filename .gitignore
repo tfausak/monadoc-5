@@ -1,4 +1,5 @@
 /.stack-work/
 /.vscode/
 /*.sqlite3*
+/dist-newstyle/
 /stack.yaml.lock
