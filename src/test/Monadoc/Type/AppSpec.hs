@@ -26,5 +26,5 @@ spec = Hspec.describe "Monadoc.Type.App" $ do
       let config = Config.initial { Config.database = ":memory:" }
       context <- Monadoc.configToContext config
       result <- App.run context . App.withConnection $ \connection ->
-        IO.liftIO . Sql.query_ connection $ Sql.sql "select 1"
+        IO.liftIO $ Sql.query_ connection "select 1"
       result `Hspec.shouldBe` [Sql.Only (1 :: Int)]

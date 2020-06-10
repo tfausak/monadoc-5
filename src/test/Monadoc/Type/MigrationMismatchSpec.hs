@@ -17,17 +17,18 @@ spec = Hspec.describe "Monadoc.Type.MigrationMismatch" $ do
 
     Hspec.it "looks nice" $ do
       let
+        expected = replicate 64 '0'
+        actual = replicate 64 '1'
         migrationMismatch = MigrationMismatch.MigrationMismatch
-          { MigrationMismatch.actual = Sha256.fromDigest . read $ replicate
-            64
-            '1'
-          , MigrationMismatch.expected = Sha256.fromDigest . read $ replicate
-            64
-            '0'
+          { MigrationMismatch.actual = Sha256.fromDigest $ read actual
+          , MigrationMismatch.expected = Sha256.fromDigest $ read expected
           , MigrationMismatch.timestamp = Timestamp.fromUtcTime
             $ Time.posixSecondsToUTCTime 0
           }
-      Exception.displayException migrationMismatch
-        `Hspec.shouldBe` "migration 1970-01-01 00:00:00 UTC \
-        \expected 0000000000000000000000000000000000000000000000000000000000000000 \
-        \but got 1111111111111111111111111111111111111111111111111111111111111111"
+        string = mconcat
+          [ "migration 1970-01-01 00:00:00 UTC expected "
+          , expected
+          , " but got "
+          , actual
+          ]
+      Exception.displayException migrationMismatch `Hspec.shouldBe` string

@@ -40,20 +40,19 @@ run = Monad.forever $ do
 
 pruneBlobs :: App.App ()
 pruneBlobs = App.withConnection $ \connection -> Trans.lift $ do
-  rows <-
-    Sql.query_ connection
-      $ Sql.sql
-          "select blobs.sha256 \
-          \from blobs \
-          \left join cache \
-          \on cache.sha256 = blobs.sha256 \
-          \where cache.sha256 is null"
+  rows <- Sql.query_
+    connection
+    "select blobs.sha256 \
+    \from blobs \
+    \left join cache \
+    \on cache.sha256 = blobs.sha256 \
+    \where cache.sha256 is null"
   let count = length rows
   Monad.when (count > 0) $ do
     Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
     Sql.execute
       connection
-      (Sql.sql "delete from blobs where sha256 in (?)")
+      "delete from blobs where sha256 in (?)"
       (fmap Sql.fromOnly rows :: [Sha256.Sha256])
 
 pluralize :: String -> Int -> String
@@ -76,10 +75,8 @@ indexUrl = "https://hackage.haskell.org/01-index.tar.gz"
 
 getEtag :: App.App Etag.Etag
 getEtag = do
-  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
-    connection
-    (Sql.sql "select etag from cache where url = ?")
-    [indexUrl]
+  rows <- App.withConnection $ \connection -> Trans.lift
+    $ Sql.query connection "select etag from cache where url = ?" [indexUrl]
   pure $ case rows of
     [] -> Etag.fromByteString ByteString.empty
     Sql.Only etag : _ -> etag
@@ -113,21 +110,17 @@ handle200 response = do
       sha256 = Sha256.fromDigest $ Crypto.hash body
     Sql.execute
       connection
-      (Sql.sql
-        "insert into blobs (octets, sha256, size) \
-        \ values (?, ?, ?) on conflict (sha256) do nothing"
-      )
+      "insert into blobs (octets, sha256, size) \
+      \ values (?, ?, ?) on conflict (sha256) do nothing"
       ( Binary.fromByteString body
       , sha256
       , Size.fromInt $ ByteString.length body
       )
     Sql.execute
       connection
-      (Sql.sql
-        "insert into cache (etag, sha256, url) values (?, ?, ?) \
-        \ on conflict (url) do update set \
-        \ etag = excluded.etag, sha256 = excluded.sha256"
-      )
+      "insert into cache (etag, sha256, url) values (?, ?, ?) \
+      \ on conflict (url) do update set \
+      \ etag = excluded.etag, sha256 = excluded.sha256"
       (etag, sha256, indexUrl)
   pure etag
 
@@ -164,26 +157,21 @@ processIndex etag = do
 
 getSha256 :: Etag.Etag -> App.App (Maybe Sha256.Sha256)
 getSha256 etag = do
-  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
-    connection
-    (Sql.sql "select sha256 from cache where etag = ?")
-    [etag]
+  rows <- App.withConnection $ \connection -> Trans.lift
+    $ Sql.query connection "select sha256 from cache where etag = ?" [etag]
   pure $ case rows of
     [] -> Nothing
     Sql.Only sha256 : _ -> Just sha256
 
 removeCache :: Etag.Etag -> App.App ()
 removeCache etag = App.withConnection $ \connection ->
-  Trans.lift $ Sql.execute
-    connection
-    (Sql.sql "delete from cache where etag = ?")
-    [etag]
+  Trans.lift $ Sql.execute connection "delete from cache where etag = ?" [etag]
 
 getBinary :: Sha256.Sha256 -> App.App (Maybe Binary.Binary)
 getBinary sha256 = do
   rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
     connection
-    (Sql.sql "select octets from blobs where sha256 = ?")
+    "select octets from blobs where sha256 = ?"
     [sha256]
   pure $ case rows of
     [] -> Nothing

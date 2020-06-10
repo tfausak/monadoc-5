@@ -5,7 +5,6 @@ module Monadoc.Vendor.Sql
   , module Database.SQLite.Simple.Ok
   , module Database.SQLite.Simple.ToField
   , fromFieldVia
-  , sql
   )
 where
 
@@ -35,7 +34,6 @@ import Database.SQLite.Simple.ToField (ToField(toField))
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.Ok as Sql
-import qualified Data.Text as Text
 import qualified Data.Typeable as Typeable
 
 -- | Converts from a SQL field into a value using the given function. This is
@@ -53,8 +51,3 @@ fromFieldVia f field = do
         $ "failed to convert "
         <> show x
     Just y -> pure y
-
--- | Converts a string into a SQL query. This is purely for convenience when
--- avoiding @OverloadedStrings@.
-sql :: String -> Sql.Query
-sql = Sql.Query . Text.pack

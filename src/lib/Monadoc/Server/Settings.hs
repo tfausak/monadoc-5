@@ -53,7 +53,7 @@ statusResponse status headers = stringResponse status headers $ unwords
 stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
 stringResponse status headers string = Wai.responseLBS
   status
-  ((Http.hContentType, Utf8.fromString "text/plain; charset=utf-8") : headers)
+  ((Http.hContentType, "text/plain; charset=utf-8") : headers)
   (LazyByteString.fromStrict $ Utf8.fromString string)
 
 serverName :: ByteString.ByteString

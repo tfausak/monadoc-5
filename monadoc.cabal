@@ -40,6 +40,7 @@ common library
     , wai >= 3.2.2 && < 3.3
     , warp >= 3.3.12 && < 3.4
     , zlib >= 0.6.2 && < 0.7
+  default-extensions: OverloadedStrings
   default-language: Haskell2010
   ghc-options:
     -Weverything
@@ -47,7 +48,9 @@ common library
     -Wno-implicit-prelude
     -Wno-missing-deriving-strategies
     -Wno-missing-exported-signatures
+    -Wno-missing-local-signatures
     -Wno-missing-safe-haskell-mode
+    -Wno-monomorphism-restriction
     -Wno-prepositive-qualified-module
     -Wno-redundant-constraints
     -Wno-safe

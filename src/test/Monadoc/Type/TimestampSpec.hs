@@ -3,7 +3,6 @@ module Monadoc.Type.TimestampSpec
   )
 where
 
-import qualified Data.Text as Text
 import qualified Data.Time as Time
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sql as Sql
@@ -16,8 +15,7 @@ spec = Hspec.describe "Monadoc.Type.Timestamp" $ do
 
     Hspec.it "parses a timestamp" $ do
       let
-        field =
-          Sql.Field (Sql.SQLText (Text.pack "2001-02-03T04:05:06.007Z")) 0
+        field = Sql.Field (Sql.SQLText "2001-02-03T04:05:06.007Z") 0
         timestamp =
           Timestamp.fromUtcTime
             . Time.UTCTime (Time.fromGregorian 2001 2 3)
@@ -26,7 +24,7 @@ spec = Hspec.describe "Monadoc.Type.Timestamp" $ do
       Sql.fromField field `Hspec.shouldBe` pure timestamp
 
     Hspec.it "fails to parse an invalid timestamp" $ do
-      let field = Sql.Field (Sql.SQLText (Text.pack "not valid")) 0
+      let field = Sql.Field (Sql.SQLText "not valid") 0
       Sql.fromField field
         `Hspec.shouldBe` (Sql.Errors [] :: Sql.Ok Timestamp.Timestamp)
 
@@ -39,5 +37,5 @@ spec = Hspec.describe "Monadoc.Type.Timestamp" $ do
             . Time.UTCTime (Time.fromGregorian 2001 2 3)
             . Time.timeOfDayToTime
             $ Time.TimeOfDay 4 5 6.007
-        sqlData = Sql.SQLText (Text.pack "2001-02-03T04:05:06.007Z")
+        sqlData = Sql.SQLText "2001-02-03T04:05:06.007Z"
       Sql.toField timestamp `Hspec.shouldBe` sqlData

@@ -10,7 +10,6 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Pool as Pool
-import qualified Data.Text as Text
 import qualified GHC.Clock as Clock
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
@@ -48,8 +47,8 @@ runHandler request handler = do
 route :: Wai.Request -> Handler.Handler Wai.Response
 route request =
   let
-    method = Utf8.toString $ Wai.requestMethod request
-    path = Text.unpack <$> Wai.pathInfo request
+    method = Wai.requestMethod request
+    path = Wai.pathInfo request
   in case (method, path) of
     ("GET", ["health-check"]) -> healthCheckHandler
     ("GET", ["throw"]) -> throwHandler
@@ -59,7 +58,7 @@ healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
   pool <- Reader.asks $ Context.pool . fst
   Trans.lift . Pool.withResource pool $ \connection -> do
-    rows <- Sql.query_ connection $ Sql.sql "select 1"
+    rows <- Sql.query_ connection "select 1"
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
   pure $ statusResponse Http.ok200 []
 
@@ -112,5 +111,5 @@ statusResponse status headers = stringResponse status headers $ unwords
 stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
 stringResponse status headers string = Wai.responseLBS
   status
-  ((Http.hContentType, Utf8.fromString "text/plain; charset=utf-8") : headers)
+  ((Http.hContentType, "text/plain; charset=utf-8") : headers)
   (LazyByteString.fromStrict $ Utf8.fromString string)
