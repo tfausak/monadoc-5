@@ -76,6 +76,7 @@ library
     Monadoc.Data.Version
     Monadoc.Ghc
     Monadoc.Main
+    Monadoc.Server.Application
     Monadoc.Server.Main
     Monadoc.Server.Middleware
     Monadoc.Server.Settings
@@ -121,6 +122,7 @@ test-suite test
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
     Monadoc.MainSpec
+    Monadoc.Server.ApplicationSpec
     Monadoc.Server.MainSpec
     Monadoc.Server.MiddlewareSpec
     Monadoc.Server.SettingsSpec
