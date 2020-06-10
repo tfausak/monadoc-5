@@ -11,17 +11,21 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Pool as Pool
 import qualified Data.Text as Text
+import qualified GHC.Clock as Clock
+import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Handler as Handler
 import qualified Monadoc.Type.WithCallStack as WithCallStack
-import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Utility.Utf8 as Utf8
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Internal as Wai
+import qualified System.Mem as Mem
+import qualified Text.Printf as Printf
 
 run :: App.App ()
 run = do
@@ -66,7 +70,24 @@ notFoundHandler :: Handler.Handler Wai.Response
 notFoundHandler = pure $ statusResponse Http.notFound404 []
 
 middleware :: Wai.Middleware
-middleware = addContentLength . handleExceptions
+middleware = logRequests . addContentLength . handleExceptions
+
+logRequests :: Wai.Middleware
+logRequests handle request respond = do
+  timeBefore <- Clock.getMonotonicTime
+  allocationsBefore <- Mem.getAllocationCounter
+  handle request $ \response -> do
+    allocationsAfter <- Mem.getAllocationCounter
+    timeAfter <- Clock.getMonotonicTime
+    Console.info $ Printf.printf
+      "%d %s %s%s %.3f %d"
+      (Http.statusCode $ Wai.responseStatus response)
+      (Utf8.toString $ Wai.requestMethod request)
+      (Utf8.toString $ Wai.rawPathInfo request)
+      (Utf8.toString $ Wai.rawQueryString request)
+      (timeAfter - timeBefore)
+      (div (allocationsBefore - allocationsAfter) 1024)
+    respond response
 
 addContentLength :: Wai.Middleware
 addContentLength handle request respond = handle request $ \oldResponse ->

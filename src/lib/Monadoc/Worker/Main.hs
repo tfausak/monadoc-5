@@ -7,12 +7,15 @@ import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Catch as Exception
+import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
+import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -30,102 +33,166 @@ import qualified System.IO.Unsafe as Unsafe
 
 run :: App.App ()
 run = Monad.forever $ do
-  Console.info "updating hackage index"
-  let url = "https://hackage.haskell.org/01-index.tar.gz"
-  result <- App.withConnection $ \connection -> Trans.lift $ Sql.query
+  pruneBlobs
+  etag <- updateIndex
+  processIndex etag
+  sleep $ 15 * 60
+
+pruneBlobs :: App.App ()
+pruneBlobs = App.withConnection $ \connection -> Trans.lift $ do
+  rows <-
+    Sql.query_ connection
+      $ Sql.sql
+          "select blobs.sha256 \
+          \from blobs \
+          \left join cache \
+          \on cache.sha256 = blobs.sha256 \
+          \where cache.sha256 is null"
+  let count = length rows
+  Monad.when (count > 0) $ do
+    Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
+    Sql.execute
+      connection
+      (Sql.sql "delete from blobs where sha256 in (?)")
+      (fmap Sql.fromOnly rows :: [Sha256.Sha256])
+
+pluralize :: String -> Int -> String
+pluralize word count =
+  unwords [show count, if count == 1 then word else word <> "s"]
+
+updateIndex :: App.App Etag.Etag
+updateIndex = do
+  etag <- getEtag
+  Console.info $ unwords ["Updating Hackage index with", show etag, "..."]
+  request <- buildRequest etag
+  response <- getResponse request
+  case Http.statusCode $ Client.responseStatus response of
+    200 -> handle200 response
+    304 -> handle304 etag
+    _ -> handleOther request response
+
+indexUrl :: String
+indexUrl = "https://hackage.haskell.org/01-index.tar.gz"
+
+getEtag :: App.App Etag.Etag
+getEtag = do
+  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
     connection
-    (Sql.sql "select etag, sha256 from cache where url = ?")
-    [url]
-  contents <- case result of
-    [] -> do
-      Console.info "index is not cached"
-      request <- Client.parseRequest url
-      manager <- Reader.asks Context.manager
-      response <- Trans.lift $ Client.httpLbs request manager
-      Monad.when (Client.responseStatus response /= Http.ok200)
-        . WithCallStack.throw
-        . userError
-        $ show response
-      let
-        body = LazyByteString.toStrict $ Client.responseBody response
-        sha256 = Sha256.fromDigest $ Crypto.hash body
-        etag =
-          Etag.fromByteString
-            . Maybe.fromMaybe ByteString.empty
-            . lookup Http.hETag
-            $ Client.responseHeaders response
-      Console.info "got index, caching response"
-      App.withConnection $ \connection -> Trans.lift $ do
-        Sql.execute
-          connection
-          (Sql.sql
-            "insert into blobs (octets, sha256, size) \
-            \ values (?, ?, ?) on conflict (sha256) do nothing"
-          )
-          ( Binary.fromByteString body
-          , sha256
-          , Size.fromInt $ ByteString.length body
-          )
-        Sql.execute
-          connection
-          (Sql.sql
-            "insert into cache (etag, sha256, url) values (?, ?, ?) \
-            \ on conflict (url) do update set \
-            \ etag = excluded.etag, sha256 = excluded.sha256"
-          )
-          (etag, sha256, url)
-      pure body
-    (etag, sha256) : _ -> do
-      Console.info "index is cached"
-      request <- addRequestHeader Http.hIfNoneMatch (Etag.toByteString etag)
-        <$> Client.parseRequest url
-      manager <- Reader.asks Context.manager
-      response <- Trans.lift $ Client.httpLbs request manager
-      case Http.statusCode $ Client.responseStatus response of
-        200 -> do
-          Console.info "index has changed"
-          let
-            body = LazyByteString.toStrict $ Client.responseBody response
-            newSha256 = Sha256.fromDigest $ Crypto.hash body
-            newEtag =
-              Etag.fromByteString
-                . Maybe.fromMaybe ByteString.empty
-                . lookup Http.hETag
-                $ Client.responseHeaders response
-          Console.info "got index, caching response"
-          App.withConnection $ \connection -> Trans.lift $ do
-            Sql.execute
-              connection
-              (Sql.sql
-                "insert into blobs (octets, sha256, size) \
-                \ values (?, ?, ?) on conflict (sha256) do nothing"
-              )
-              ( Binary.fromByteString body
-              , newSha256
-              , Size.fromInt $ ByteString.length body
-              )
-            Sql.execute
-              connection
-              (Sql.sql
-                "insert into cache (etag, sha256, url) values (?, ?, ?) \
-                \ on conflict (url) do update set \
-                \ etag = excluded.etag, sha256 = excluded.sha256"
-              )
-              (newEtag, newSha256, url)
-          pure body
-        304 -> do
-          Console.info "index has not changed"
-          rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
-            connection
-            (Sql.sql "select octets from blobs where sha256 = ?")
-            [sha256 :: Sha256.Sha256]
-          case rows of
-            [] -> WithCallStack.throw $ userError "missing index blob"
-            row : _ -> pure . Binary.toByteString $ Sql.fromOnly row
-        _ -> WithCallStack.throw . userError $ show response
-  Console.info $ "index size: " <> show (ByteString.length contents)
+    (Sql.sql "select etag from cache where url = ?")
+    [indexUrl]
+  pure $ case rows of
+    [] -> Etag.fromByteString ByteString.empty
+    Sql.Only etag : _ -> etag
+
+buildRequest :: Etag.Etag -> App.App Client.Request
+buildRequest etag = do
+  initialRequest <- Client.parseRequest indexUrl
+  pure $ addRequestHeader
+    Http.hIfNoneMatch
+    (Etag.toByteString etag)
+    initialRequest
+
+getResponse
+  :: Client.Request -> App.App (Client.Response LazyByteString.ByteString)
+getResponse request = do
+  manager <- Reader.asks Context.manager
+  Trans.lift $ Client.httpLbs request manager
+
+handle200 :: Client.Response LazyByteString.ByteString -> App.App Etag.Etag
+handle200 response = do
+  let
+    etag =
+      Etag.fromByteString
+        . Maybe.fromMaybe ByteString.empty
+        . lookup Http.hETag
+        $ Client.responseHeaders response
+  Console.info $ unwords ["Hackage index has changed to", show etag, "."]
+  App.withConnection $ \connection -> Trans.lift $ do
+    let
+      body = LazyByteString.toStrict $ Client.responseBody response
+      sha256 = Sha256.fromDigest $ Crypto.hash body
+    Sql.execute
+      connection
+      (Sql.sql
+        "insert into blobs (octets, sha256, size) \
+        \ values (?, ?, ?) on conflict (sha256) do nothing"
+      )
+      ( Binary.fromByteString body
+      , sha256
+      , Size.fromInt $ ByteString.length body
+      )
+    Sql.execute
+      connection
+      (Sql.sql
+        "insert into cache (etag, sha256, url) values (?, ?, ?) \
+        \ on conflict (url) do update set \
+        \ etag = excluded.etag, sha256 = excluded.sha256"
+      )
+      (etag, sha256, indexUrl)
+  pure etag
+
+handle304 :: Etag.Etag -> App.App Etag.Etag
+handle304 etag = do
+  Console.info "Hackage index has not changed."
+  pure etag
+
+handleOther
+  :: Client.Request
+  -> Client.Response LazyByteString.ByteString
+  -> App.App Etag.Etag
+handleOther request response =
+  WithCallStack.throw
+    . Client.HttpExceptionRequest request
+    . Client.StatusCodeException (response { Client.responseBody = () })
+    . LazyByteString.toStrict
+    $ Client.responseBody response
+
+processIndex :: Etag.Etag -> App.App ()
+processIndex etag = do
+  maybeSha256 <- getSha256 etag
+  case maybeSha256 of
+    Nothing -> do
+      Console.info $ unwords ["Missing SHA256 for", show etag, "."]
+      removeCache etag
+    Just sha256 -> do
+      maybeBinary <- getBinary sha256
+      case maybeBinary of
+        Nothing -> do
+          Console.info $ unwords ["Missing binary for", show sha256, "."]
+          removeCache etag
+        Just binary -> processIndexWith binary
+
+getSha256 :: Etag.Etag -> App.App (Maybe Sha256.Sha256)
+getSha256 etag = do
+  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
+    connection
+    (Sql.sql "select sha256 from cache where etag = ?")
+    [etag]
+  pure $ case rows of
+    [] -> Nothing
+    Sql.Only sha256 : _ -> Just sha256
+
+removeCache :: Etag.Etag -> App.App ()
+removeCache etag = App.withConnection $ \connection ->
+  Trans.lift $ Sql.execute
+    connection
+    (Sql.sql "delete from cache where etag = ?")
+    [etag]
+
+getBinary :: Sha256.Sha256 -> App.App (Maybe Binary.Binary)
+getBinary sha256 = do
+  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
+    connection
+    (Sql.sql "select octets from blobs where sha256 = ?")
+    [sha256]
+  pure $ case rows of
+    [] -> Nothing
+    Sql.Only binary : _ -> Just binary
+
+processIndexWith :: Binary.Binary -> App.App ()
+processIndexWith =
   Console.info
-    . mappend "index entry count: "
+    . mappend "Index entry count: "
     . show
     . length
     . Tar.foldEntries
@@ -135,18 +202,21 @@ run = Monad.forever $ do
               "" -> entry : entries -- preferred-versions
               ".cabal" -> entry : entries
               ".json" -> entries -- ignore
-              _ ->
-                Unsafe.unsafePerformIO . WithCallStack.throw . userError $ show
-                  entry
-          _ -> Unsafe.unsafePerformIO . WithCallStack.throw . userError $ show
-            entry
+              _ -> unsafeThrow . userError $ show entry
+          _ -> unsafeThrow . userError $ show entry
         )
         []
-        (Unsafe.unsafePerformIO . WithCallStack.throw)
+        unsafeThrow
     . Tar.read
     . Gzip.decompress
-    $ LazyByteString.fromStrict contents
-  Trans.lift . Concurrent.threadDelay $ 15 * 60 * 1000000
+    . LazyByteString.fromStrict
+    . Binary.toByteString
+
+unsafeThrow :: (Stack.HasCallStack, Exception.Exception e) => e -> a
+unsafeThrow = Unsafe.unsafePerformIO . WithCallStack.throw
+
+sleep :: IO.MonadIO m => Double -> m ()
+sleep = IO.liftIO . Concurrent.threadDelay . round . (* 1000000)
 
 addRequestHeader
   :: Http.HeaderName
