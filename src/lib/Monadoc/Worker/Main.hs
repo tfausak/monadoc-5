@@ -7,12 +7,15 @@ import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Catch as Exception
+import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
+import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -135,18 +138,21 @@ run = Monad.forever $ do
               "" -> entry : entries -- preferred-versions
               ".cabal" -> entry : entries
               ".json" -> entries -- ignore
-              _ ->
-                Unsafe.unsafePerformIO . WithCallStack.throw . userError $ show
-                  entry
-          _ -> Unsafe.unsafePerformIO . WithCallStack.throw . userError $ show
-            entry
+              _ -> unsafeThrow . userError $ show entry
+          _ -> unsafeThrow . userError $ show entry
         )
         []
-        (Unsafe.unsafePerformIO . WithCallStack.throw)
+        unsafeThrow
     . Tar.read
     . Gzip.decompress
     $ LazyByteString.fromStrict contents
-  Trans.lift . Concurrent.threadDelay $ 15 * 60 * 1000000
+  sleep $ 15 * 60
+
+unsafeThrow :: (Stack.HasCallStack, Exception.Exception e) => e -> a
+unsafeThrow = Unsafe.unsafePerformIO . WithCallStack.throw
+
+sleep :: IO.MonadIO m => Double -> m ()
+sleep = IO.liftIO . Concurrent.threadDelay . round . (* 1000000)
 
 addRequestHeader
   :: Http.HeaderName
