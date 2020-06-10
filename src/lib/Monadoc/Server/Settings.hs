@@ -23,7 +23,6 @@ fromConfig :: Config.Config -> Warp.Settings
 fromConfig config =
   Warp.setBeforeMainLoop (beforeMainLoop config)
     . Warp.setHost (Config.host config)
-    . Warp.setLogger logger
     . Warp.setOnException onException
     . Warp.setOnExceptionResponse onExceptionResponse
     . Warp.setPort (Config.port config)
@@ -36,13 +35,6 @@ beforeMainLoop config = Console.info $ unwords
   , "port"
   , show $ Config.port config
   , "..."
-  ]
-
-logger :: Wai.Request -> Http.Status -> Maybe Integer -> IO ()
-logger request status _ = Console.info $ unwords
-  [ show $ Http.statusCode status
-  , Utf8.toString $ Wai.requestMethod request
-  , Utf8.toString $ Wai.rawPathInfo request <> Wai.rawQueryString request
   ]
 
 onException :: Maybe Wai.Request -> Exception.SomeException -> IO ()
