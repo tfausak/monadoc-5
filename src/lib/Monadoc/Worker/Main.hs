@@ -33,9 +33,32 @@ import qualified System.IO.Unsafe as Unsafe
 
 run :: App.App ()
 run = Monad.forever $ do
+  pruneBlobs
   etag <- updateIndex
   processIndex etag
   sleep $ 15 * 60
+
+pruneBlobs :: App.App ()
+pruneBlobs = App.withConnection $ \connection -> Trans.lift $ do
+  rows <-
+    Sql.query_ connection
+      $ Sql.sql
+          "select blobs.sha256 \
+          \from blobs \
+          \left join cache \
+          \on cache.sha256 = blobs.sha256 \
+          \where cache.sha256 is null"
+  let count = length rows
+  Monad.when (count > 0) $ do
+    Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
+    Sql.execute
+      connection
+      (Sql.sql "delete from blobs where sha256 in (?)")
+      (fmap Sql.fromOnly rows :: [Sha256.Sha256])
+
+pluralize :: String -> Int -> String
+pluralize word count =
+  unwords [show count, if count == 1 then word else word <> "s"]
 
 updateIndex :: App.App Etag.Etag
 updateIndex = do
