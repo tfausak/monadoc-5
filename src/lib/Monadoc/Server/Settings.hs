@@ -35,6 +35,7 @@ beforeMainLoop config = Console.info $ unwords
   , show $ Config.host config
   , "port"
   , show $ Config.port config
+  , "..."
   ]
 
 logger :: Wai.Request -> Http.Status -> Maybe Integer -> IO ()
