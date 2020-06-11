@@ -34,8 +34,8 @@ import qualified System.IO.Unsafe as Unsafe
 run :: App.App ()
 run = Monad.forever $ do
   pruneBlobs
-  etag <- updateIndex
-  processIndex etag
+  updateIndex
+  processIndex
   sleep $ 15 * 60
 
 pruneBlobs :: App.App ()
@@ -44,9 +44,9 @@ pruneBlobs = App.withConnection $ \connection -> Trans.lift $ do
     connection
     "select blobs.sha256 \
     \from blobs \
-    \left join cache \
-    \on cache.sha256 = blobs.sha256 \
-    \where cache.sha256 is null"
+    \left join files \
+    \on files.digest = blobs.sha256 \
+    \where files.digest is null"
   let count = length rows
   Monad.when (count > 0) $ do
     Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
@@ -59,7 +59,7 @@ pluralize :: String -> Int -> String
 pluralize word count =
   unwords [show count, if count == 1 then word else word <> "s"]
 
-updateIndex :: App.App Etag.Etag
+updateIndex :: App.App ()
 updateIndex = do
   etag <- getEtag
   Console.info $ unwords ["Updating Hackage index with", show etag, "..."]
@@ -67,7 +67,7 @@ updateIndex = do
   response <- getResponse request
   case Http.statusCode $ Client.responseStatus response of
     200 -> handle200 response
-    304 -> handle304 etag
+    304 -> handle304
     _ -> handleOther request response
 
 indexUrl :: String
@@ -95,7 +95,7 @@ getResponse request = do
   manager <- Reader.asks Context.manager
   Trans.lift $ Client.httpLbs request manager
 
-handle200 :: Client.Response LazyByteString.ByteString -> App.App Etag.Etag
+handle200 :: Client.Response LazyByteString.ByteString -> App.App ()
 handle200 response = do
   let
     etag =
@@ -122,17 +122,18 @@ handle200 response = do
       \ on conflict (url) do update set \
       \ etag = excluded.etag, sha256 = excluded.sha256"
       (etag, sha256, indexUrl)
-  pure etag
+    Sql.execute
+      connection
+      "insert into files (digest, name) values (?, ?) \
+      \ on conflict (name) do update set \
+      \ digest = excluded.digest"
+      (sha256, indexUrl)
 
-handle304 :: Etag.Etag -> App.App Etag.Etag
-handle304 etag = do
-  Console.info "Hackage index has not changed."
-  pure etag
+handle304 :: App.App ()
+handle304 = Console.info "Hackage index has not changed."
 
 handleOther
-  :: Client.Request
-  -> Client.Response LazyByteString.ByteString
-  -> App.App Etag.Etag
+  :: Client.Request -> Client.Response LazyByteString.ByteString -> App.App ()
 handleOther request response =
   WithCallStack.throw
     . Client.HttpExceptionRequest request
@@ -140,32 +141,34 @@ handleOther request response =
     . LazyByteString.toStrict
     $ Client.responseBody response
 
-processIndex :: Etag.Etag -> App.App ()
-processIndex etag = do
-  maybeSha256 <- getSha256 etag
+processIndex :: App.App ()
+processIndex = do
+  maybeSha256 <- getSha256
   case maybeSha256 of
     Nothing -> do
-      Console.info $ unwords ["Missing SHA256 for", show etag, "."]
-      removeCache etag
+      Console.info $ unwords ["Missing SHA256 for", show indexUrl, "."]
+      removeCache
     Just sha256 -> do
       maybeBinary <- getBinary sha256
       case maybeBinary of
         Nothing -> do
           Console.info $ unwords ["Missing binary for", show sha256, "."]
-          removeCache etag
+          removeCache
         Just binary -> processIndexWith binary
 
-getSha256 :: Etag.Etag -> App.App (Maybe Sha256.Sha256)
-getSha256 etag = do
-  rows <- App.withConnection $ \connection -> Trans.lift
-    $ Sql.query connection "select sha256 from cache where etag = ?" [etag]
+getSha256 :: App.App (Maybe Sha256.Sha256)
+getSha256 = do
+  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
+    connection
+    "select digest from files where name = ?"
+    [indexUrl]
   pure $ case rows of
     [] -> Nothing
     Sql.Only sha256 : _ -> Just sha256
 
-removeCache :: Etag.Etag -> App.App ()
-removeCache etag = App.withConnection $ \connection ->
-  Trans.lift $ Sql.execute connection "delete from cache where etag = ?" [etag]
+removeCache :: App.App ()
+removeCache = App.withConnection $ \connection -> Trans.lift
+  $ Sql.execute connection "delete from cache where url = ?" [indexUrl]
 
 getBinary :: Sha256.Sha256 -> App.App (Maybe Binary.Binary)
 getBinary sha256 = do
