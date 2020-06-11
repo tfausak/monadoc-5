@@ -57,7 +57,7 @@ stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
 stringResponse status headers =
   responseBS
       status
-      ((Http.hContentType, "text/plain; charset=utf-8") : headers)
+      ((Http.hContentType, "text/plain;charset=utf-8") : headers)
     . Utf8.fromString
 
 responseBS
@@ -71,8 +71,15 @@ responseBS status headers body =
     withContentLength = (:) (Http.hContentLength, Utf8.fromString $ show size)
   in Wai.responseLBS
     status
-    (withContentLength headers)
+    (defaultHeaders <> withContentLength headers)
     (LazyByteString.fromStrict body)
+
+defaultHeaders :: Http.ResponseHeaders
+defaultHeaders =
+  [ ("Referrer-Policy", "no-referrer")
+  , ("X-Content-Type-Options", "nosniff")
+  , ("X-Frame-Options", "deny")
+  ]
 
 serverName :: ByteString.ByteString
 serverName =
