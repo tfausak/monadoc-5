@@ -55,9 +55,7 @@ statusResponse status headers = stringResponse status headers $ unwords
 
 stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
 stringResponse status headers =
-  responseBS
-      status
-      ((Http.hContentType, "text/plain;charset=utf-8") : headers)
+  responseBS status ((Http.hContentType, "text/plain;charset=utf-8") : headers)
     . Utf8.fromString
 
 responseBS
@@ -76,7 +74,8 @@ responseBS status headers body =
 
 defaultHeaders :: Http.ResponseHeaders
 defaultHeaders =
-  [ ("Referrer-Policy", "no-referrer")
+  [ ("Content-Security-Policy", "default-src 'self'")
+  , ("Referrer-Policy", "no-referrer")
   , ("X-Content-Type-Options", "nosniff")
   , ("X-Frame-Options", "deny")
   ]
