@@ -42,7 +42,9 @@ route request =
 rootHandler :: Handler.Handler Wai.Response
 rootHandler =
   pure
-    . Wai.responseLBS Http.ok200 []
+    . Wai.responseLBS
+        Http.ok200
+        [(Http.hContentType, "text/html; charset=utf-8")]
     . Lucid.renderBS
     . Lucid.doctypehtml_
     $ do
