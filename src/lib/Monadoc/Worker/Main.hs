@@ -50,10 +50,9 @@ pruneBlobs = App.withConnection $ \connection -> Trans.lift $ do
   let count = length rows
   Monad.when (count > 0) $ do
     Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
-    Sql.execute
-      connection
-      "delete from blobs where sha256 in (?)"
-      (fmap Sql.fromOnly rows :: [Sha256.Sha256])
+    mapM_
+      (Sql.execute connection "delete from blobs where sha256 = ?")
+      (rows :: [Sql.Only Sha256.Sha256])
 
 pluralize :: String -> Int -> String
 pluralize word count =
