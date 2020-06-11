@@ -2,6 +2,10 @@
 # name servers, otherwise DNS resolution won't work. This step is manual
 # because the domain isn't managed by CloudFormation.
 
+# Certificates require manual validation. After creating a certificate with
+# CloudFormation, you must go to the certificate manager in the AWS console and
+# hit the "Create record in Route 53" button.
+
 Parameters:
 
   Domain:
@@ -366,3 +370,10 @@ Resources:
     Type: AWS::EFS::AccessPoint
     Properties:
       FileSystemId: !Ref FileSystem
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-certificatemanager-certificate.html
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub www.${Domain}
+      ValidationMethod: DNS
