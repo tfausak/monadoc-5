@@ -8,6 +8,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Pool as Pool
+import qualified Lucid
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Handler as Handler
@@ -33,9 +34,23 @@ route request =
     method = Wai.requestMethod request
     path = Wai.pathInfo request
   in case (method, path) of
+    ("GET", []) -> rootHandler
     ("GET", ["health-check"]) -> healthCheckHandler
     ("GET", ["throw"]) -> throwHandler
     _ -> notFoundHandler
+
+rootHandler :: Handler.Handler Wai.Response
+rootHandler =
+  pure
+    . Wai.responseLBS Http.ok200 []
+    . Lucid.renderBS
+    . Lucid.doctypehtml_
+    $ do
+        Lucid.head_ $ do
+          Lucid.meta_ [Lucid.charset_ "utf-8"]
+          Lucid.title_ "Monadoc"
+        Lucid.body_ $ do
+          Lucid.h1_ "Monadoc"
 
 healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
