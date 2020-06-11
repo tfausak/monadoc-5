@@ -1,7 +1,7 @@
 cabal-version: 2.2
 
 category: Documentation
-data-files: data/*.css
+data-files: data/*.css data/*.ico
 description: Monadoc provides better Haskell documentation.
 extra-source-files: README.markdown
 license-file: LICENSE.markdown

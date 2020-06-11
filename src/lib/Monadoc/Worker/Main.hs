@@ -102,7 +102,7 @@ handle200 response = do
         . Maybe.fromMaybe ByteString.empty
         . lookup Http.hETag
         $ Client.responseHeaders response
-  Console.info $ unwords ["Hackage index has changed to", show etag, "."]
+  Console.info $ mconcat ["Hackage index has changed to ", show etag, "."]
   App.withConnection $ \connection -> Trans.lift $ do
     let
       body = LazyByteString.toStrict $ Client.responseBody response
@@ -145,13 +145,13 @@ processIndex = do
   maybeSha256 <- getSha256
   case maybeSha256 of
     Nothing -> do
-      Console.info $ unwords ["Missing SHA256 for", show indexUrl, "."]
+      Console.info $ mconcat ["Missing SHA256 for ", show indexUrl, "."]
       removeCache
     Just sha256 -> do
       maybeBinary <- getBinary sha256
       case maybeBinary of
         Nothing -> do
-          Console.info $ unwords ["Missing binary for", show sha256, "."]
+          Console.info $ mconcat ["Missing binary for ", show sha256, "."]
           removeCache
         Just binary -> processIndexWith binary
 

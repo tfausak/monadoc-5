@@ -37,6 +37,7 @@ route request =
     path = Wai.pathInfo request
   in case (method, path) of
     ("GET", []) -> rootHandler
+    ("GET", ["favicon.ico"]) -> faviconHandler
     ("GET", ["health-check"]) -> healthCheckHandler
     ("GET", ["tachyons.css"]) -> tachyonsHandler
     ("GET", ["throw"]) -> throwHandler
@@ -53,10 +54,21 @@ rootHandler =
     $ do
         Lucid.head_ $ do
           Lucid.meta_ [Lucid.charset_ "utf-8"]
+          Lucid.link_ [Lucid.rel_ "icon", Lucid.href_ "favicon.ico"]
           Lucid.link_ [Lucid.rel_ "stylesheet", Lucid.href_ "tachyons.css"]
           Lucid.title_ "Monadoc"
         Lucid.body_ $ do
           Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
+
+faviconHandler :: Handler.Handler Wai.Response
+faviconHandler = Trans.lift $ do
+  let relative = FilePath.combine "data" "favicon.ico"
+  absolute <- Package.getDataFileName relative
+  contents <- LazyByteString.readFile absolute
+  pure $ Wai.responseLBS
+    Http.ok200
+    [(Http.hContentType, "image/vnd.microsoft.icon")]
+    contents
 
 healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
