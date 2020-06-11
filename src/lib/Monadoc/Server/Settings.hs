@@ -10,6 +10,7 @@ where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
+import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Monadoc.Console as Console
@@ -18,6 +19,7 @@ import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
+import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 
@@ -67,9 +69,13 @@ responseBS status headers body =
   let
     size = ByteString.length body
     withContentLength = (:) (Http.hContentLength, Utf8.fromString $ show size)
+    withETag = (:)
+      ( Http.hETag
+      , Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
+      )
   in Wai.responseLBS
     status
-    (defaultHeaders <> withContentLength headers)
+    (withETag . withContentLength $ defaultHeaders <> headers)
     (LazyByteString.fromStrict body)
 
 defaultHeaders :: Http.ResponseHeaders
