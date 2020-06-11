@@ -17,7 +17,7 @@ import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
 
 middleware :: Wai.Middleware
-middleware = logRequests . addContentLength . handleExceptions
+middleware = logRequests . handleExceptions . addContentLength
 
 logRequests :: Wai.Middleware
 logRequests handle request respond = do
