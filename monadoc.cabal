@@ -29,6 +29,7 @@ common library
     , http-client >= 0.7.0 && < 0.8
     , http-client-tls >= 0.3.5 && < 0.4
     , http-types >= 0.12.3 && < 0.13
+    , lucid >= 2.9.12 && < 2.10
     , network-uri >= 2.6.3 && < 2.7
     , resource-pool >= 0.2.3 && < 0.3
     , sqlite-simple >= 0.4.18 && < 0.5
@@ -40,6 +41,7 @@ common library
     , wai >= 3.2.2 && < 3.3
     , warp >= 3.3.12 && < 3.4
     , zlib >= 0.6.2 && < 0.7
+  default-extensions: OverloadedStrings
   default-language: Haskell2010
   ghc-options:
     -Weverything
@@ -47,7 +49,9 @@ common library
     -Wno-implicit-prelude
     -Wno-missing-deriving-strategies
     -Wno-missing-exported-signatures
+    -Wno-missing-local-signatures
     -Wno-missing-safe-haskell-mode
+    -Wno-monomorphism-restriction
     -Wno-prepositive-qualified-module
     -Wno-redundant-constraints
     -Wno-safe
@@ -73,7 +77,9 @@ library
     Monadoc.Data.Version
     Monadoc.Ghc
     Monadoc.Main
+    Monadoc.Server.Application
     Monadoc.Server.Main
+    Monadoc.Server.Middleware
     Monadoc.Server.Settings
     Monadoc.Type.App
     Monadoc.Type.Binary
@@ -117,7 +123,9 @@ test-suite test
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
     Monadoc.MainSpec
+    Monadoc.Server.ApplicationSpec
     Monadoc.Server.MainSpec
+    Monadoc.Server.MiddlewareSpec
     Monadoc.Server.SettingsSpec
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec

@@ -29,5 +29,5 @@ spec = Hspec.describe "Monadoc.Type.Handler" $ do
       result <-
         Handler.run context Wai.defaultRequest
         . Handler.withConnection
-        $ \connection -> IO.liftIO . Sql.query_ connection $ Sql.sql "select 1"
+        $ \connection -> IO.liftIO $ Sql.query_ connection "select 1"
       result `Hspec.shouldBe` [Sql.Only (1 :: Int)]

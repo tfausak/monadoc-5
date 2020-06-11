@@ -3,7 +3,6 @@ module Monadoc.Type.UrlSpec
   )
 where
 
-import qualified Data.Text as Text
 import qualified Monadoc.Type.Url as Url
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.URI as Uri
@@ -16,7 +15,7 @@ spec = Hspec.describe "Monadoc.Type.Url" $ do
 
     Hspec.it "parses a basic URL" $ do
       let
-        field = Sql.Field (Sql.SQLText (Text.pack "http://monadoc.test")) 0
+        field = Sql.Field (Sql.SQLText "http://monadoc.test") 0
         url = Url.fromUri $ Uri.URI
           "http:"
           (Just (Uri.URIAuth "" "monadoc.test" ""))
@@ -26,7 +25,7 @@ spec = Hspec.describe "Monadoc.Type.Url" $ do
       Sql.fromField field `Hspec.shouldBe` pure url
 
     Hspec.it "fails to parse an invalid URL" $ do
-      let field = Sql.Field (Sql.SQLText (Text.pack "not valid")) 0
+      let field = Sql.Field (Sql.SQLText "not valid") 0
       Sql.fromField field `Hspec.shouldBe` (Sql.Errors [] :: Sql.Ok Url.Url)
 
   Hspec.describe "toField" $ do
@@ -39,5 +38,5 @@ spec = Hspec.describe "Monadoc.Type.Url" $ do
           ""
           ""
           ""
-        sqlData = Sql.SQLText $ Text.pack "http://monadoc.test"
+        sqlData = Sql.SQLText "http://monadoc.test"
       Sql.toField url `Hspec.shouldBe` sqlData

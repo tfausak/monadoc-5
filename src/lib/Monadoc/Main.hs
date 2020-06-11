@@ -29,12 +29,12 @@ run = do
 
 runMigrations :: App.App ()
 runMigrations = App.withConnection $ \connection -> Trans.lift $ do
-  Sql.execute_ connection $ Sql.sql "pragma journal_mode = wal"
-  Sql.execute_ connection
-    $ Sql.sql
-        "create table if not exists migrations \
-        \( iso8601 text not null primary key \
-        \, sha256 text not null )"
+  Sql.execute_ connection "pragma journal_mode = wal"
+  Sql.execute_
+    connection
+    "create table if not exists migrations \
+    \( iso8601 text not null primary key \
+    \, sha256 text not null )"
   mapM_ (ensureMigration connection) Migrations.migrations
 
 ensureMigration :: Sql.Connection -> Migration.Migration -> IO ()
@@ -48,7 +48,7 @@ getDigest :: Sql.Connection -> Timestamp.Timestamp -> IO (Maybe Sha256.Sha256)
 getDigest connection timestamp = do
   rows <- Sql.query
     connection
-    (Sql.sql "select sha256 from migrations where iso8601 = ?")
+    "select sha256 from migrations where iso8601 = ?"
     [timestamp]
   pure $ case rows of
     [] -> Nothing
@@ -66,7 +66,7 @@ runMigration connection migration = do
   Sql.execute_ connection $ Migration.query migration
   Sql.execute
     connection
-    (Sql.sql "insert into migrations (iso8601, sha256) values (?, ?)")
+    "insert into migrations (iso8601, sha256) values (?, ?)"
     migration
 
 checkDigest :: Migration.Migration -> Sha256.Sha256 -> IO ()

@@ -31,13 +31,18 @@ migrations = Set.fromList
     \( etag text not null \
     \, sha256 text not null \
     \, url text not null primary key )"
+  , makeMigration
+    (2020, 6, 10, 19, 46, 0)
+    "create table files (digest text not null, name text primary key)"
   ]
 
 makeMigration
-  :: (Integer, Int, Int, Int, Int, Fixed.Pico) -> String -> Migration.Migration
+  :: (Integer, Int, Int, Int, Int, Fixed.Pico)
+  -> Sql.Query
+  -> Migration.Migration
 makeMigration (year, month, day, hour, minute, second) query =
   Migration.Migration
-    { Migration.query = Sql.sql query
+    { Migration.query = query
     , Migration.timestamp = Timestamp.fromUtcTime
       $ Time.utcTime year month day hour minute second
     }
