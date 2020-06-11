@@ -17,6 +17,8 @@ import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
+import qualified Paths_monadoc as Package
+import qualified System.FilePath as FilePath
 
 application :: Context.Context -> Wai.Application
 application context request respond = do
@@ -36,6 +38,7 @@ route request =
   in case (method, path) of
     ("GET", []) -> rootHandler
     ("GET", ["health-check"]) -> healthCheckHandler
+    ("GET", ["tachyons.css"]) -> tachyonsHandler
     ("GET", ["throw"]) -> throwHandler
     _ -> notFoundHandler
 
@@ -50,9 +53,10 @@ rootHandler =
     $ do
         Lucid.head_ $ do
           Lucid.meta_ [Lucid.charset_ "utf-8"]
+          Lucid.link_ [Lucid.rel_ "stylesheet", Lucid.href_ "tachyons.css"]
           Lucid.title_ "Monadoc"
         Lucid.body_ $ do
-          Lucid.h1_ "Monadoc"
+          Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
 
 healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
@@ -61,6 +65,16 @@ healthCheckHandler = do
     rows <- Sql.query_ connection "select 1"
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
   pure $ statusResponse Http.ok200 []
+
+tachyonsHandler :: Handler.Handler Wai.Response
+tachyonsHandler = Trans.lift $ do
+  let relative = FilePath.combine "data" "tachyons-4-12-0.css"
+  absolute <- Package.getDataFileName relative
+  contents <- LazyByteString.readFile absolute
+  pure $ Wai.responseLBS
+    Http.ok200
+    [(Http.hContentType, "text/css; charset=utf-8")]
+    contents
 
 throwHandler :: Handler.Handler a
 throwHandler = WithCallStack.throw $ userError "oh no"
