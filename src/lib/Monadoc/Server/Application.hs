@@ -8,6 +8,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Map as Map
 import qualified Data.Pool as Pool
 import qualified Lucid
 import qualified Monadoc.Server.Settings as Settings
@@ -50,7 +51,7 @@ rootHandler =
   pure
     . Settings.responseBS
         Http.ok200
-        [(Http.hContentType, "text/html;charset=utf-8")]
+        (Map.singleton Http.hContentType "text/html;charset=utf-8")
     . LazyByteString.toStrict
     . Lucid.renderBS
     . Lucid.doctypehtml_
@@ -64,8 +65,10 @@ rootHandler =
           Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
 
 faviconHandler :: Handler.Handler Wai.Response
-faviconHandler =
-  fileResponse Http.ok200 [(Http.hContentType, "image/x-icon")] "favicon.ico"
+faviconHandler = fileResponse
+  Http.ok200
+  (Map.singleton Http.hContentType "image/x-icon")
+  "favicon.ico"
 
 healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
@@ -73,27 +76,27 @@ healthCheckHandler = do
   Trans.lift . Pool.withResource pool $ \connection -> do
     rows <- Sql.query_ connection "select 1"
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
-  pure $ Settings.statusResponse Http.ok200 []
+  pure $ Settings.statusResponse Http.ok200 Map.empty
 
 robotsHandler :: Handler.Handler Wai.Response
-robotsHandler = pure . Settings.stringResponse Http.ok200 [] $ unlines
+robotsHandler = pure . Settings.stringResponse Http.ok200 Map.empty $ unlines
   ["User-agent: *", "Disallow:"]
 
 tachyonsHandler :: Handler.Handler Wai.Response
 tachyonsHandler = fileResponse
   Http.ok200
-  [(Http.hContentType, "text/css;charset=utf-8")]
+  (Map.singleton Http.hContentType "text/css;charset=utf-8")
   "tachyons-4-12-0.css"
 
 throwHandler :: Handler.Handler a
 throwHandler = WithCallStack.throw $ userError "oh no"
 
 notFoundHandler :: Handler.Handler Wai.Response
-notFoundHandler = pure $ Settings.statusResponse Http.notFound404 []
+notFoundHandler = pure $ Settings.statusResponse Http.notFound404 Map.empty
 
 fileResponse
   :: Http.Status
-  -> Http.ResponseHeaders
+  -> Settings.Headers
   -> FilePath
   -> Handler.Handler Wai.Response
 fileResponse status headers name = Trans.lift $ do

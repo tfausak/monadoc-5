@@ -1,5 +1,6 @@
 module Monadoc.Server.Settings
-  ( fromConfig
+  ( Headers
+  , fromConfig
   , onException
   , onExceptionResponse
   , responseBS
@@ -13,6 +14,7 @@ import qualified Control.Monad.Catch as Exception
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Map as Map
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
@@ -49,42 +51,38 @@ onException _ someException@(Exception.SomeException exception) =
     $ Exception.displayException exception
 
 onExceptionResponse :: Exception.SomeException -> Wai.Response
-onExceptionResponse _ = statusResponse Http.internalServerError500 []
+onExceptionResponse _ = statusResponse Http.internalServerError500 Map.empty
 
-statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
+type Headers = Map.Map Http.HeaderName ByteString.ByteString
+
+statusResponse :: Http.Status -> Headers -> Wai.Response
 statusResponse status headers = stringResponse status headers $ unwords
   [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
 
-stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
+stringResponse :: Http.Status -> Headers -> String -> Wai.Response
 stringResponse status headers =
-  responseBS status ((Http.hContentType, "text/plain;charset=utf-8") : headers)
+  responseBS
+      status
+      (Map.insert Http.hContentType "text/plain;charset=utf-8" headers)
     . Utf8.fromString
 
-responseBS
-  :: Http.Status
-  -> Http.ResponseHeaders
-  -> ByteString.ByteString
-  -> Wai.Response
-responseBS status headers body =
+responseBS :: Http.Status -> Headers -> ByteString.ByteString -> Wai.Response
+responseBS status oldHeaders body =
   let
-    size = ByteString.length body
-    withContentLength = (:) (Http.hContentLength, Utf8.fromString $ show size)
-    withETag = (:)
-      ( Http.hETag
-      , Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
-      )
+    contentLength = Utf8.fromString . show $ ByteString.length body
+    etag = Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
+    newHeaders = Map.fromList
+      [ (Http.hContentLength, contentLength)
+      , ("Content-Security-Policy", "default-src 'self'")
+      , (Http.hETag, etag)
+      , ("Referrer-Policy", "no-referrer")
+      , ("X-Content-Type-Options", "nosniff")
+      , ("X-Frame-Options", "deny")
+      ]
   in Wai.responseLBS
     status
-    (withETag . withContentLength $ defaultHeaders <> headers)
+    (Map.toList $ Map.union newHeaders oldHeaders)
     (LazyByteString.fromStrict body)
-
-defaultHeaders :: Http.ResponseHeaders
-defaultHeaders =
-  [ ("Content-Security-Policy", "default-src 'self'")
-  , ("Referrer-Policy", "no-referrer")
-  , ("X-Content-Type-Options", "nosniff")
-  , ("X-Frame-Options", "deny")
-  ]
 
 serverName :: ByteString.ByteString
 serverName =
