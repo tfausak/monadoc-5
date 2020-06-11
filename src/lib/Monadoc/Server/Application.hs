@@ -39,6 +39,7 @@ route request =
     ("GET", []) -> rootHandler
     ("GET", ["favicon.ico"]) -> faviconHandler
     ("GET", ["health-check"]) -> healthCheckHandler
+    ("GET", ["robots.txt"]) -> robotsHandler
     ("GET", ["tachyons.css"]) -> tachyonsHandler
     ("GET", ["throw"]) -> throwHandler
     _ -> notFoundHandler
@@ -77,6 +78,10 @@ healthCheckHandler = do
     rows <- Sql.query_ connection "select 1"
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
   pure $ statusResponse Http.ok200 []
+
+robotsHandler :: Handler.Handler Wai.Response
+robotsHandler =
+  pure . stringResponse Http.ok200 [] $ unlines ["User-agent: *", "Disallow:"]
 
 tachyonsHandler :: Handler.Handler Wai.Response
 tachyonsHandler = Trans.lift $ do
