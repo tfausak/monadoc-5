@@ -2,6 +2,9 @@ module Monadoc.Server.Settings
   ( fromConfig
   , onException
   , onExceptionResponse
+  , responseBS
+  , statusResponse
+  , stringResponse
   )
 where
 
@@ -13,10 +16,10 @@ import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Type.Config as Config
+import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Monadoc.Utility.Utf8 as Utf8
 
 -- | Builds Warp server settings from a config.
 fromConfig :: Config.Config -> Warp.Settings
@@ -51,10 +54,25 @@ statusResponse status headers = stringResponse status headers $ unwords
   [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
 
 stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
-stringResponse status headers string = Wai.responseLBS
-  status
-  ((Http.hContentType, "text/plain; charset=utf-8") : headers)
-  (LazyByteString.fromStrict $ Utf8.fromString string)
+stringResponse status headers =
+  responseBS
+      status
+      ((Http.hContentType, "text/plain; charset=utf-8") : headers)
+    . Utf8.fromString
+
+responseBS
+  :: Http.Status
+  -> Http.ResponseHeaders
+  -> ByteString.ByteString
+  -> Wai.Response
+responseBS status headers body =
+  let
+    size = ByteString.length body
+    withContentLength = (:) (Http.hContentLength, Utf8.fromString $ show size)
+  in Wai.responseLBS
+    status
+    (withContentLength headers)
+    (LazyByteString.fromStrict body)
 
 serverName :: ByteString.ByteString
 serverName =

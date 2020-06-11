@@ -6,14 +6,15 @@ where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Pool as Pool
 import qualified Lucid
+import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Handler as Handler
 import qualified Monadoc.Type.WithCallStack as WithCallStack
-import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
@@ -47,9 +48,10 @@ route request =
 rootHandler :: Handler.Handler Wai.Response
 rootHandler =
   pure
-    . Wai.responseLBS
+    . Settings.responseBS
         Http.ok200
         [(Http.hContentType, "text/html; charset=utf-8")]
+    . LazyByteString.toStrict
     . Lucid.renderBS
     . Lucid.doctypehtml_
     $ do
@@ -62,14 +64,10 @@ rootHandler =
           Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
 
 faviconHandler :: Handler.Handler Wai.Response
-faviconHandler = Trans.lift $ do
-  let relative = FilePath.combine "data" "favicon.ico"
-  absolute <- Package.getDataFileName relative
-  contents <- LazyByteString.readFile absolute
-  pure $ Wai.responseLBS
-    Http.ok200
-    [(Http.hContentType, "image/vnd.microsoft.icon")]
-    contents
+faviconHandler = fileResponse
+  Http.ok200
+  [(Http.hContentType, "image/vnd.microsoft.icon")]
+  "favicon.ico"
 
 healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
@@ -77,34 +75,31 @@ healthCheckHandler = do
   Trans.lift . Pool.withResource pool $ \connection -> do
     rows <- Sql.query_ connection "select 1"
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
-  pure $ statusResponse Http.ok200 []
+  pure $ Settings.statusResponse Http.ok200 []
 
 robotsHandler :: Handler.Handler Wai.Response
-robotsHandler =
-  pure . stringResponse Http.ok200 [] $ unlines ["User-agent: *", "Disallow:"]
+robotsHandler = pure . Settings.stringResponse Http.ok200 [] $ unlines
+  ["User-agent: *", "Disallow:"]
 
 tachyonsHandler :: Handler.Handler Wai.Response
-tachyonsHandler = Trans.lift $ do
-  let relative = FilePath.combine "data" "tachyons-4-12-0.css"
-  absolute <- Package.getDataFileName relative
-  contents <- LazyByteString.readFile absolute
-  pure $ Wai.responseLBS
-    Http.ok200
-    [(Http.hContentType, "text/css; charset=utf-8")]
-    contents
+tachyonsHandler = fileResponse
+  Http.ok200
+  [(Http.hContentType, "text/css; charset=utf-8")]
+  "tachyons-4-12-0.css"
 
 throwHandler :: Handler.Handler a
 throwHandler = WithCallStack.throw $ userError "oh no"
 
 notFoundHandler :: Handler.Handler Wai.Response
-notFoundHandler = pure $ statusResponse Http.notFound404 []
+notFoundHandler = pure $ Settings.statusResponse Http.notFound404 []
 
-statusResponse :: Http.Status -> Http.ResponseHeaders -> Wai.Response
-statusResponse status headers = stringResponse status headers $ unwords
-  [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
-
-stringResponse :: Http.Status -> Http.ResponseHeaders -> String -> Wai.Response
-stringResponse status headers string = Wai.responseLBS
-  status
-  ((Http.hContentType, "text/plain; charset=utf-8") : headers)
-  (LazyByteString.fromStrict $ Utf8.fromString string)
+fileResponse
+  :: Http.Status
+  -> Http.ResponseHeaders
+  -> FilePath
+  -> Handler.Handler Wai.Response
+fileResponse status headers name = Trans.lift $ do
+  let relative = FilePath.combine "data" name
+  absolute <- Package.getDataFileName relative
+  contents <- ByteString.readFile absolute
+  pure $ Settings.responseBS status headers contents

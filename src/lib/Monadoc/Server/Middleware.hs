@@ -4,20 +4,17 @@ module Monadoc.Server.Middleware
 where
 
 import qualified Control.Monad.Catch as Exception
-import qualified Data.ByteString.Builder as Builder
-import qualified Data.ByteString.Lazy as LazyByteString
 import qualified GHC.Clock as Clock
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Network.Wai.Internal as Wai
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
 
 middleware :: Wai.Middleware
-middleware = logRequests . handleExceptions . addContentLength
+middleware = logRequests . handleExceptions
 
 logRequests :: Wai.Middleware
 logRequests handle request respond = do
@@ -35,16 +32,6 @@ logRequests handle request respond = do
       (timeAfter - timeBefore)
       (div (allocationsBefore - allocationsAfter) 1024)
     respond response
-
-addContentLength :: Wai.Middleware
-addContentLength handle request respond = handle request $ \oldResponse ->
-  respond $ case oldResponse of
-    Wai.ResponseBuilder status headers builder ->
-      let
-        size = LazyByteString.length $ Builder.toLazyByteString builder
-        header = (Http.hContentLength, Utf8.fromString $ show size)
-      in Wai.ResponseBuilder status (header : headers) builder
-    _ -> oldResponse
 
 handleExceptions :: Wai.Middleware
 handleExceptions handle request respond =
