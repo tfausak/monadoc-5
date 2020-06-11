@@ -50,7 +50,7 @@ rootHandler =
   pure
     . Settings.responseBS
         Http.ok200
-        [(Http.hContentType, "text/html; charset=utf-8")]
+        [(Http.hContentType, "text/html;charset=utf-8")]
     . LazyByteString.toStrict
     . Lucid.renderBS
     . Lucid.doctypehtml_
@@ -64,10 +64,8 @@ rootHandler =
           Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
 
 faviconHandler :: Handler.Handler Wai.Response
-faviconHandler = fileResponse
-  Http.ok200
-  [(Http.hContentType, "image/vnd.microsoft.icon")]
-  "favicon.ico"
+faviconHandler =
+  fileResponse Http.ok200 [(Http.hContentType, "image/x-icon")] "favicon.ico"
 
 healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
@@ -84,7 +82,7 @@ robotsHandler = pure . Settings.stringResponse Http.ok200 [] $ unlines
 tachyonsHandler :: Handler.Handler Wai.Response
 tachyonsHandler = fileResponse
   Http.ok200
-  [(Http.hContentType, "text/css; charset=utf-8")]
+  [(Http.hContentType, "text/css;charset=utf-8")]
   "tachyons-4-12-0.css"
 
 throwHandler :: Handler.Handler a
