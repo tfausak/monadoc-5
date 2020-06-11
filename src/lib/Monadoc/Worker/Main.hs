@@ -118,10 +118,10 @@ handle200 response = do
       )
     Sql.execute
       connection
-      "insert into cache (etag, sha256, url) values (?, ?, ?) \
+      "insert into cache (etag, sha256, url) values (?, 'unused', ?) \
       \ on conflict (url) do update set \
       \ etag = excluded.etag, sha256 = excluded.sha256"
-      (etag, sha256, indexUrl)
+      (etag, indexUrl)
     Sql.execute
       connection
       "insert into files (digest, name) values (?, ?) \
