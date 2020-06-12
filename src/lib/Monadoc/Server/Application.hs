@@ -10,6 +10,8 @@ import qualified Data.Map as Map
 import qualified Data.Pool as Pool
 import qualified Data.Text as Text
 import qualified Lucid
+import qualified Monadoc.Data.Commit as Commit
+import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
@@ -99,8 +101,23 @@ rootHandler = do
           , Lucid.href_ $ renderRelativeRoute Route.Tachyons
           ]
         Lucid.title_ "Monadoc"
-      Lucid.body_ $ do
+      Lucid.body_ [Lucid.class_ "bg-white black sans-serif"] $ do
         Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
+        Lucid.footer_ [Lucid.class_ "mid-gray pa3 tc"] . Lucid.p_ $ do
+          "Powered by "
+          Lucid.a_
+            [ Lucid.class_ "color-inherit"
+            , Lucid.href_ "https://github.com/tfausak/monadoc"
+            ]
+            "Monadoc"
+          " version "
+          Lucid.code_ $ Lucid.toHtml Version.string
+          case Commit.hash of
+            Nothing -> pure ()
+            Just commit -> do
+              " commit "
+              Lucid.code_ . Lucid.toHtml $ take 7 commit
+          "."
 
 faviconHandler :: App.App request Wai.Response
 faviconHandler = do
