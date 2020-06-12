@@ -39,6 +39,7 @@ parseRoute request =
     ("GET", ["favicon.ico"]) -> Just Route.Favicon
     ("GET", ["health-check"]) -> Just Route.HealthCheck
     ("GET", ["robots.txt"]) -> Just Route.Robots
+    ("GET", ["static", "logo.png"]) -> Just Route.Logo
     ("GET", ["static", "tachyons-4-12-0.css"]) -> Just Route.Tachyons
     ("GET", ["throw"]) -> Just Route.Throw
     _ -> Nothing
@@ -47,9 +48,10 @@ runRoute :: Maybe Route.Route -> App.App Wai.Request Wai.Response
 runRoute maybeRoute = case maybeRoute of
   Nothing -> notFoundHandler
   Just route -> case route of
-    Route.Index -> rootHandler
     Route.Favicon -> faviconHandler
     Route.HealthCheck -> healthCheckHandler
+    Route.Index -> rootHandler
+    Route.Logo -> logoHandler
     Route.Robots -> robotsHandler
     Route.Tachyons -> tachyonsHandler
     Route.Throw -> throwHandler
@@ -60,9 +62,10 @@ renderAbsoluteRoute config =
 
 renderRelativeRoute :: Route.Route -> Text.Text
 renderRelativeRoute route = case route of
-  Route.Index -> "/"
   Route.Favicon -> "/favicon.ico"
   Route.HealthCheck -> "/health-check"
+  Route.Index -> "/"
+  Route.Logo -> "/static/logo.png"
   Route.Robots -> "/robots.txt"
   Route.Tachyons -> "/static/tachyons-4-12-0.css"
   Route.Throw -> "/throw"
@@ -93,6 +96,7 @@ rootHandler = do
         og "type" "website"
         let url = renderAbsoluteRoute config Route.Index
         og "url" url
+        og "image" $ renderAbsoluteRoute config Route.Logo
         Lucid.link_ [Lucid.rel_ "canonical", Lucid.href_ url]
         Lucid.link_
           [Lucid.rel_ "icon", Lucid.href_ $ renderRelativeRoute Route.Favicon]
@@ -127,6 +131,14 @@ faviconHandler = do
     (Map.insert Http.hContentType "image/x-icon" $ Common.defaultHeaders config
     )
     "favicon.ico"
+
+logoHandler :: App.App request Wai.Response
+logoHandler = do
+  config <- Reader.asks Context.config
+  Common.fileResponse
+    Http.ok200
+    (Map.insert Http.hContentType "image/png" $ Common.defaultHeaders config)
+    "logo.png"
 
 healthCheckHandler :: App.App request Wai.Response
 healthCheckHandler = do

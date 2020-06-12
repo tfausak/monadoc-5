@@ -7,6 +7,7 @@ data Route
   = Favicon
   | HealthCheck
   | Index
+  | Logo
   | Robots
   | Tachyons
   | Throw
