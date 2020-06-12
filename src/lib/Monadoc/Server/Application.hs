@@ -30,7 +30,7 @@ application context request respond = do
 runHandler :: Wai.Request -> Handler.Handler result -> App.App request result
 runHandler request handler = do
   context <- Reader.ask
-  Trans.lift $ Handler.run context request handler
+  Trans.lift $ Handler.run context { Context.request = request } handler
 
 route :: Wai.Request -> Handler.Handler Wai.Response
 route request =
