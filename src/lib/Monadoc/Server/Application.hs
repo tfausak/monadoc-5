@@ -22,12 +22,12 @@ import qualified Network.Wai as Wai
 import qualified Paths_monadoc as Package
 import qualified System.FilePath as FilePath
 
-application :: Context.Context () -> Wai.Application
+application :: Context.Context request -> Wai.Application
 application context request respond = do
   response <- App.run context . runHandler request $ route request
   respond response
 
-runHandler :: Wai.Request -> Handler.Handler a -> App.App () a
+runHandler :: Wai.Request -> Handler.Handler result -> App.App request result
 runHandler request handler = do
   context <- Reader.ask
   Trans.lift $ Handler.run context request handler
