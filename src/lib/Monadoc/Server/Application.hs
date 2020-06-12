@@ -14,6 +14,7 @@ import qualified Lucid
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
@@ -23,22 +24,34 @@ import qualified System.FilePath as FilePath
 
 application :: Context.Context request -> Wai.Application
 application context request respond = do
-  response <- App.run context { Context.request = request } $ route request
+  let ctx = context { Context.request = request }
+  response <- App.run ctx . runRoute $ getRoute request
   respond response
 
-route :: Wai.Request -> App.App Wai.Request Wai.Response
-route request =
+getRoute :: Wai.Request -> Maybe Route.Route
+getRoute request =
   let
     method = Wai.requestMethod request
     path = Wai.pathInfo request
   in case (method, path) of
-    ("GET", []) -> rootHandler
-    ("GET", ["favicon.ico"]) -> faviconHandler
-    ("GET", ["health-check"]) -> healthCheckHandler
-    ("GET", ["robots.txt"]) -> robotsHandler
-    ("GET", ["tachyons.css"]) -> tachyonsHandler
-    ("GET", ["throw"]) -> throwHandler
-    _ -> notFoundHandler
+    ("GET", []) -> Just Route.Index
+    ("GET", ["favicon.ico"]) -> Just Route.Favicon
+    ("GET", ["health-check"]) -> Just Route.HealthCheck
+    ("GET", ["robots.txt"]) -> Just Route.Robots
+    ("GET", ["tachyons.css"]) -> Just Route.Tachyons
+    ("GET", ["throw"]) -> Just Route.Throw
+    _ -> Nothing
+
+runRoute :: Maybe Route.Route -> App.App Wai.Request Wai.Response
+runRoute maybeRoute = case maybeRoute of
+  Nothing -> notFoundHandler
+  Just route -> case route of
+    Route.Index -> rootHandler
+    Route.Favicon -> faviconHandler
+    Route.HealthCheck -> healthCheckHandler
+    Route.Robots -> robotsHandler
+    Route.Tachyons -> tachyonsHandler
+    Route.Throw -> throwHandler
 
 rootHandler :: App.App request Wai.Response
 rootHandler = do

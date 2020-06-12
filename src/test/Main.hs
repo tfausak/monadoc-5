@@ -25,6 +25,7 @@ import qualified Monadoc.Type.ContextSpec
 import qualified Monadoc.Type.EtagSpec
 import qualified Monadoc.Type.MigrationMismatchSpec
 import qualified Monadoc.Type.MigrationSpec
+import qualified Monadoc.Type.RouteSpec
 import qualified Monadoc.Type.Sha256Spec
 import qualified Monadoc.Type.SizeSpec
 import qualified Monadoc.Type.TimestampSpec
@@ -58,6 +59,7 @@ main = Hspec.hspec $ do
   Monadoc.Type.EtagSpec.spec
   Monadoc.Type.MigrationMismatchSpec.spec
   Monadoc.Type.MigrationSpec.spec
+  Monadoc.Type.RouteSpec.spec
   Monadoc.Type.Sha256Spec.spec
   Monadoc.Type.SizeSpec.spec
   Monadoc.Type.TimestampSpec.spec

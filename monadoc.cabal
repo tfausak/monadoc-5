@@ -90,6 +90,7 @@ library
     Monadoc.Type.Etag
     Monadoc.Type.Migration
     Monadoc.Type.MigrationMismatch
+    Monadoc.Type.Route
     Monadoc.Type.Sha256
     Monadoc.Type.Size
     Monadoc.Type.Timestamp
@@ -135,6 +136,7 @@ test-suite test
     Monadoc.Type.EtagSpec
     Monadoc.Type.MigrationMismatchSpec
     Monadoc.Type.MigrationSpec
+    Monadoc.Type.RouteSpec
     Monadoc.Type.Sha256Spec
     Monadoc.Type.SizeSpec
     Monadoc.Type.TimestampSpec
