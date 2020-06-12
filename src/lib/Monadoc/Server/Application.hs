@@ -14,7 +14,6 @@ import qualified Lucid
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
-import qualified Monadoc.Type.Handler as Handler
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
@@ -24,15 +23,10 @@ import qualified System.FilePath as FilePath
 
 application :: Context.Context request -> Wai.Application
 application context request respond = do
-  response <- App.run context . runHandler request $ route request
+  response <- App.run context { Context.request = request } $ route request
   respond response
 
-runHandler :: Wai.Request -> Handler.Handler result -> App.App request result
-runHandler request handler = do
-  context <- Reader.ask
-  Trans.lift $ Handler.run context { Context.request = request } handler
-
-route :: Wai.Request -> Handler.Handler Wai.Response
+route :: Wai.Request -> App.App Wai.Request Wai.Response
 route request =
   let
     method = Wai.requestMethod request
@@ -46,7 +40,7 @@ route request =
     ("GET", ["throw"]) -> throwHandler
     _ -> notFoundHandler
 
-rootHandler :: Handler.Handler Wai.Response
+rootHandler :: App.App request Wai.Response
 rootHandler = do
   config <- Reader.asks Context.config
   pure
@@ -74,7 +68,7 @@ rootHandler = do
           Lucid.body_ $ do
             Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
 
-faviconHandler :: Handler.Handler Wai.Response
+faviconHandler :: App.App request Wai.Response
 faviconHandler = do
   config <- Reader.asks Context.config
   fileResponse
@@ -84,7 +78,7 @@ faviconHandler = do
     )
     "favicon.ico"
 
-healthCheckHandler :: Handler.Handler Wai.Response
+healthCheckHandler :: App.App request Wai.Response
 healthCheckHandler = do
   pool <- Reader.asks Context.pool
   Trans.lift . Pool.withResource pool $ \connection -> do
@@ -93,14 +87,14 @@ healthCheckHandler = do
   config <- Reader.asks Context.config
   pure . Settings.statusResponse Http.ok200 $ Settings.defaultHeaders config
 
-robotsHandler :: Handler.Handler Wai.Response
+robotsHandler :: App.App request Wai.Response
 robotsHandler = do
   config <- Reader.asks Context.config
   pure
     . Settings.stringResponse Http.ok200 (Settings.defaultHeaders config)
     $ unlines ["User-agent: *", "Disallow:"]
 
-tachyonsHandler :: Handler.Handler Wai.Response
+tachyonsHandler :: App.App request Wai.Response
 tachyonsHandler = do
   config <- Reader.asks Context.config
   fileResponse
@@ -110,10 +104,10 @@ tachyonsHandler = do
     )
     "tachyons-4-12-0.css"
 
-throwHandler :: Handler.Handler a
+throwHandler :: App.App request result
 throwHandler = WithCallStack.throw $ userError "oh no"
 
-notFoundHandler :: Handler.Handler Wai.Response
+notFoundHandler :: App.App request Wai.Response
 notFoundHandler = do
   config <- Reader.asks Context.config
   pure . Settings.statusResponse Http.notFound404 $ Settings.defaultHeaders
@@ -123,7 +117,7 @@ fileResponse
   :: Http.Status
   -> Settings.Headers
   -> FilePath
-  -> Handler.Handler Wai.Response
+  -> App.App request Wai.Response
 fileResponse status headers name = Trans.lift $ do
   let relative = FilePath.combine "data" name
   absolute <- Package.getDataFileName relative
