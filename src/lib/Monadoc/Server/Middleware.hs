@@ -4,12 +4,10 @@ module Monadoc.Server.Middleware
 where
 
 import qualified Control.Monad.Catch as Exception
-import qualified Data.ByteString as ByteString
-import qualified Data.Map as Map
+import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified GHC.Clock as Clock
 import qualified Monadoc.Console as Console
-import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Utility.Utf8 as Utf8
@@ -54,8 +52,16 @@ handleEtag handle request respond = handle request $ \response ->
     hasEtag = Maybe.isJust expected
     actual = lookup Http.hETag $ Wai.responseHeaders response
   in respond $ if isGet && isSuccessful && hasEtag && actual == expected
-    then Common.responseBS
+    then Wai.responseLBS
       Http.notModified304
-      (Map.fromList $ Wai.responseHeaders response)
-      ByteString.empty
+      (filter (\header -> not $ isContentLength header || isETag header)
+      $ Wai.responseHeaders response
+      )
+      LazyByteString.empty
     else response
+
+isContentLength :: Http.Header -> Bool
+isContentLength = (== Http.hContentLength) . fst
+
+isETag :: Http.Header -> Bool
+isETag = (== Http.hETag) . fst
