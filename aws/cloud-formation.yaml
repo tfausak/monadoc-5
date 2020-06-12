@@ -429,7 +429,7 @@ Resources:
             - GET
             - HEAD
             - OPTIONS
-          Compress: true
+          Compress: false
           ForwardedValues:
             QueryString: true
           TargetOriginId: !Sub origin.${Domain}

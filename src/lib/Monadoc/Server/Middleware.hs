@@ -3,9 +3,14 @@ module Monadoc.Server.Middleware
   )
 where
 
+import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Monad.Catch as Exception
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import qualified Data.Text.Encoding.Error as Text
 import qualified GHC.Clock as Clock
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
@@ -14,11 +19,13 @@ import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
+import qualified Network.Wai.Internal as Wai
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
 
 middleware :: Config.Config -> Wai.Middleware
-middleware config = logRequests . handleExceptions config . handleEtag
+middleware config =
+  logRequests . handleExceptions config . handleEtag . compress
 
 logRequests :: Wai.Middleware
 logRequests handle request respond = do
@@ -65,3 +72,41 @@ isContentLength = (== Http.hContentLength) . fst
 
 isETag :: Http.Header -> Bool
 isETag = (== Http.hETag) . fst
+
+compress :: Wai.Middleware
+compress handle request respond = handle request $ \response ->
+  respond $ case response of
+    Wai.ResponseBuilder status headers builder ->
+      let
+        expanded = Builder.toLazyByteString builder
+        compressed = Gzip.compress expanded
+        contentLength =
+          Utf8.fromString . show $ LazyByteString.length compressed
+        newHeaders =
+          (Http.hContentEncoding, "gzip")
+            : (Http.hContentLength, contentLength)
+            : filter (not . isContentLength) headers
+      in if acceptsGzip request
+           && not (isEncoded response)
+           && longEnough expanded
+         then
+           Wai.responseLBS status newHeaders compressed
+         else
+           response
+    _ -> response
+
+isEncoded :: Wai.Response -> Bool
+isEncoded = Maybe.isJust . lookup Http.hContentEncoding . Wai.responseHeaders
+
+acceptsGzip :: Wai.Request -> Bool
+acceptsGzip =
+  elem "gzip"
+    . fmap Text.strip
+    . Text.splitOn ","
+    . Text.decodeUtf8With Text.lenientDecode
+    . Maybe.fromMaybe ""
+    . lookup Http.hAcceptEncoding
+    . Wai.requestHeaders
+
+longEnough :: LazyByteString.ByteString -> Bool
+longEnough = (> 1024) . LazyByteString.length
