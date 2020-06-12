@@ -61,6 +61,10 @@ handle = do
         Lucid.link_
           [Lucid.rel_ "icon", Lucid.href_ $ renderRelativeRoute Route.Favicon]
         Lucid.link_
+          [ Lucid.rel_ "apple-touch-icon"
+          , Lucid.href_ $ renderRelativeRoute Route.Logo
+          ]
+        Lucid.link_
           [ Lucid.rel_ "stylesheet"
           , Lucid.href_ $ renderRelativeRoute Route.Tachyons
           ]
