@@ -6,7 +6,6 @@ where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Pool as Pool
@@ -19,13 +18,11 @@ import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Paths_monadoc as Package
-import qualified System.FilePath as FilePath
 
 application :: Context.Context request -> Wai.Application
 application context request respond = do
-  let ctx = context { Context.request = request }
-  response <- App.run ctx . runRoute $ getRoute request
+  response <-
+    App.run context { Context.request = request } . runRoute $ getRoute request
   respond response
 
 getRoute :: Wai.Request -> Maybe Route.Route
@@ -84,7 +81,7 @@ rootHandler = do
 faviconHandler :: App.App request Wai.Response
 faviconHandler = do
   config <- Reader.asks Context.config
-  fileResponse
+  Common.fileResponse
     Http.ok200
     (Map.insert Http.hContentType "image/x-icon" $ Common.defaultHeaders config
     )
@@ -109,7 +106,7 @@ robotsHandler = do
 tachyonsHandler :: App.App request Wai.Response
 tachyonsHandler = do
   config <- Reader.asks Context.config
-  fileResponse
+  Common.fileResponse
     Http.ok200
     (Map.insert Http.hContentType "text/css;charset=utf-8"
     $ Common.defaultHeaders config
@@ -123,11 +120,3 @@ notFoundHandler :: App.App request Wai.Response
 notFoundHandler = do
   config <- Reader.asks Context.config
   pure . Common.statusResponse Http.notFound404 $ Common.defaultHeaders config
-
-fileResponse
-  :: Http.Status -> Common.Headers -> FilePath -> App.App request Wai.Response
-fileResponse status headers name = Trans.lift $ do
-  let relative = FilePath.combine "data" name
-  absolute <- Package.getDataFileName relative
-  contents <- ByteString.readFile absolute
-  pure $ Common.responseBS status headers contents

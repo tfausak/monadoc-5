@@ -1,24 +1,37 @@
 module Monadoc.Server.Common
   ( Headers
   , defaultHeaders
+  , fileResponse
   , responseBS
   , statusResponse
   , stringResponse
   )
 where
 
+import qualified Control.Monad.Trans.Class as Trans
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
+import qualified Paths_monadoc as Package
+import qualified System.FilePath as FilePath
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
+
+fileResponse
+  :: Http.Status -> Headers -> FilePath -> App.App request Wai.Response
+fileResponse status headers name = Trans.lift $ do
+  let relative = FilePath.combine "data" name
+  absolute <- Package.getDataFileName relative
+  contents <- ByteString.readFile absolute
+  pure $ responseBS status headers contents
 
 statusResponse :: Http.Status -> Headers -> Wai.Response
 statusResponse status headers = stringResponse status headers $ unwords
