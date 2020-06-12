@@ -431,6 +431,8 @@ Resources:
             - OPTIONS
           Compress: false
           ForwardedValues:
+            Headers:
+              - Accept-Encoding
             QueryString: true
           TargetOriginId: !Sub origin.${Domain}
           ViewerProtocolPolicy: redirect-to-https
