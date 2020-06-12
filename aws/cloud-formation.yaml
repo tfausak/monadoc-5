@@ -322,7 +322,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       Certificates:
-        - CertificateArn: !Ref Certificate
+        - CertificateArn: !Ref OriginCertificate
       DefaultActions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward
@@ -345,6 +345,15 @@ Resources:
         HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
       HostedZoneId: !Ref HostedZone
       Name: !Sub www.${Domain}
+      Type: A
+  OriginRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget:
+        DNSName: !GetAtt LoadBalancer.DNSName
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub origin.${Domain}
       Type: A
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-filesystem.html
@@ -378,4 +387,9 @@ Resources:
     Type: AWS::CertificateManager::Certificate
     Properties:
       DomainName: !Sub www.${Domain}
+      ValidationMethod: DNS
+  OriginCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub origin.${Domain}
       ValidationMethod: DNS
