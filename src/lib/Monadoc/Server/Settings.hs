@@ -73,7 +73,7 @@ responseBS status oldHeaders body =
     etag = Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
     newHeaders = Map.fromList
       [ (Http.hContentLength, contentLength)
-      , ("Content-Security-Policy", "default-src 'self'")
+      , ("Content-Security-Policy", "base-uri 'none', default-src 'self'")
       , (Http.hETag, etag)
       , ("Referrer-Policy", "no-referrer")
       , ("X-Content-Type-Options", "nosniff")
