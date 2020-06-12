@@ -11,7 +11,7 @@ import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Pool as Pool
 import qualified Lucid
-import qualified Monadoc.Server.Settings as Settings
+import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Route as Route
@@ -57,10 +57,10 @@ rootHandler :: App.App request Wai.Response
 rootHandler = do
   config <- Reader.asks Context.config
   pure
-    . Settings.responseBS
+    . Common.responseBS
         Http.ok200
         (Map.insert Http.hContentType "text/html;charset=utf-8"
-        $ Settings.defaultHeaders config
+        $ Common.defaultHeaders config
         )
     . LazyByteString.toStrict
     . Lucid.renderBS
@@ -86,8 +86,7 @@ faviconHandler = do
   config <- Reader.asks Context.config
   fileResponse
     Http.ok200
-    (Map.insert Http.hContentType "image/x-icon"
-    $ Settings.defaultHeaders config
+    (Map.insert Http.hContentType "image/x-icon" $ Common.defaultHeaders config
     )
     "favicon.ico"
 
@@ -98,13 +97,13 @@ healthCheckHandler = do
     rows <- Sql.query_ connection "select 1"
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
   config <- Reader.asks Context.config
-  pure . Settings.statusResponse Http.ok200 $ Settings.defaultHeaders config
+  pure . Common.statusResponse Http.ok200 $ Common.defaultHeaders config
 
 robotsHandler :: App.App request Wai.Response
 robotsHandler = do
   config <- Reader.asks Context.config
   pure
-    . Settings.stringResponse Http.ok200 (Settings.defaultHeaders config)
+    . Common.stringResponse Http.ok200 (Common.defaultHeaders config)
     $ unlines ["User-agent: *", "Disallow:"]
 
 tachyonsHandler :: App.App request Wai.Response
@@ -113,7 +112,7 @@ tachyonsHandler = do
   fileResponse
     Http.ok200
     (Map.insert Http.hContentType "text/css;charset=utf-8"
-    $ Settings.defaultHeaders config
+    $ Common.defaultHeaders config
     )
     "tachyons-4-12-0.css"
 
@@ -123,16 +122,12 @@ throwHandler = WithCallStack.throw $ userError "oh no"
 notFoundHandler :: App.App request Wai.Response
 notFoundHandler = do
   config <- Reader.asks Context.config
-  pure . Settings.statusResponse Http.notFound404 $ Settings.defaultHeaders
-    config
+  pure . Common.statusResponse Http.notFound404 $ Common.defaultHeaders config
 
 fileResponse
-  :: Http.Status
-  -> Settings.Headers
-  -> FilePath
-  -> App.App request Wai.Response
+  :: Http.Status -> Common.Headers -> FilePath -> App.App request Wai.Response
 fileResponse status headers name = Trans.lift $ do
   let relative = FilePath.combine "data" name
   absolute <- Package.getDataFileName relative
   contents <- ByteString.readFile absolute
-  pure $ Settings.responseBS status headers contents
+  pure $ Common.responseBS status headers contents

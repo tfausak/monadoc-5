@@ -14,6 +14,7 @@ import qualified Monadoc.Data.VersionSpec
 import qualified Monadoc.GhcSpec
 import qualified Monadoc.MainSpec
 import qualified Monadoc.Server.ApplicationSpec
+import qualified Monadoc.Server.CommonSpec
 import qualified Monadoc.Server.MainSpec
 import qualified Monadoc.Server.MiddlewareSpec
 import qualified Monadoc.Server.SettingsSpec
@@ -48,6 +49,7 @@ main = Hspec.hspec $ do
   Monadoc.GhcSpec.spec
   Monadoc.MainSpec.spec
   Monadoc.Server.ApplicationSpec.spec
+  Monadoc.Server.CommonSpec.spec
   Monadoc.Server.MainSpec.spec
   Monadoc.Server.MiddlewareSpec.spec
   Monadoc.Server.SettingsSpec.spec
