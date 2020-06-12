@@ -6,7 +6,6 @@ where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.Map as Map
 import qualified Data.Pool as Pool
 import qualified Data.Text as Text
 import qualified Lucid
@@ -132,21 +131,10 @@ rootHandler = do
           "."
 
 faviconHandler :: App.App request Wai.Response
-faviconHandler = do
-  config <- Reader.asks Context.config
-  Common.fileResponse
-    Http.ok200
-    (Map.insert Http.hContentType "image/x-icon" $ Common.defaultHeaders config
-    )
-    "favicon.ico"
+faviconHandler = Common.simpleFileResponse "favicon.ico" "image/x-icon"
 
 logoHandler :: App.App request Wai.Response
-logoHandler = do
-  config <- Reader.asks Context.config
-  Common.fileResponse
-    Http.ok200
-    (Map.insert Http.hContentType "image/png" $ Common.defaultHeaders config)
-    "logo.png"
+logoHandler = Common.simpleFileResponse "logo.png" "image/png"
 
 healthCheckHandler :: App.App request Wai.Response
 healthCheckHandler = do
@@ -165,14 +153,8 @@ robotsHandler = do
     $ unlines ["User-agent: *", "Disallow:"]
 
 tachyonsHandler :: App.App request Wai.Response
-tachyonsHandler = do
-  config <- Reader.asks Context.config
-  Common.fileResponse
-    Http.ok200
-    (Map.insert Http.hContentType "text/css;charset=utf-8"
-    $ Common.defaultHeaders config
-    )
-    "tachyons-4-12-0.css"
+tachyonsHandler =
+  Common.simpleFileResponse "tachyons-4-12-0.css" "text/css;charset=utf-8"
 
 throwHandler :: App.App request result
 throwHandler = WithCallStack.throw $ userError "oh no"

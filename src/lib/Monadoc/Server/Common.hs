@@ -4,12 +4,14 @@ module Monadoc.Server.Common
   , fileResponse
   , htmlResponse
   , responseBS
+  , simpleFileResponse
   , statusResponse
   , stringResponse
   )
 where
 
 import qualified Control.Monad.Trans.Class as Trans
+import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
@@ -18,6 +20,7 @@ import qualified Data.Map as Map
 import qualified Lucid
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
+import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
@@ -34,6 +37,15 @@ htmlResponse status headers =
       (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
     . LazyByteString.toStrict
     . Lucid.renderBS
+
+simpleFileResponse
+  :: FilePath -> ByteString.ByteString -> App.App request Wai.Response
+simpleFileResponse file mime = do
+  config <- Reader.asks Context.config
+  fileResponse
+    Http.ok200
+    (Map.insert Http.hContentType mime $ defaultHeaders config)
+    file
 
 fileResponse
   :: Http.Status -> Headers -> FilePath -> App.App request Wai.Response
