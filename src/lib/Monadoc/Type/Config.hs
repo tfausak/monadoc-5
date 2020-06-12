@@ -19,6 +19,9 @@ data Config = Config
   -- ^ The host to bind on. In typical usage you'll want to set this to @"*"@.
   , port :: Warp.Port
   -- ^ The port to bind on.
+  , url :: String
+  -- ^ The base URL that the site is available at. Be sure to change this if
+  -- you change the host or port.
   , version :: Bool
   -- ^ Whether or not to show the version number.
   } deriving (Eq, Show)
@@ -30,5 +33,6 @@ initial = Config
   , help = False
   , host = "127.0.0.1"
   , port = 4444
+  , url = "http://localhost:4444"
   , version = False
   }

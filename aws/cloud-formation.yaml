@@ -161,6 +161,7 @@ Resources:
               - --database=/efs/monadoc.sqlite3
               - --host=*
               - !Sub --port=${Port}
+              - !Sub --url=https://www.${Domain}
             image: !Sub ${Image}:${Tag}
             name: !Sub ${AWS::StackName}-custom-container
             essential: true

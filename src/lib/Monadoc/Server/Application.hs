@@ -47,11 +47,14 @@ route request =
     _ -> notFoundHandler
 
 rootHandler :: Handler.Handler Wai.Response
-rootHandler =
+rootHandler = do
+  config <- Reader.asks $ Context.config . fst
   pure
     . Settings.responseBS
         Http.ok200
-        (Map.singleton Http.hContentType "text/html;charset=utf-8")
+        (Map.insert Http.hContentType "text/html;charset=utf-8"
+        $ Settings.defaultHeaders config
+        )
     . LazyByteString.toStrict
     . Lucid.renderBS
     $ do
@@ -72,10 +75,14 @@ rootHandler =
             Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
 
 faviconHandler :: Handler.Handler Wai.Response
-faviconHandler = fileResponse
-  Http.ok200
-  (Map.singleton Http.hContentType "image/x-icon")
-  "favicon.ico"
+faviconHandler = do
+  config <- Reader.asks $ Context.config . fst
+  fileResponse
+    Http.ok200
+    (Map.insert Http.hContentType "image/x-icon"
+    $ Settings.defaultHeaders config
+    )
+    "favicon.ico"
 
 healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
@@ -83,23 +90,34 @@ healthCheckHandler = do
   Trans.lift . Pool.withResource pool $ \connection -> do
     rows <- Sql.query_ connection "select 1"
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
-  pure $ Settings.statusResponse Http.ok200 Map.empty
+  config <- Reader.asks $ Context.config . fst
+  pure . Settings.statusResponse Http.ok200 $ Settings.defaultHeaders config
 
 robotsHandler :: Handler.Handler Wai.Response
-robotsHandler = pure . Settings.stringResponse Http.ok200 Map.empty $ unlines
-  ["User-agent: *", "Disallow:"]
+robotsHandler = do
+  config <- Reader.asks $ Context.config . fst
+  pure
+    . Settings.stringResponse Http.ok200 (Settings.defaultHeaders config)
+    $ unlines ["User-agent: *", "Disallow:"]
 
 tachyonsHandler :: Handler.Handler Wai.Response
-tachyonsHandler = fileResponse
-  Http.ok200
-  (Map.singleton Http.hContentType "text/css;charset=utf-8")
-  "tachyons-4-12-0.css"
+tachyonsHandler = do
+  config <- Reader.asks $ Context.config . fst
+  fileResponse
+    Http.ok200
+    (Map.insert Http.hContentType "text/css;charset=utf-8"
+    $ Settings.defaultHeaders config
+    )
+    "tachyons-4-12-0.css"
 
 throwHandler :: Handler.Handler a
 throwHandler = WithCallStack.throw $ userError "oh no"
 
 notFoundHandler :: Handler.Handler Wai.Response
-notFoundHandler = pure $ Settings.statusResponse Http.notFound404 Map.empty
+notFoundHandler = do
+  config <- Reader.asks $ Context.config . fst
+  pure . Settings.statusResponse Http.notFound404 $ Settings.defaultHeaders
+    config
 
 fileResponse
   :: Http.Status

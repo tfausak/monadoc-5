@@ -1,5 +1,6 @@
 module Monadoc.Server.Settings
   ( Headers
+  , defaultHeaders
   , fromConfig
   , onException
   , onExceptionResponse
@@ -14,6 +15,7 @@ import qualified Control.Monad.Catch as Exception
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
@@ -31,7 +33,7 @@ fromConfig config =
   Warp.setBeforeMainLoop (beforeMainLoop config)
     . Warp.setHost (Config.host config)
     . Warp.setOnException onException
-    . Warp.setOnExceptionResponse onExceptionResponse
+    . Warp.setOnExceptionResponse (onExceptionResponse config)
     . Warp.setPort (Config.port config)
     $ Warp.setServerName serverName Warp.defaultSettings
 
@@ -50,8 +52,9 @@ onException _ someException@(Exception.SomeException exception) =
     . Console.warn
     $ Exception.displayException exception
 
-onExceptionResponse :: Exception.SomeException -> Wai.Response
-onExceptionResponse _ = statusResponse Http.internalServerError500 Map.empty
+onExceptionResponse :: Config.Config -> Exception.SomeException -> Wai.Response
+onExceptionResponse config _ =
+  statusResponse Http.internalServerError500 $ defaultHeaders config
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
 
@@ -67,22 +70,32 @@ stringResponse status headers =
     . Utf8.fromString
 
 responseBS :: Http.Status -> Headers -> ByteString.ByteString -> Wai.Response
-responseBS status oldHeaders body =
+responseBS status headers body =
   let
     contentLength = Utf8.fromString . show $ ByteString.length body
     etag = Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
-    newHeaders = Map.fromList
-      [ (Http.hContentLength, contentLength)
-      , ("Content-Security-Policy", "base-uri 'none', default-src 'self'")
-      , (Http.hETag, etag)
-      , ("Referrer-Policy", "no-referrer")
-      , ("X-Content-Type-Options", "nosniff")
-      , ("X-Frame-Options", "deny")
-      ]
+    extraHeaders =
+      Map.fromList [(Http.hContentLength, contentLength), (Http.hETag, etag)]
   in Wai.responseLBS
     status
-    (Map.toList $ Map.union newHeaders oldHeaders)
+    (Map.toList $ Map.union extraHeaders headers)
     (LazyByteString.fromStrict body)
+
+defaultHeaders :: Config.Config -> Headers
+defaultHeaders config = Map.fromList
+  [ ("Content-Security-Policy", contentSecurityPolicy)
+  , ("Referrer-Policy", "no-referrer")
+  , ("Strict-Transport-Security", strictTransportSecurity config)
+  , ("X-Content-Type-Options", "nosniff")
+  , ("X-Frame-Options", "deny")
+  ]
+
+contentSecurityPolicy :: ByteString.ByteString
+contentSecurityPolicy = "base-uri 'none', default-src 'self'"
+
+strictTransportSecurity :: Config.Config -> ByteString.ByteString
+strictTransportSecurity config =
+  if List.isPrefixOf "https:" $ Config.url config then "86400" else "0"
 
 serverName :: ByteString.ByteString
 serverName =

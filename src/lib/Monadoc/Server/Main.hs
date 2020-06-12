@@ -15,7 +15,8 @@ import qualified Network.Wai.Handler.Warp as Warp
 run :: App.App ()
 run = do
   context <- Reader.ask
+  let config = Context.config context
   Trans.lift
-    . Warp.runSettings (Settings.fromConfig $ Context.config context)
-    . Middleware.middleware
+    . Warp.runSettings (Settings.fromConfig config)
+    . Middleware.middleware config
     $ Application.application context

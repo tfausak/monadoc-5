@@ -29,6 +29,9 @@ options =
     $ \rawPort config -> case Read.readMaybe rawPort of
         Nothing -> Left $ "invalid port: " <> show rawPort
         Just port -> Right config { Config.port = port }
+  , option [] ["url"] "sets the base URL (defaults to http://localhost:4444)"
+    . argument "URL"
+    $ \url config -> Right config { Config.url = url }
   , option ['v'] ["version"] "shows the version number and exits"
     . GetOpt.NoArg
     $ \config -> Right config { Config.version = True }

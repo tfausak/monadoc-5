@@ -10,6 +10,7 @@ import qualified Data.Maybe as Maybe
 import qualified GHC.Clock as Clock
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
+import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
@@ -17,8 +18,8 @@ import qualified Network.Wai as Wai
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
 
-middleware :: Wai.Middleware
-middleware = logRequests . handleExceptions . handleEtag
+middleware :: Config.Config -> Wai.Middleware
+middleware config = logRequests . handleExceptions config . handleEtag
 
 logRequests :: Wai.Middleware
 logRequests handle request respond = do
@@ -37,11 +38,11 @@ logRequests handle request respond = do
       (div (allocationsBefore - allocationsAfter) 1024)
     respond response
 
-handleExceptions :: Wai.Middleware
-handleExceptions handle request respond =
+handleExceptions :: Config.Config -> Wai.Middleware
+handleExceptions config handle request respond =
   Exception.catch (handle request respond) $ \someException -> do
     Settings.onException (Just request) someException
-    respond $ Settings.onExceptionResponse someException
+    respond $ Settings.onExceptionResponse config someException
 
 handleEtag :: Wai.Middleware
 handleEtag handle request respond = handle request $ \response ->
