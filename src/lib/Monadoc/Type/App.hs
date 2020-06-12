@@ -12,10 +12,10 @@ import qualified Monadoc.Vendor.Sql as Sql
 
 -- | The main application type. This simply provides the run-time context. Use
 -- 'run' to convert this into 'IO'.
-type App a = Reader.ReaderT Context.Context IO a
+type App a = Reader.ReaderT (Context.Context ()) IO a
 
 -- | Runs an 'App' action.
-run :: Context.Context -> App a -> IO a
+run :: Context.Context () -> App a -> IO a
 run = flip Reader.runReaderT
 
 -- | Checks out a SQL connection from the pool and runs the given action with

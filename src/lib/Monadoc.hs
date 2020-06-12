@@ -93,7 +93,7 @@ argumentsToConfigResult name arguments =
 
 -- | Converts a config into a context. This involves acquiring any resources
 -- described in the config.
-configToContext :: Config.Config -> IO Context.Context
+configToContext :: Config.Config -> IO (Context.Context ())
 configToContext config = do
   manager <- Tls.newTlsManager
   let database = Config.database config

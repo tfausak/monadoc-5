@@ -22,7 +22,7 @@ import qualified Network.Wai as Wai
 import qualified Paths_monadoc as Package
 import qualified System.FilePath as FilePath
 
-application :: Context.Context -> Wai.Application
+application :: Context.Context () -> Wai.Application
 application context request respond = do
   response <- App.run context . runHandler request $ route request
   respond response

@@ -10,7 +10,7 @@ import qualified Network.HTTP.Client as Client
 
 -- | The run-time application context. This will be available in most places
 -- and is basically a grab bag of global state.
-data Context = Context
+data Context a = Context
   { config :: Config.Config
   -- ^ The config used to create this context, just in case we still need some
   -- values from it.
