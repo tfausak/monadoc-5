@@ -3,22 +3,30 @@ module Monadoc.Server.Middleware
   )
 where
 
+import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Monad.Catch as Exception
-import qualified Data.ByteString as ByteString
-import qualified Data.Map as Map
+import qualified Crypto.Hash as Crypto
+import qualified Data.ByteString.Builder as Builder
+import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import qualified Data.Text.Encoding.Error as Text
 import qualified GHC.Clock as Clock
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
+import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
+import qualified Network.Wai.Internal as Wai
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
 
-middleware :: Wai.Middleware
-middleware = logRequests . handleExceptions . handleEtag
+middleware :: Config.Config -> Wai.Middleware
+middleware config =
+  logRequests . handleExceptions config . handleEtag . compress
 
 logRequests :: Wai.Middleware
 logRequests handle request respond = do
@@ -37,11 +45,11 @@ logRequests handle request respond = do
       (div (allocationsBefore - allocationsAfter) 1024)
     respond response
 
-handleExceptions :: Wai.Middleware
-handleExceptions handle request respond =
+handleExceptions :: Config.Config -> Wai.Middleware
+handleExceptions config handle request respond =
   Exception.catch (handle request respond) $ \someException -> do
     Settings.onException (Just request) someException
-    respond $ Settings.onExceptionResponse someException
+    respond $ Settings.onExceptionResponse config someException
 
 handleEtag :: Wai.Middleware
 handleEtag handle request respond = handle request $ \response ->
@@ -52,8 +60,62 @@ handleEtag handle request respond = handle request $ \response ->
     hasEtag = Maybe.isJust expected
     actual = lookup Http.hETag $ Wai.responseHeaders response
   in respond $ if isGet && isSuccessful && hasEtag && actual == expected
-    then Settings.responseBS
+    then Wai.responseLBS
       Http.notModified304
-      (Map.fromList $ Wai.responseHeaders response)
-      ByteString.empty
+      (filter (\header -> not $ isContentLength header || isETag header)
+      $ Wai.responseHeaders response
+      )
+      LazyByteString.empty
     else response
+
+isContentLength :: Http.Header -> Bool
+isContentLength = (== Http.hContentLength) . fst
+
+isETag :: Http.Header -> Bool
+isETag = (== Http.hETag) . fst
+
+compress :: Wai.Middleware
+compress handle request respond = handle request $ \response ->
+  respond $ case response of
+    Wai.ResponseBuilder status headers builder ->
+      let
+        expanded = Builder.toLazyByteString builder
+        compressed = Gzip.compress expanded
+        size = Utf8.fromString . show $ LazyByteString.length compressed
+        etag =
+          Utf8.fromString
+            . show
+            . show
+            . Crypto.hashWith Crypto.SHA256
+            $ LazyByteString.toStrict compressed
+        newHeaders =
+          (Http.hContentEncoding, "gzip")
+            : (Http.hContentLength, size)
+            : (Http.hETag, etag)
+            : filter
+                (\header -> not $ isContentLength header || isETag header)
+                headers
+      in if acceptsGzip request
+           && not (isEncoded response)
+           && longEnough expanded
+         then
+           Wai.responseLBS status newHeaders compressed
+         else
+           response
+    _ -> response
+
+isEncoded :: Wai.Response -> Bool
+isEncoded = Maybe.isJust . lookup Http.hContentEncoding . Wai.responseHeaders
+
+acceptsGzip :: Wai.Request -> Bool
+acceptsGzip =
+  elem "gzip"
+    . fmap Text.strip
+    . Text.splitOn ","
+    . Text.decodeUtf8With Text.lenientDecode
+    . Maybe.fromMaybe ""
+    . lookup Http.hAcceptEncoding
+    . Wai.requestHeaders
+
+longEnough :: LazyByteString.ByteString -> Bool
+longEnough = (> 1024) . LazyByteString.length

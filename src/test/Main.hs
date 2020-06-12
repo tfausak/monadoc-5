@@ -12,8 +12,16 @@ import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
 import qualified Monadoc.GhcSpec
+import qualified Monadoc.Handler.FaviconSpec
+import qualified Monadoc.Handler.HealthCheckSpec
+import qualified Monadoc.Handler.IndexSpec
+import qualified Monadoc.Handler.LogoSpec
+import qualified Monadoc.Handler.RobotsSpec
+import qualified Monadoc.Handler.TachyonsSpec
+import qualified Monadoc.Handler.ThrowSpec
 import qualified Monadoc.MainSpec
 import qualified Monadoc.Server.ApplicationSpec
+import qualified Monadoc.Server.CommonSpec
 import qualified Monadoc.Server.MainSpec
 import qualified Monadoc.Server.MiddlewareSpec
 import qualified Monadoc.Server.SettingsSpec
@@ -23,9 +31,9 @@ import qualified Monadoc.Type.ConfigResultSpec
 import qualified Monadoc.Type.ConfigSpec
 import qualified Monadoc.Type.ContextSpec
 import qualified Monadoc.Type.EtagSpec
-import qualified Monadoc.Type.HandlerSpec
 import qualified Monadoc.Type.MigrationMismatchSpec
 import qualified Monadoc.Type.MigrationSpec
+import qualified Monadoc.Type.RouteSpec
 import qualified Monadoc.Type.Sha256Spec
 import qualified Monadoc.Type.SizeSpec
 import qualified Monadoc.Type.TimestampSpec
@@ -46,8 +54,16 @@ main = Hspec.hspec $ do
   Monadoc.Data.OptionsSpec.spec
   Monadoc.Data.VersionSpec.spec
   Monadoc.GhcSpec.spec
+  Monadoc.Handler.FaviconSpec.spec
+  Monadoc.Handler.HealthCheckSpec.spec
+  Monadoc.Handler.IndexSpec.spec
+  Monadoc.Handler.LogoSpec.spec
+  Monadoc.Handler.RobotsSpec.spec
+  Monadoc.Handler.TachyonsSpec.spec
+  Monadoc.Handler.ThrowSpec.spec
   Monadoc.MainSpec.spec
   Monadoc.Server.ApplicationSpec.spec
+  Monadoc.Server.CommonSpec.spec
   Monadoc.Server.MainSpec.spec
   Monadoc.Server.MiddlewareSpec.spec
   Monadoc.Server.SettingsSpec.spec
@@ -57,9 +73,9 @@ main = Hspec.hspec $ do
   Monadoc.Type.ConfigSpec.spec
   Monadoc.Type.ContextSpec.spec
   Monadoc.Type.EtagSpec.spec
-  Monadoc.Type.HandlerSpec.spec
   Monadoc.Type.MigrationMismatchSpec.spec
   Monadoc.Type.MigrationSpec.spec
+  Monadoc.Type.RouteSpec.spec
   Monadoc.Type.Sha256Spec.spec
   Monadoc.Type.SizeSpec.spec
   Monadoc.Type.TimestampSpec.spec

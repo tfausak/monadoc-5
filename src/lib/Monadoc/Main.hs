@@ -20,29 +20,31 @@ import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
 import qualified Monadoc.Worker.Main as Worker
 
-run :: App.App ()
+run :: App.App request ()
 run = do
   runMigrations
   context <- Reader.ask
   Trans.lift
     $ Async.race_ (App.run context Server.run) (App.run context Worker.run)
 
-runMigrations :: App.App ()
-runMigrations = App.withConnection $ \connection -> Trans.lift $ do
-  Sql.execute_ connection "pragma journal_mode = wal"
-  Sql.execute_
-    connection
-    "create table if not exists migrations \
-    \( iso8601 text not null primary key \
-    \, sha256 text not null )"
-  mapM_ (ensureMigration connection) Migrations.migrations
+runMigrations :: App.App request ()
+runMigrations = do
+  App.withConnection $ \connection -> Trans.lift $ do
+    Sql.execute_ connection "pragma journal_mode = wal"
+    Sql.execute_
+      connection
+      "create table if not exists migrations \
+      \( iso8601 text not null primary key \
+      \, sha256 text not null )"
+  mapM_ ensureMigration Migrations.migrations
 
-ensureMigration :: Sql.Connection -> Migration.Migration -> IO ()
-ensureMigration connection migration = Sql.withTransaction connection $ do
-  maybeDigest <- getDigest connection $ Migration.timestamp migration
-  case maybeDigest of
-    Nothing -> runMigration connection migration
-    Just digest -> checkDigest migration digest
+ensureMigration :: Migration.Migration -> App.App request ()
+ensureMigration migration = App.withConnection $ \connection ->
+  Trans.lift . Sql.withTransaction connection $ do
+    maybeDigest <- getDigest connection $ Migration.timestamp migration
+    case maybeDigest of
+      Nothing -> runMigration connection migration
+      Just digest -> checkDigest migration digest
 
 getDigest :: Sql.Connection -> Timestamp.Timestamp -> IO (Maybe Sha256.Sha256)
 getDigest connection timestamp = do
@@ -69,7 +71,8 @@ runMigration connection migration = do
     "insert into migrations (iso8601, sha256) values (?, ?)"
     migration
 
-checkDigest :: Migration.Migration -> Sha256.Sha256 -> IO ()
+checkDigest
+  :: Exception.MonadThrow m => Migration.Migration -> Sha256.Sha256 -> m ()
 checkDigest migration expectedSha256 = do
   let actualSha256 = Migration.sha256 migration
   Monad.when (actualSha256 /= expectedSha256) $ Exception.throwM
