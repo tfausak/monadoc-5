@@ -12,7 +12,7 @@ import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Network.Wai.Handler.Warp as Warp
 
-run :: App.App ()
+run :: App.App () ()
 run = do
   context <- Reader.ask
   let config = Context.config context

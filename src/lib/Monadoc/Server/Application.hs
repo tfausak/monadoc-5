@@ -27,7 +27,7 @@ application context request respond = do
   response <- App.run context . runHandler request $ route request
   respond response
 
-runHandler :: Wai.Request -> Handler.Handler a -> App.App a
+runHandler :: Wai.Request -> Handler.Handler a -> App.App () a
 runHandler request handler = do
   context <- Reader.ask
   Trans.lift $ Handler.run context request handler

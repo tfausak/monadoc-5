@@ -31,14 +31,14 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
-run :: App.App ()
+run :: App.App () ()
 run = Monad.forever $ do
   pruneBlobs
   updateIndex
   processIndex
   sleep $ 15 * 60
 
-pruneBlobs :: App.App ()
+pruneBlobs :: App.App () ()
 pruneBlobs = App.withConnection $ \connection -> Trans.lift $ do
   rows <- Sql.query_
     connection
@@ -58,7 +58,7 @@ pluralize :: String -> Int -> String
 pluralize word count =
   unwords [show count, if count == 1 then word else word <> "s"]
 
-updateIndex :: App.App ()
+updateIndex :: App.App () ()
 updateIndex = do
   etag <- getEtag
   Console.info $ unwords ["Updating Hackage index with", show etag, "..."]
@@ -72,7 +72,7 @@ updateIndex = do
 indexUrl :: String
 indexUrl = "https://hackage.haskell.org/01-index.tar.gz"
 
-getEtag :: App.App Etag.Etag
+getEtag :: App.App () Etag.Etag
 getEtag = do
   rows <- App.withConnection $ \connection -> Trans.lift
     $ Sql.query connection "select etag from cache where url = ?" [indexUrl]
@@ -80,7 +80,7 @@ getEtag = do
     [] -> Etag.fromByteString ByteString.empty
     Sql.Only etag : _ -> etag
 
-buildRequest :: Etag.Etag -> App.App Client.Request
+buildRequest :: Etag.Etag -> App.App () Client.Request
 buildRequest etag = do
   initialRequest <- Client.parseRequest indexUrl
   pure $ addRequestHeader
@@ -89,12 +89,12 @@ buildRequest etag = do
     initialRequest
 
 getResponse
-  :: Client.Request -> App.App (Client.Response LazyByteString.ByteString)
+  :: Client.Request -> App.App () (Client.Response LazyByteString.ByteString)
 getResponse request = do
   manager <- Reader.asks Context.manager
   Trans.lift $ Client.httpLbs request manager
 
-handle200 :: Client.Response LazyByteString.ByteString -> App.App ()
+handle200 :: Client.Response LazyByteString.ByteString -> App.App () ()
 handle200 response = do
   let
     etag =
@@ -128,11 +128,13 @@ handle200 response = do
       \ digest = excluded.digest"
       (sha256, indexUrl)
 
-handle304 :: App.App ()
+handle304 :: App.App () ()
 handle304 = Console.info "Hackage index has not changed."
 
 handleOther
-  :: Client.Request -> Client.Response LazyByteString.ByteString -> App.App ()
+  :: Client.Request
+  -> Client.Response LazyByteString.ByteString
+  -> App.App () ()
 handleOther request response =
   WithCallStack.throw
     . Client.HttpExceptionRequest request
@@ -140,7 +142,7 @@ handleOther request response =
     . LazyByteString.toStrict
     $ Client.responseBody response
 
-processIndex :: App.App ()
+processIndex :: App.App () ()
 processIndex = do
   maybeSha256 <- getSha256
   case maybeSha256 of
@@ -155,7 +157,7 @@ processIndex = do
           removeCache
         Just binary -> processIndexWith binary
 
-getSha256 :: App.App (Maybe Sha256.Sha256)
+getSha256 :: App.App () (Maybe Sha256.Sha256)
 getSha256 = do
   rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
     connection
@@ -165,11 +167,11 @@ getSha256 = do
     [] -> Nothing
     Sql.Only sha256 : _ -> Just sha256
 
-removeCache :: App.App ()
+removeCache :: App.App () ()
 removeCache = App.withConnection $ \connection -> Trans.lift
   $ Sql.execute connection "delete from cache where url = ?" [indexUrl]
 
-getBinary :: Sha256.Sha256 -> App.App (Maybe Binary.Binary)
+getBinary :: Sha256.Sha256 -> App.App () (Maybe Binary.Binary)
 getBinary sha256 = do
   rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
     connection
@@ -179,7 +181,7 @@ getBinary sha256 = do
     [] -> Nothing
     Sql.Only binary : _ -> Just binary
 
-processIndexWith :: Binary.Binary -> App.App ()
+processIndexWith :: Binary.Binary -> App.App () ()
 processIndexWith =
   Console.info
     . mappend "Index entry count: "

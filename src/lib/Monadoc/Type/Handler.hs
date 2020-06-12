@@ -18,7 +18,8 @@ type Handler a = Reader.ReaderT (Context.Context Wai.Request, Wai.Request) IO a
 -- Note that this could throw an exception, so be sure to handle those
 -- somewhere else.
 run :: Context.Context () -> Wai.Request -> Handler a -> IO a
-run context request = flip Reader.runReaderT (context { Context.request = request }, request)
+run context request =
+  flip Reader.runReaderT (context { Context.request = request }, request)
 
 -- | Checks out a SQL connection from the pool and runs the given action with
 -- it.
