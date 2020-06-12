@@ -80,7 +80,7 @@ rootHandler = do
         Lucid.meta_ [Lucid.charset_ "utf-8"]
         Lucid.meta_
           [ Lucid.name_ "description"
-          , Lucid.content_ "Better Haskell documentation."
+          , Lucid.content_ "\x1f516 Better Haskell documentation."
           ]
         Lucid.meta_
           [ Lucid.name_ "viewport"
@@ -106,7 +106,15 @@ rootHandler = do
           ]
         Lucid.title_ "Monadoc"
       Lucid.body_ [Lucid.class_ "bg-white black sans-serif"] $ do
-        Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
+        Lucid.header_ [Lucid.class_ "bg-purple pa3 white"]
+          . Lucid.h1_ [Lucid.class_ "ma0 normal"]
+          $ Lucid.a_
+              [ Lucid.class_ "color-inherit no-underline"
+              , Lucid.href_ $ renderRelativeRoute Route.Index
+              ]
+              "Monadoc"
+        Lucid.main_ [Lucid.class_ "pa3"]
+          $ Lucid.p_ "\x1f516 Better Haskell documentation."
         Lucid.footer_ [Lucid.class_ "mid-gray pa3 tc"] . Lucid.p_ $ do
           "Powered by "
           Lucid.a_
