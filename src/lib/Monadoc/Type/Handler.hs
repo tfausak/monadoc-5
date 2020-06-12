@@ -12,13 +12,13 @@ import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.Wai as Wai
 
 -- | A server handler for an HTTP request/response.
-type Handler a = Reader.ReaderT (Context.Context (), Wai.Request) IO a
+type Handler a = Reader.ReaderT (Context.Context Wai.Request, Wai.Request) IO a
 
 -- | Given a context and a request, runs the handler to produce the response.
 -- Note that this could throw an exception, so be sure to handle those
 -- somewhere else.
 run :: Context.Context () -> Wai.Request -> Handler a -> IO a
-run context request = flip Reader.runReaderT (context, request)
+run context request = flip Reader.runReaderT (context { Context.request = request }, request)
 
 -- | Checks out a SQL connection from the pool and runs the given action with
 -- it.

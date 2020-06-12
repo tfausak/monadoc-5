@@ -108,6 +108,7 @@ configToContext config = do
     { Context.config = config
     , Context.manager = manager
     , Context.pool = pool
+    , Context.request = ()
     }
 
 stripeCount :: Int
