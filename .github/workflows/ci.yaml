@@ -49,6 +49,7 @@ jobs:
           name: monadoc-ubuntu-18.04-${{ github.sha }}
           path: docker
       - run: chmod +x docker/monadoc
+      - run: cp --recursive data docker
       - uses: docker/build-push-action@v1
         with:
           username: taylorfausak
