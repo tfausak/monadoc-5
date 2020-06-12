@@ -20,14 +20,14 @@ import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
 import qualified Monadoc.Worker.Main as Worker
 
-run :: App.App () ()
+run :: App.App request ()
 run = do
   runMigrations
   context <- Reader.ask
   Trans.lift
     $ Async.race_ (App.run context Server.run) (App.run context Worker.run)
 
-runMigrations :: App.App () ()
+runMigrations :: App.App request ()
 runMigrations = App.withConnection $ \connection -> Trans.lift $ do
   Sql.execute_ connection "pragma journal_mode = wal"
   Sql.execute_
