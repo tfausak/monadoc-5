@@ -48,7 +48,7 @@ route request =
 
 rootHandler :: Handler.Handler Wai.Response
 rootHandler = do
-  config <- Reader.asks $ Context.config . fst
+  config <- Reader.asks Context.config
   pure
     . Settings.responseBS
         Http.ok200
@@ -76,7 +76,7 @@ rootHandler = do
 
 faviconHandler :: Handler.Handler Wai.Response
 faviconHandler = do
-  config <- Reader.asks $ Context.config . fst
+  config <- Reader.asks Context.config
   fileResponse
     Http.ok200
     (Map.insert Http.hContentType "image/x-icon"
@@ -86,23 +86,23 @@ faviconHandler = do
 
 healthCheckHandler :: Handler.Handler Wai.Response
 healthCheckHandler = do
-  pool <- Reader.asks $ Context.pool . fst
+  pool <- Reader.asks Context.pool
   Trans.lift . Pool.withResource pool $ \connection -> do
     rows <- Sql.query_ connection "select 1"
     Monad.guard $ rows == [Sql.Only (1 :: Int)]
-  config <- Reader.asks $ Context.config . fst
+  config <- Reader.asks Context.config
   pure . Settings.statusResponse Http.ok200 $ Settings.defaultHeaders config
 
 robotsHandler :: Handler.Handler Wai.Response
 robotsHandler = do
-  config <- Reader.asks $ Context.config . fst
+  config <- Reader.asks Context.config
   pure
     . Settings.stringResponse Http.ok200 (Settings.defaultHeaders config)
     $ unlines ["User-agent: *", "Disallow:"]
 
 tachyonsHandler :: Handler.Handler Wai.Response
 tachyonsHandler = do
-  config <- Reader.asks $ Context.config . fst
+  config <- Reader.asks Context.config
   fileResponse
     Http.ok200
     (Map.insert Http.hContentType "text/css;charset=utf-8"
@@ -115,7 +115,7 @@ throwHandler = WithCallStack.throw $ userError "oh no"
 
 notFoundHandler :: Handler.Handler Wai.Response
 notFoundHandler = do
-  config <- Reader.asks $ Context.config . fst
+  config <- Reader.asks Context.config
   pure . Settings.statusResponse Http.notFound404 $ Settings.defaultHeaders
     config
 
