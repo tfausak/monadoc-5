@@ -37,7 +37,7 @@ parseRoute request =
     ("GET", ["favicon.ico"]) -> Just Route.Favicon
     ("GET", ["health-check"]) -> Just Route.HealthCheck
     ("GET", ["robots.txt"]) -> Just Route.Robots
-    ("GET", ["tachyons.css"]) -> Just Route.Tachyons
+    ("GET", ["tachyons-4-12-0.css"]) -> Just Route.Tachyons
     ("GET", ["throw"]) -> Just Route.Throw
     _ -> Nothing
 
@@ -62,7 +62,7 @@ renderRelativeRoute route = case route of
   Route.Favicon -> "/favicon.ico"
   Route.HealthCheck -> "/health-check"
   Route.Robots -> "/robots.txt"
-  Route.Tachyons -> "/tachyons.css"
+  Route.Tachyons -> "/tachyons-4-12-0.css"
   Route.Throw -> "/throw"
 
 rootHandler :: App.App request Wai.Response
