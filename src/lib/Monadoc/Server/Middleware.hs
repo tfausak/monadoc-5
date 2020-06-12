@@ -5,6 +5,7 @@ where
 
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Monad.Catch as Exception
+import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
@@ -80,12 +81,20 @@ compress handle request respond = handle request $ \response ->
       let
         expanded = Builder.toLazyByteString builder
         compressed = Gzip.compress expanded
-        contentLength =
-          Utf8.fromString . show $ LazyByteString.length compressed
+        size = Utf8.fromString . show $ LazyByteString.length compressed
+        etag =
+          Utf8.fromString
+            . show
+            . show
+            . Crypto.hashWith Crypto.SHA256
+            $ LazyByteString.toStrict compressed
         newHeaders =
           (Http.hContentEncoding, "gzip")
-            : (Http.hContentLength, contentLength)
-            : filter (not . isContentLength) headers
+            : (Http.hContentLength, size)
+            : (Http.hETag, etag)
+            : filter
+                (\header -> not $ isContentLength header || isETag header)
+                headers
       in if acceptsGzip request
            && not (isEncoded response)
            && longEnough expanded
