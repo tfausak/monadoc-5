@@ -59,6 +59,12 @@ rootHandler =
         Lucid.html_ [Lucid.lang_ "en-US"] $ do
           Lucid.head_ $ do
             Lucid.meta_ [Lucid.charset_ "utf-8"]
+            Lucid.meta_
+              [ Lucid.name_ "description"
+              , Lucid.content_ "Better Haskell documentation."
+              ]
+            Lucid.meta_ [Lucid.name_ "og:title", Lucid.content_ "Monadoc"]
+            Lucid.meta_ [Lucid.name_ "og:type", Lucid.content_ "website"]
             Lucid.link_ [Lucid.rel_ "icon", Lucid.href_ "favicon.ico"]
             Lucid.link_ [Lucid.rel_ "stylesheet", Lucid.href_ "tachyons.css"]
             Lucid.title_ "Monadoc"
