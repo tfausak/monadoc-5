@@ -77,6 +77,13 @@ library
     Monadoc.Data.Options
     Monadoc.Data.Version
     Monadoc.Ghc
+    Monadoc.Handler.Favicon
+    Monadoc.Handler.HealthCheck
+    Monadoc.Handler.Index
+    Monadoc.Handler.Logo
+    Monadoc.Handler.Robots
+    Monadoc.Handler.Tachyons
+    Monadoc.Handler.Throw
     Monadoc.Main
     Monadoc.Server.Application
     Monadoc.Server.Common
@@ -124,6 +131,13 @@ test-suite test
     Monadoc.Data.OptionsSpec
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
+    Monadoc.Handler.FaviconSpec
+    Monadoc.Handler.HealthCheckSpec
+    Monadoc.Handler.IndexSpec
+    Monadoc.Handler.LogoSpec
+    Monadoc.Handler.RobotsSpec
+    Monadoc.Handler.TachyonsSpec
+    Monadoc.Handler.ThrowSpec
     Monadoc.MainSpec
     Monadoc.Server.ApplicationSpec
     Monadoc.Server.CommonSpec
