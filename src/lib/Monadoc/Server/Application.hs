@@ -8,9 +8,11 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.Pool as Pool
+import qualified Data.Text as Text
 import qualified Lucid
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.App as App
+import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.WithCallStack as WithCallStack
@@ -21,11 +23,12 @@ import qualified Network.Wai as Wai
 application :: Context.Context request -> Wai.Application
 application context request respond = do
   response <-
-    App.run context { Context.request = request } . runRoute $ getRoute request
+    App.run context { Context.request = request } . runRoute $ parseRoute
+      request
   respond response
 
-getRoute :: Wai.Request -> Maybe Route.Route
-getRoute request =
+parseRoute :: Wai.Request -> Maybe Route.Route
+parseRoute request =
   let
     method = Wai.requestMethod request
     path = Wai.pathInfo request
@@ -49,6 +52,19 @@ runRoute maybeRoute = case maybeRoute of
     Route.Tachyons -> tachyonsHandler
     Route.Throw -> throwHandler
 
+renderAbsoluteRoute :: Config.Config -> Route.Route -> Text.Text
+renderAbsoluteRoute config =
+  mappend (Text.pack $ Config.url config) . renderRelativeRoute
+
+renderRelativeRoute :: Route.Route -> Text.Text
+renderRelativeRoute route = case route of
+  Route.Index -> "/"
+  Route.Favicon -> "/favicon.ico"
+  Route.HealthCheck -> "/health-check"
+  Route.Robots -> "/robots.txt"
+  Route.Tachyons -> "/tachyons.css"
+  Route.Throw -> "/throw"
+
 rootHandler :: App.App request Wai.Response
 rootHandler = do
   config <- Reader.asks Context.config
@@ -61,10 +77,27 @@ rootHandler = do
           [ Lucid.name_ "description"
           , Lucid.content_ "Better Haskell documentation."
           ]
-        Lucid.meta_ [Lucid.name_ "og:title", Lucid.content_ "Monadoc"]
-        Lucid.meta_ [Lucid.name_ "og:type", Lucid.content_ "website"]
-        Lucid.link_ [Lucid.rel_ "icon", Lucid.href_ "favicon.ico"]
-        Lucid.link_ [Lucid.rel_ "stylesheet", Lucid.href_ "tachyons.css"]
+        Lucid.meta_
+          [ Lucid.name_ "viewport"
+          , Lucid.content_ "initial-scale=1,width=device-width"
+          ]
+        let
+          og property content =
+            Lucid.meta_
+              [ Lucid.term "property" $ "og:" <> property
+              , Lucid.content_ content
+              ]
+        og "title" "Monadoc"
+        og "type" "website"
+        let url = renderAbsoluteRoute config Route.Index
+        og "url" url
+        Lucid.link_ [Lucid.rel_ "canonical", Lucid.href_ url]
+        Lucid.link_
+          [Lucid.rel_ "icon", Lucid.href_ $ renderRelativeRoute Route.Favicon]
+        Lucid.link_
+          [ Lucid.rel_ "stylesheet"
+          , Lucid.href_ $ renderRelativeRoute Route.Tachyons
+          ]
         Lucid.title_ "Monadoc"
       Lucid.body_ $ do
         Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
