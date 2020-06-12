@@ -54,15 +54,16 @@ rootHandler =
         (Map.singleton Http.hContentType "text/html;charset=utf-8")
     . LazyByteString.toStrict
     . Lucid.renderBS
-    . Lucid.doctypehtml_
     $ do
-        Lucid.head_ $ do
-          Lucid.meta_ [Lucid.charset_ "utf-8"]
-          Lucid.link_ [Lucid.rel_ "icon", Lucid.href_ "favicon.ico"]
-          Lucid.link_ [Lucid.rel_ "stylesheet", Lucid.href_ "tachyons.css"]
-          Lucid.title_ "Monadoc"
-        Lucid.body_ $ do
-          Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
+        Lucid.doctype_
+        Lucid.html_ [Lucid.lang_ "en-US"] $ do
+          Lucid.head_ $ do
+            Lucid.meta_ [Lucid.charset_ "utf-8"]
+            Lucid.link_ [Lucid.rel_ "icon", Lucid.href_ "favicon.ico"]
+            Lucid.link_ [Lucid.rel_ "stylesheet", Lucid.href_ "tachyons.css"]
+            Lucid.title_ "Monadoc"
+          Lucid.body_ $ do
+            Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
 
 faviconHandler :: Handler.Handler Wai.Response
 faviconHandler = fileResponse
