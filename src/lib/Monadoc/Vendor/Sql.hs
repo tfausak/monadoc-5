@@ -12,7 +12,7 @@ import Database.SQLite.Simple
   ( Connection
   , Only(Only, fromOnly)
   , Query(Query, fromQuery)
-  , SQLData(SQLBlob, SQLInteger, SQLFloat, SQLNull, SQLText)
+  , SQLData(SQLBlob, SQLFloat, SQLInteger, SQLNull, SQLText)
   , ToRow(toRow)
   , close
   , execute
@@ -31,10 +31,10 @@ import Database.SQLite.Simple.Internal (Field(Field))
 import Database.SQLite.Simple.Ok (Ok(Errors, Ok))
 import Database.SQLite.Simple.ToField (ToField(toField))
 
+import qualified Data.Typeable as Typeable
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.Ok as Sql
-import qualified Data.Typeable as Typeable
 
 -- | Converts from a SQL field into a value using the given function. This is
 -- mostly used to avoid all the boilerplate.
