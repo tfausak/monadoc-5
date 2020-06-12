@@ -6,7 +6,6 @@ where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Pool as Pool
 import qualified Lucid
@@ -53,30 +52,22 @@ runRoute maybeRoute = case maybeRoute of
 rootHandler :: App.App request Wai.Response
 rootHandler = do
   config <- Reader.asks Context.config
-  pure
-    . Common.responseBS
-        Http.ok200
-        (Map.insert Http.hContentType "text/html;charset=utf-8"
-        $ Common.defaultHeaders config
-        )
-    . LazyByteString.toStrict
-    . Lucid.renderBS
-    $ do
-        Lucid.doctype_
-        Lucid.html_ [Lucid.lang_ "en-US"] $ do
-          Lucid.head_ $ do
-            Lucid.meta_ [Lucid.charset_ "utf-8"]
-            Lucid.meta_
-              [ Lucid.name_ "description"
-              , Lucid.content_ "Better Haskell documentation."
-              ]
-            Lucid.meta_ [Lucid.name_ "og:title", Lucid.content_ "Monadoc"]
-            Lucid.meta_ [Lucid.name_ "og:type", Lucid.content_ "website"]
-            Lucid.link_ [Lucid.rel_ "icon", Lucid.href_ "favicon.ico"]
-            Lucid.link_ [Lucid.rel_ "stylesheet", Lucid.href_ "tachyons.css"]
-            Lucid.title_ "Monadoc"
-          Lucid.body_ $ do
-            Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
+  pure . Common.htmlResponse Http.ok200 (Common.defaultHeaders config) $ do
+    Lucid.doctype_
+    Lucid.html_ [Lucid.lang_ "en-US"] $ do
+      Lucid.head_ $ do
+        Lucid.meta_ [Lucid.charset_ "utf-8"]
+        Lucid.meta_
+          [ Lucid.name_ "description"
+          , Lucid.content_ "Better Haskell documentation."
+          ]
+        Lucid.meta_ [Lucid.name_ "og:title", Lucid.content_ "Monadoc"]
+        Lucid.meta_ [Lucid.name_ "og:type", Lucid.content_ "website"]
+        Lucid.link_ [Lucid.rel_ "icon", Lucid.href_ "favicon.ico"]
+        Lucid.link_ [Lucid.rel_ "stylesheet", Lucid.href_ "tachyons.css"]
+        Lucid.title_ "Monadoc"
+      Lucid.body_ $ do
+        Lucid.h1_ [Lucid.class_ "purple sans-serif tc"] "Monadoc"
 
 faviconHandler :: App.App request Wai.Response
 faviconHandler = do

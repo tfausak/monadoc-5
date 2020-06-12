@@ -2,6 +2,7 @@ module Monadoc.Server.Common
   ( Headers
   , defaultHeaders
   , fileResponse
+  , htmlResponse
   , responseBS
   , statusResponse
   , stringResponse
@@ -14,6 +15,7 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Lucid
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Utility.Utf8 as Utf8
@@ -24,6 +26,14 @@ import qualified Paths_monadoc as Package
 import qualified System.FilePath as FilePath
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
+
+htmlResponse :: Http.Status -> Headers -> Lucid.Html a -> Wai.Response
+htmlResponse status headers =
+  responseBS
+      status
+      (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
+    . LazyByteString.toStrict
+    . Lucid.renderBS
 
 fileResponse
   :: Http.Status -> Headers -> FilePath -> App.App request Wai.Response
