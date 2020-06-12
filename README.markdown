@@ -1,10 +1,10 @@
 # [Monadoc](https://www.monadoc.com)
 
-[![build badge][]][build status]
+<a href='https://github.com/tfausak/monadoc/actions'>
+  <img align='right' alt='' src='https://github.com/tfausak/monadoc/workflows/.github/workflows/ci.yaml/badge.svg'>
+</a>
 
-Better Haskell documentation.
-
-This is still a work in progress. I've made a bunch of proofs of concept before. This one is meant to be a real service. Here's a summary of the previous attempts:
+:bookmark: Better Haskell documentation. This is still a work in progress. I've made a bunch of proofs of concept before. This one is meant to be a real service. Here's a summary of the previous attempts:
 
 - https://github.com/tfausak/grawlix/tree/3189fa2: This introduced the basic idea of commenting on Haskell documentation. It started life as a bookmarklet. I briefly considered making browser extensions, but I figured that wouldn't be able to get enough traction. So I started on the path of parsing the package index and building my own subset of the documentation. I made it a fair ways in that direction, but stopped for some reason.
 
@@ -20,14 +20,12 @@ I'm kind of surprised I've been at this in one way or another for so long. But a
 
 Here's a wishlist of features that I want to implement:
 
-- Basic pages for Hackage users, packages, versions, revisions, and modules, just like [Hackage](https://hackage.haskell.org/).
+- Basic pages for Hackage users, packages, versions, revisions, and modules, just like [Hackage](https://hackage.haskell.org/package/flow).
 - Pages for individual identifiers as well, like [ClojureDocs](https://clojuredocs.org/clojure.core/map). (As opposed or in addition to `#anchor` links on a module page.)
+- Type directed search like [Hoogle](https://hoogle.haskell.org/?hoogle=Ord%20a%20%3D%3E%20%5Ba%5D%20-%3E%20%5Ba%5D).
 - Inline source view like [APIdock](https://apidock.com/ruby/Enumerable/map).
 - Comments on anything (but especially identifiers) like [PHP](https://www.php.net/manual/en/function.str-pad).
-- Live search like on [CocoaPods](https://cocoapods.org/).
+- Live search like on [CocoaPods](https://cocoapods.org).
 - Various maintainer tools like reverse dependencies (<https://packdeps.haskellers.com/>), licenses, and feeds/notifications about versions/comments.
 
 In addition, I want this project to be easy to hack on. That means it should build easily on Linux, macOS, and Windows with both Cabal and Stack. It shouldn't require any special infrastructure like Docker or Nix. It should prefer simpler code so that anyone can jump in. Whenever possible things should be tested and enforced by CI.
-
-[build badge]: https://github.com/tfausak/monadoc/workflows/.github/workflows/ci.yaml/badge.svg
-[build status]: https://github.com/tfausak/monadoc/actions
