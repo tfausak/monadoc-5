@@ -10,14 +10,12 @@ import qualified Monadoc.Server.Application as Application
 import qualified Monadoc.Server.Middleware as Middleware
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
-import qualified Monadoc.Type.Context as Context
 import qualified Network.Wai.Handler.Warp as Warp
 
 run :: Stack.HasCallStack => App.App request ()
 run = do
   context <- Reader.ask
-  let config = Context.config context
   Trans.lift
-    . Warp.runSettings (Settings.fromConfig config)
-    . Middleware.middleware config
+    . Warp.runSettings (Settings.fromContext context)
+    . Middleware.middleware context
     $ Application.application context

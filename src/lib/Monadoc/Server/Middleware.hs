@@ -15,7 +15,7 @@ import qualified Data.Text.Encoding.Error as Text
 import qualified GHC.Clock as Clock
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
-import qualified Monadoc.Type.Config as Config
+import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
@@ -24,9 +24,9 @@ import qualified Network.Wai.Internal as Wai
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
 
-middleware :: Config.Config -> Wai.Middleware
-middleware config =
-  logRequests . handleExceptions config . handleEtag . compress
+middleware :: Context.Context request -> Wai.Middleware
+middleware context =
+  logRequests . handleExceptions context . handleEtag . compress
 
 logRequests :: Wai.Middleware
 logRequests handle request respond = do
@@ -45,11 +45,12 @@ logRequests handle request respond = do
       (div (allocationsBefore - allocationsAfter) 1024)
     respond response
 
-handleExceptions :: Config.Config -> Wai.Middleware
-handleExceptions config handle request respond =
+handleExceptions :: Context.Context request -> Wai.Middleware
+handleExceptions context handle request respond =
   Exception.catch (handle request respond) $ \someException -> do
-    Settings.onException (Just request) someException
-    respond $ Settings.onExceptionResponse config someException
+    Settings.onException context (Just request) someException
+    respond
+      $ Settings.onExceptionResponse (Context.config context) someException
 
 handleEtag :: Wai.Middleware
 handleEtag handle request respond = handle request $ \response ->
