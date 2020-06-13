@@ -5,7 +5,7 @@ module Monadoc.Console
 where
 
 import qualified Control.Concurrent.STM as Stm
-import qualified Control.Exception as Exception
+import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.IO.Class as IO
 import qualified Monadoc.Vendor.Time as Time
 import qualified System.IO as IO
