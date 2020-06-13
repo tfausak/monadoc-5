@@ -19,7 +19,8 @@ jobs:
       - run: >
           curl
           --request POST
-          --data '{ "content": "Test message please ignore. `${{ github.sha }}`" }'
+          --header 'Content-Type: application/json'
+          --data '{ "content": "Test message please ignore. commit `${{ github.sha }}` os `${{ matrix.os }}`" }'
           '${{ secrets.DISCORD_URL }}'
       - uses: actions/checkout@v2
       - id: setup-haskell
