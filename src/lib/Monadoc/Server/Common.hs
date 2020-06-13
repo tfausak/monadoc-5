@@ -88,7 +88,7 @@ defaultHeaders config = Map.fromList
   ]
 
 contentSecurityPolicy :: ByteString.ByteString
-contentSecurityPolicy = "base-uri 'none', default-src 'self'"
+contentSecurityPolicy = "base-uri 'none'; default-src 'self'"
 
 strictTransportSecurity :: Config.Config -> ByteString.ByteString
 strictTransportSecurity config =
