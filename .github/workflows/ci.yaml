@@ -16,12 +16,6 @@ jobs:
         cabal: [ '3.2' ]
     runs-on: ${{ matrix.os }}
     steps:
-      - run: >
-          curl
-          --request POST
-          --header 'Content-Type: application/json'
-          --data '{ "content": "Test message please ignore. commit `${{ github.sha }}` os `${{ matrix.os }}`" }'
-          '${{ secrets.DISCORD_URL }}'
       - uses: actions/checkout@v2
       - id: setup-haskell
         uses: actions/setup-haskell@v1.1
@@ -69,6 +63,12 @@ jobs:
     needs: push
     runs-on: ubuntu-18.04
     steps:
+      - run: >
+          curl
+          --request POST
+          --header 'Content-Type: application/json'
+          --data '{ "content": "Deploying `${{ github.sha }}` ..." }'
+          '${{ secrets.DISCORD_URL }}'
       - uses: actions/checkout@v2
       - uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -84,3 +84,10 @@ jobs:
             Tag=${{ github.sha }}
           no-fail-on-empty-changeset: '1'
           capabilities: CAPABILITY_NAMED_IAM
+      - if: always()
+        run: >
+          curl
+          --request POST
+          --header 'Content-Type: application/json'
+          --data '{ "content": "Deploy of `${{ github.sha }}` ${{ job.status }}." }'
+          '${{ secrets.DISCORD_URL }}'
