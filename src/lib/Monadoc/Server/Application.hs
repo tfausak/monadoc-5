@@ -12,6 +12,7 @@ import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
 import qualified Monadoc.Handler.Throw as Handler.Throw
 import qualified Monadoc.Server.Common as Common
+import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Route as Route
@@ -27,18 +28,7 @@ application context request respond = do
 
 parseRoute :: Wai.Request -> Maybe Route.Route
 parseRoute request =
-  let
-    method = Wai.requestMethod request
-    path = Wai.pathInfo request
-  in case (method, path) of
-    ("GET", []) -> Just Route.Index
-    ("GET", ["favicon.ico"]) -> Just Route.Favicon
-    ("GET", ["health-check"]) -> Just Route.HealthCheck
-    ("GET", ["robots.txt"]) -> Just Route.Robots
-    ("GET", ["static", "logo.png"]) -> Just Route.Logo
-    ("GET", ["static", "tachyons-4-12-0.css"]) -> Just Route.Tachyons
-    ("GET", ["throw"]) -> Just Route.Throw
-    _ -> Nothing
+  Router.parseRoute (Wai.requestMethod request) (Wai.pathInfo request)
 
 runRoute :: Maybe Route.Route -> App.App Wai.Request Wai.Response
 runRoute maybeRoute = case maybeRoute of

@@ -24,6 +24,7 @@ import qualified Monadoc.Server.ApplicationSpec
 import qualified Monadoc.Server.CommonSpec
 import qualified Monadoc.Server.MainSpec
 import qualified Monadoc.Server.MiddlewareSpec
+import qualified Monadoc.Server.RouterSpec
 import qualified Monadoc.Server.SettingsSpec
 import qualified Monadoc.Type.AppSpec
 import qualified Monadoc.Type.BinarySpec
@@ -66,6 +67,7 @@ main = Hspec.hspec $ do
   Monadoc.Server.CommonSpec.spec
   Monadoc.Server.MainSpec.spec
   Monadoc.Server.MiddlewareSpec.spec
+  Monadoc.Server.RouterSpec.spec
   Monadoc.Server.SettingsSpec.spec
   Monadoc.Type.AppSpec.spec
   Monadoc.Type.BinarySpec.spec

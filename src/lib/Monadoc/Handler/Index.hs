@@ -4,31 +4,16 @@ module Monadoc.Handler.Index
 where
 
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.Text as Text
 import qualified Lucid
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Server.Common as Common
+import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
-import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-
-renderAbsoluteRoute :: Config.Config -> Route.Route -> Text.Text
-renderAbsoluteRoute config =
-  mappend (Text.pack $ Config.url config) . renderRelativeRoute
-
-renderRelativeRoute :: Route.Route -> Text.Text
-renderRelativeRoute route = case route of
-  Route.Favicon -> "/favicon.ico"
-  Route.HealthCheck -> "/health-check"
-  Route.Index -> "/"
-  Route.Logo -> "/static/logo.png"
-  Route.Robots -> "/robots.txt"
-  Route.Tachyons -> "/static/tachyons-4-12-0.css"
-  Route.Throw -> "/throw"
 
 handle :: App.App request Wai.Response
 handle = do
@@ -54,19 +39,21 @@ handle = do
               ]
         og "title" "Monadoc"
         og "type" "website"
-        let url = renderAbsoluteRoute config Route.Index
+        let url = Router.renderAbsoluteRoute config Route.Index
         og "url" url
-        og "image" $ renderAbsoluteRoute config Route.Logo
+        og "image" $ Router.renderAbsoluteRoute config Route.Logo
         Lucid.link_ [Lucid.rel_ "canonical", Lucid.href_ url]
         Lucid.link_
-          [Lucid.rel_ "icon", Lucid.href_ $ renderRelativeRoute Route.Favicon]
+          [ Lucid.rel_ "icon"
+          , Lucid.href_ $ Router.renderRelativeRoute Route.Favicon
+          ]
         Lucid.link_
           [ Lucid.rel_ "apple-touch-icon"
-          , Lucid.href_ $ renderRelativeRoute Route.Logo
+          , Lucid.href_ $ Router.renderRelativeRoute Route.Logo
           ]
         Lucid.link_
           [ Lucid.rel_ "stylesheet"
-          , Lucid.href_ $ renderRelativeRoute Route.Tachyons
+          , Lucid.href_ $ Router.renderRelativeRoute Route.Tachyons
           ]
         Lucid.title_ "Monadoc"
       Lucid.body_ [Lucid.class_ "bg-white black sans-serif"] $ do
@@ -74,7 +61,7 @@ handle = do
           . Lucid.h1_ [Lucid.class_ "ma0 normal"]
           $ Lucid.a_
               [ Lucid.class_ "color-inherit no-underline"
-              , Lucid.href_ $ renderRelativeRoute Route.Index
+              , Lucid.href_ $ Router.renderRelativeRoute Route.Index
               ]
               "Monadoc"
         Lucid.main_ [Lucid.class_ "pa3"]
