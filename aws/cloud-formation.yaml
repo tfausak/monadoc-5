@@ -8,6 +8,19 @@
 
 Parameters:
 
+  ClientId:
+    Type: String
+    Description:
+      The client ID for the GitHub OAuth application. You can get this at
+      <https://github.com/settings/developers>.
+    Default: 658122d4ef8c24039953
+
+  ClientSecret:
+    Type: String
+    Description:
+      The client secret for the GitHub OAuth application. See the  "ClientId"
+      parameter for details.
+
   Domain:
     Type: String
     Description:
@@ -158,6 +171,8 @@ Resources:
         containerDefinitions:
           - command:
               - monadoc
+              - !Sub --client-id=${ClientId}
+              - !Sub --client-secret=${ClientSecret}
               - --database=/efs/monadoc.sqlite3
               - --host=*
               - !Sub --port=${Port}
