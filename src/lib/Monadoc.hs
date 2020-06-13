@@ -10,6 +10,7 @@ import qualified Control.Monad as Monad
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
+import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Options as Options
@@ -28,7 +29,7 @@ import qualified System.Exit as Exit
 import qualified System.IO as IO
 
 -- | The main app entrypoint. This is what the executable runs.
-monadoc :: IO ()
+monadoc :: Stack.HasCallStack => IO ()
 monadoc = do
   mapM_ (flip IO.hSetBuffering IO.LineBuffering) [IO.stderr, IO.stdout]
   config <- getConfig

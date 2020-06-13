@@ -4,6 +4,7 @@ module Monadoc.Server.Application
 where
 
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified GHC.Stack as Stack
 import qualified Monadoc.Handler.Favicon as Handler.Favicon
 import qualified Monadoc.Handler.HealthCheck as Handler.HealthCheck
 import qualified Monadoc.Handler.Index as Handler.Index
@@ -19,7 +20,7 @@ import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
-application :: Context.Context request -> Wai.Application
+application :: Stack.HasCallStack => Context.Context request -> Wai.Application
 application context request respond = do
   response <-
     App.run context { Context.request = request } . runRoute $ parseRoute
@@ -30,7 +31,10 @@ parseRoute :: Wai.Request -> Maybe Route.Route
 parseRoute request =
   Router.parseRoute (Wai.requestMethod request) (Wai.pathInfo request)
 
-runRoute :: Maybe Route.Route -> App.App Wai.Request Wai.Response
+runRoute
+  :: Stack.HasCallStack
+  => Maybe Route.Route
+  -> App.App Wai.Request Wai.Response
 runRoute maybeRoute = case maybeRoute of
   Just route -> case route of
     Route.Favicon -> Handler.Favicon.handle
