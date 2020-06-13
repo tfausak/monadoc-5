@@ -18,8 +18,14 @@ Parameters:
   ClientSecret:
     Type: String
     Description:
-      The client secret for the GitHub OAuth application. See the  "ClientId"
+      The client secret for the GitHub OAuth application. See the "ClientId"
       parameter for details.
+
+  DiscordUrl:
+    Type: String
+    Description:
+      The URL to the Discord webhook for reporting exceptions. This is the full
+      URL, not just the ID and token.
 
   Domain:
     Type: String
@@ -174,6 +180,7 @@ Resources:
               - !Sub --client-id=${ClientId}
               - !Sub --client-secret=${ClientSecret}
               - --database=/efs/monadoc.sqlite3
+              - !Sub --discord-url=${DiscordUrl}
               - --host=*
               - !Sub --port=${Port}
               - !Sub --url=https://www.${Domain}

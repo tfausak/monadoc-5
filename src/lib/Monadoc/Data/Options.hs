@@ -17,6 +17,7 @@ options =
   [ clientIdOption
   , clientSecretOption
   , databaseOption
+  , discordUrlOption
   , helpOption
   , hostOption
   , portOption
@@ -42,6 +43,15 @@ databaseOption =
   option [] ["database"] "sets the database file (defaults to monadoc.sqlite3)"
     . argument "FILE"
     $ \database config -> Right config { Config.database = database }
+
+discordUrlOption :: Option
+discordUrlOption =
+  option
+      []
+      ["discord-url"]
+      "sets the Discord webhook URL (defaults to http://discord.invalid/...)"
+    . argument "URL"
+    $ \discordUrl config -> Right config { Config.discordUrl = discordUrl }
 
 helpOption :: Option
 helpOption =
