@@ -16,6 +16,11 @@ jobs:
         cabal: [ '3.2' ]
     runs-on: ${{ matrix.os }}
     steps:
+      - run: >
+          curl
+          --request POST
+          --data '{ "content": "Test message please ignore. `${{ github.sha }}`" }'
+          '${{ secrets.DISCORD_URL }}'
       - uses: actions/checkout@v2
       - id: setup-haskell
         uses: actions/setup-haskell@v1.1
