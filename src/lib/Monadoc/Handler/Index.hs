@@ -4,12 +4,14 @@ module Monadoc.Handler.Index
 where
 
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Data.Text as Text
 import qualified Lucid
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
+import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
@@ -57,13 +59,27 @@ handle = do
           ]
         Lucid.title_ "Monadoc"
       Lucid.body_ [Lucid.class_ "bg-white black sans-serif"] $ do
-        Lucid.header_ [Lucid.class_ "bg-purple pa3 white"]
-          . Lucid.h1_ [Lucid.class_ "ma0 normal"]
-          $ Lucid.a_
-              [ Lucid.class_ "color-inherit no-underline"
-              , Lucid.href_ $ Router.renderRelativeRoute Route.Index
-              ]
-              "Monadoc"
+        Lucid.header_
+            [ Lucid.class_
+                "bg-purple flex items-center justify-between pa3 white"
+            ]
+          $ do
+              Lucid.h1_ [Lucid.class_ "ma0 normal"] $ Lucid.a_
+                [ Lucid.class_ "color-inherit no-underline"
+                , Lucid.href_ $ Router.renderRelativeRoute Route.Index
+                ]
+                "Monadoc"
+              Lucid.a_
+                [ Lucid.class_ "color-inherit no-underline"
+                , Lucid.href_ . Text.pack $ mconcat
+                  [ "http://github.com/login/oauth/authorize?client_id="
+                  , Config.clientId config
+                  , "&redirect_uri="
+                  , Config.url config
+                  , "/todo"
+                  ]
+                ]
+                "Log in with GitHub"
         Lucid.main_ [Lucid.class_ "pa3"]
           $ Lucid.p_ "\x1f516 Better Haskell documentation."
         Lucid.footer_ [Lucid.class_ "mid-gray pa3 tc"] . Lucid.p_ $ do
