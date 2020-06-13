@@ -65,7 +65,7 @@ withCallStack
 withCallStack x = case Exception.fromException x of
   Just (WithCallStack _ (Exception.SomeException _)) -> x
   Nothing -> Exception.toException WithCallStack
-    { callStack = Stack.callStack
+    { callStack = Stack.popCallStack Stack.callStack
     , value = x
     }
 
