@@ -37,6 +37,7 @@ import qualified Monadoc.Type.MigrationSpec
 import qualified Monadoc.Type.RouteSpec
 import qualified Monadoc.Type.Sha256Spec
 import qualified Monadoc.Type.SizeSpec
+import qualified Monadoc.Type.TestExceptionSpec
 import qualified Monadoc.Type.TimestampSpec
 import qualified Monadoc.Type.UrlSpec
 import qualified Monadoc.Type.WithCallStackSpec
@@ -80,6 +81,7 @@ main = Hspec.hspec $ do
   Monadoc.Type.RouteSpec.spec
   Monadoc.Type.Sha256Spec.spec
   Monadoc.Type.SizeSpec.spec
+  Monadoc.Type.TestExceptionSpec.spec
   Monadoc.Type.TimestampSpec.spec
   Monadoc.Type.UrlSpec.spec
   Monadoc.Type.WithCallStackSpec.spec
