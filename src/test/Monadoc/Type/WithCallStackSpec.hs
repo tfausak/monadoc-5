@@ -57,3 +57,8 @@ spec = Hspec.describe "Monadoc.Type.WithCallStack" $ do
             . WithCallStack.withCallStack
             $ Exception.toException TestException.TestException
       x `Hspec.shouldSatisfy` Maybe.isJust
+
+  -- Testing this is tough because it uses @SomeException@, which doesn't have
+  -- an @Eq@ instance. Fortunately this behavior is tested by the @catch@
+  -- tests.
+  Hspec.describe "withoutCallStack" $ pure ()
