@@ -5,8 +5,12 @@ where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Data.ByteString.Builder as Builder
+import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import qualified Data.Text.Encoding.Error as Text
 import qualified Data.UUID as Uuid
 import qualified Lucid
 import qualified Monadoc.Data.Commit as Commit
@@ -43,6 +47,7 @@ handle = do
                 [guid]
 
   let config = Context.config context
+  loginUrl <- makeLoginUrl
   pure . Common.htmlResponse Http.ok200 (Common.defaultHeaders config) $ do
     Lucid.doctype_
     Lucid.html_ [Lucid.lang_ "en-US"] $ do
@@ -95,15 +100,7 @@ handle = do
               case maybeUser of
                 Nothing -> Lucid.a_
                   [ Lucid.class_ "color-inherit no-underline"
-                  -- TODO: Include `state`.
-                  -- TODO: Escape query parameters.
-                  -- TODO: Redirect back to current URL.
-                  , Lucid.href_ $ mconcat
-                    [ "http://github.com/login/oauth/authorize?client_id="
-                    , Text.pack $ Config.clientId config
-                    , "&redirect_uri="
-                    , Router.renderAbsoluteRoute config Route.GitHubCallback
-                    ]
+                  , Lucid.href_ loginUrl
                   ]
                   "Log in with GitHub"
                 Just user -> do
@@ -126,3 +123,24 @@ handle = do
               " commit "
               Lucid.code_ . Lucid.toHtml $ take 7 commit
           "."
+
+-- TODO: Include `state`.
+-- TODO: Redirect back to current URL.
+makeLoginUrl :: App.App Wai.Request Text.Text
+makeLoginUrl = do
+  context <- Reader.ask
+  let
+    config = Context.config context
+    query = Http.renderQueryText
+      True
+      [ ("client_id", Just . Text.pack $ Config.clientId config)
+      , ( "redirect_uri"
+        , Just $ Router.renderAbsoluteRoute config Route.GitHubCallback
+        )
+      ]
+  pure
+    . Text.decodeUtf8With Text.lenientDecode
+    . LazyByteString.toStrict
+    . Builder.toLazyByteString
+    $ "https://github.com/login/oauth/authorize"
+    <> query
