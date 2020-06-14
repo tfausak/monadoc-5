@@ -57,10 +57,11 @@ handle = do
     Just guid -> pure guid
 
   cookie <- makeCookie guid
+  redirect <- getRedirect
   config <- Reader.asks Context.config
   pure
     . Common.statusResponse Http.found302
-    . Map.insert Http.hLocation "/"
+    . Map.insert Http.hLocation redirect
     . Map.insert Http.hSetCookie cookie
     $ Common.defaultHeaders config
 
@@ -141,3 +142,12 @@ makeCookie guid = do
         , Cookie.setCookieSecure = Common.isSecure config
         , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
         }
+
+getRedirect :: App.App Wai.Request ByteString.ByteString
+getRedirect =
+  Reader.asks
+    $ Maybe.fromMaybe "/"
+    . Monad.join
+    . lookup "redirect"
+    . Wai.queryString
+    . Context.request

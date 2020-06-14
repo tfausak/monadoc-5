@@ -6,6 +6,7 @@ where
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.ByteString.Builder as Builder
+import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
@@ -125,22 +126,26 @@ handle = do
           "."
 
 -- TODO: Include `state`.
--- TODO: Redirect back to current URL.
 makeLoginUrl :: App.App Wai.Request Text.Text
 makeLoginUrl = do
   context <- Reader.ask
   let
     config = Context.config context
+    clientId = Text.pack $ Config.clientId config
+    route = Router.renderAbsoluteRoute config Route.GitHubCallback
+    request = Context.request context
+    current = Wai.rawPathInfo request <> Wai.rawQueryString request
+    redirectUri =
+      route <> fromUtf8 (Http.renderSimpleQuery True [("redirect", current)])
     query = Http.renderQueryText
       True
-      [ ("client_id", Just . Text.pack $ Config.clientId config)
-      , ( "redirect_uri"
-        , Just $ Router.renderAbsoluteRoute config Route.GitHubCallback
-        )
-      ]
+      [("client_id", Just clientId), ("redirect_uri", Just redirectUri)]
   pure
-    . Text.decodeUtf8With Text.lenientDecode
+    . fromUtf8
     . LazyByteString.toStrict
     . Builder.toLazyByteString
     $ "https://github.com/login/oauth/authorize"
     <> query
+
+fromUtf8 :: ByteString.ByteString -> Text.Text
+fromUtf8 = Text.decodeUtf8With Text.lenientDecode
