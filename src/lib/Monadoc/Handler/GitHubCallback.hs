@@ -9,13 +9,13 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
-import qualified Data.UUID as Uuid
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Client as Client
@@ -76,8 +76,8 @@ handle = do
     $ Client.responseBody response2
 
   -- TODO: Store user information.
-  uuid <- Trans.lift Random.randomIO
-  Console.info $ show (uuid :: Uuid.UUID, user :: User, token)
+  guid <- Trans.lift $ Random.getStdRandom Guid.random
+  Console.info $ show (guid, user :: User, token)
 
   -- TODO: Redirect with cookie.
   WithCallStack.throw $ userError "TODO"

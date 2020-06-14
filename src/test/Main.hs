@@ -33,6 +33,7 @@ import qualified Monadoc.Type.ConfigResultSpec
 import qualified Monadoc.Type.ConfigSpec
 import qualified Monadoc.Type.ContextSpec
 import qualified Monadoc.Type.EtagSpec
+import qualified Monadoc.Type.GuidSpec
 import qualified Monadoc.Type.MigrationMismatchSpec
 import qualified Monadoc.Type.MigrationSpec
 import qualified Monadoc.Type.NotFoundExceptionSpec
@@ -80,6 +81,7 @@ main = Hspec.hspec $ do
   Monadoc.Type.ConfigSpec.spec
   Monadoc.Type.ContextSpec.spec
   Monadoc.Type.EtagSpec.spec
+  Monadoc.Type.GuidSpec.spec
   Monadoc.Type.MigrationMismatchSpec.spec
   Monadoc.Type.MigrationSpec.spec
   Monadoc.Type.NotFoundExceptionSpec.spec
