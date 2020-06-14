@@ -101,6 +101,7 @@ library
     Monadoc.Type.Context
     Monadoc.Type.Etag
     Monadoc.Type.GitHub.Login
+    Monadoc.Type.GitHub.User
     Monadoc.Type.GitHub.UserId
     Monadoc.Type.Guid
     Monadoc.Type.Migration
@@ -164,6 +165,7 @@ test-suite test
     Monadoc.Type.EtagSpec
     Monadoc.Type.GitHub.LoginSpec
     Monadoc.Type.GitHub.UserIdSpec
+    Monadoc.Type.GitHub.UserSpec
     Monadoc.Type.GuidSpec
     Monadoc.Type.MigrationMismatchSpec
     Monadoc.Type.MigrationSpec

@@ -14,8 +14,7 @@ import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
-import qualified Monadoc.Type.GitHub.Login as Login
-import qualified Monadoc.Type.GitHub.UserId as UserId
+import qualified Monadoc.Type.GitHub.User as User
 import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
@@ -78,18 +77,7 @@ handle = do
 
   -- TODO: Store user information.
   guid <- Trans.lift $ Random.getStdRandom Guid.random
-  Console.info $ show (guid, user :: User, token)
+  Console.info $ show (guid, user :: User.User, token)
 
   -- TODO: Redirect with cookie.
   WithCallStack.throw $ userError "TODO"
-
-data User = User
-  { userId :: UserId.UserId
-  , userLogin :: Login.Login
-  } deriving (Eq, Show)
-
-instance Aeson.FromJSON User where
-  parseJSON = Aeson.withObject "User" $ \object -> do
-    id_ <- object Aeson..: "id"
-    login <- object Aeson..: "login"
-    pure User { userId = id_, userLogin = login }
