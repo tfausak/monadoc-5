@@ -333,7 +333,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckPath: /health-check
+      HealthCheckPath: /api/ping
       Name: !Sub ${AWS::StackName}-target-group
       Port: !Ref Port
       Protocol: HTTP

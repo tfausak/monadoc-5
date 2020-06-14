@@ -5,9 +5,9 @@ where
 
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Handler.Favicon as Handler.Favicon
-import qualified Monadoc.Handler.HealthCheck as Handler.HealthCheck
 import qualified Monadoc.Handler.Index as Handler.Index
 import qualified Monadoc.Handler.Logo as Handler.Logo
+import qualified Monadoc.Handler.Ping as Handler.Ping
 import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
 import qualified Monadoc.Handler.Throw as Handler.Throw
@@ -41,9 +41,9 @@ runRoute maybeRoute = do
     maybeRoute
   case route of
     Route.Favicon -> Handler.Favicon.handle
-    Route.HealthCheck -> Handler.HealthCheck.handle
     Route.Index -> Handler.Index.handle
     Route.Logo -> Handler.Logo.handle
+    Route.Ping -> Handler.Ping.handle
     Route.Robots -> Handler.Robots.handle
     Route.Tachyons -> Handler.Tachyons.handle
     Route.Throw -> Handler.Throw.handle

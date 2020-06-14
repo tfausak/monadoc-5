@@ -78,9 +78,9 @@ library
     Monadoc.Data.Version
     Monadoc.Ghc
     Monadoc.Handler.Favicon
-    Monadoc.Handler.HealthCheck
     Monadoc.Handler.Index
     Monadoc.Handler.Logo
+    Monadoc.Handler.Ping
     Monadoc.Handler.Robots
     Monadoc.Handler.Tachyons
     Monadoc.Handler.Throw
@@ -135,9 +135,9 @@ test-suite test
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
     Monadoc.Handler.FaviconSpec
-    Monadoc.Handler.HealthCheckSpec
     Monadoc.Handler.IndexSpec
     Monadoc.Handler.LogoSpec
+    Monadoc.Handler.PingSpec
     Monadoc.Handler.RobotsSpec
     Monadoc.Handler.TachyonsSpec
     Monadoc.Handler.ThrowSpec

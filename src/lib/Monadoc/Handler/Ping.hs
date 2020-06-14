@@ -1,4 +1,4 @@
-module Monadoc.Handler.HealthCheck
+module Monadoc.Handler.Ping
   ( handle
   )
 where
