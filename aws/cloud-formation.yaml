@@ -183,6 +183,7 @@ Resources:
               - !Sub --discord-url=${DiscordUrl}
               - --host=*
               - !Sub --port=${Port}
+              - --services=server
               - !Sub --url=https://www.${Domain}
             image: !Sub ${Image}:${Tag}
             name: !Sub ${AWS::StackName}-custom-container
@@ -192,7 +193,7 @@ Resources:
               options:
                 awslogs-group: !Ref LogGroup
                 awslogs-region: !Ref AWS::Region
-                awslogs-stream-prefix: !Ref Tag
+                awslogs-stream-prefix: !Sub server-${Tag}
             mountPoints:
               - containerPath: /efs
                 sourceVolume: !Sub ${AWS::StackName}-efs
@@ -208,6 +209,45 @@ Resources:
           - efsVolumeConfiguration:
               fileSystemId: !Ref FileSystem
             name: !Sub ${AWS::StackName}-efs
+  WorkerTask:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt CustomResourceFunction.Arn
+      TaskDefinition:
+        cpu: 256
+        containerDefinitions:
+          - command:
+              - monadoc
+              - !Sub --client-id=${ClientId}
+              - !Sub --client-secret=${ClientSecret}
+              - --database=/efs/monadoc.sqlite3
+              - !Sub --discord-url=${DiscordUrl}
+              - --host=*
+              - !Sub --port=${Port}
+              - --services=worker
+              - !Sub --url=https://www.${Domain}
+            image: !Sub ${Image}:${Tag}
+            name: !Sub ${AWS::StackName}-worker-container
+            essential: true
+            logConfiguration:
+              logDriver: awslogs
+              options:
+                awslogs-group: !Ref LogGroup
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: !Sub worker-${Tag}
+            mountPoints:
+              - containerPath: /efs
+                sourceVolume: !Sub ${AWS::StackName}-worker-efs
+        executionRoleArn: !Ref Role
+        family: !Sub ${AWS::StackName}-worker-task-definition
+        memory: 512
+        networkMode: awsvpc
+        requiresCompatibilities:
+          - FARGATE
+        volumes:
+          - efsVolumeConfiguration:
+              fileSystemId: !Ref FileSystem
+            name: !Sub ${AWS::StackName}-worker-efs
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-cluster.html
   Cluster:
@@ -316,6 +356,23 @@ Resources:
             - !Ref Subnet2
       ServiceName: !Sub ${AWS::StackName}-custom-service
       TaskDefinition: !Ref CustomTask
+      PlatformVersion: 1.4.0
+  WorkerService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Cluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroup
+          Subnets:
+            - !Ref Subnet1
+            - !Ref Subnet2
+      ServiceName: !Sub ${AWS::StackName}-worker-service
+      TaskDefinition: !Ref WorkerTask
       PlatformVersion: 1.4.0
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-loadbalancer.html
