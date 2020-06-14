@@ -15,6 +15,9 @@ newtype Login
   = Login Text.Text
   deriving (Eq, Show)
 
+instance Sql.FromField Login where
+  fromField = fmap fromText . Sql.fromField
+
 instance Aeson.FromJSON Login where
   parseJSON = fmap fromText . Aeson.parseJSON
 

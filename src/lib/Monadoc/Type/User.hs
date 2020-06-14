@@ -16,6 +16,9 @@ data User = User
   , token :: Text.Text
   } deriving (Eq, Show)
 
+instance Sql.FromRow User where
+  fromRow = User <$> Sql.field <*> Sql.field <*> Sql.field <*> Sql.field
+
 instance Sql.ToRow User where
   toRow user =
     [ Sql.toField $ guid user

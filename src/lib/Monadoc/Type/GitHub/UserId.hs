@@ -15,6 +15,9 @@ newtype UserId
   = UserId Int
   deriving (Eq, Show)
 
+instance Sql.FromField UserId where
+  fromField = fmap fromInt . Sql.fromField
+
 instance Aeson.FromJSON UserId where
   parseJSON = fmap fromInt . Aeson.parseJSON
 

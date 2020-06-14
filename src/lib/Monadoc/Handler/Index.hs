@@ -3,8 +3,11 @@ module Monadoc.Handler.Index
   )
 where
 
+import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
+import qualified Data.UUID as Uuid
 import qualified Lucid
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
@@ -13,13 +16,33 @@ import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.GitHub.Login as Login
+import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.Route as Route
+import qualified Monadoc.Type.User as User
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
+import qualified Web.Cookie as Cookie
 
-handle :: App.App request Wai.Response
+handle :: App.App Wai.Request Wai.Response
 handle = do
-  config <- Reader.asks Context.config
+  context <- Reader.ask
+  maybeUser <-
+    case lookup Http.hCookie . Wai.requestHeaders $ Context.request context of
+      Nothing -> pure Nothing
+      Just cookie -> case lookup "guid" $ Cookie.parseCookiesText cookie of
+        Nothing -> pure Nothing
+        Just text -> case Guid.fromUuid <$> Uuid.fromText text of
+          Nothing -> pure Nothing
+          Just guid ->
+            fmap Maybe.listToMaybe . App.withConnection $ \connection ->
+              Trans.lift $ Sql.query
+                connection
+                "select * from users where guid = ?"
+                [guid]
+
+  let config = Context.config context
   pure . Common.htmlResponse Http.ok200 (Common.defaultHeaders config) $ do
     Lucid.doctype_
     Lucid.html_ [Lucid.lang_ "en-US"] $ do
@@ -69,19 +92,23 @@ handle = do
                 , Lucid.href_ $ Router.renderRelativeRoute Route.Index
                 ]
                 "Monadoc"
-              Lucid.a_
-                [ Lucid.class_ "color-inherit no-underline"
-                -- TODO: Include `state`.
-                -- TODO: Escape query parameters.
-                -- TODO: Redirect back to current URL.
-                , Lucid.href_ $ mconcat
-                  [ "http://github.com/login/oauth/authorize?client_id="
-                  , Text.pack $ Config.clientId config
-                  , "&redirect_uri="
-                  , Router.renderAbsoluteRoute config Route.GitHubCallback
+              case maybeUser of
+                Nothing -> Lucid.a_
+                  [ Lucid.class_ "color-inherit no-underline"
+                  -- TODO: Include `state`.
+                  -- TODO: Escape query parameters.
+                  -- TODO: Redirect back to current URL.
+                  , Lucid.href_ $ mconcat
+                    [ "http://github.com/login/oauth/authorize?client_id="
+                    , Text.pack $ Config.clientId config
+                    , "&redirect_uri="
+                    , Router.renderAbsoluteRoute config Route.GitHubCallback
+                    ]
                   ]
-                ]
-                "Log in with GitHub"
+                  "Log in with GitHub"
+                Just user -> do
+                  "@"
+                  Lucid.toHtml . Login.toText $ User.login user
         Lucid.main_ [Lucid.class_ "pa3"]
           $ Lucid.p_ "\x1f516 Better Haskell documentation."
         Lucid.footer_ [Lucid.class_ "mid-gray pa3 tc"] . Lucid.p_ $ do
