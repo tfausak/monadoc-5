@@ -92,7 +92,7 @@ contentSecurityPolicy :: ByteString.ByteString
 contentSecurityPolicy = "base-uri 'none'; default-src 'self'"
 
 strictTransportSecurity :: Config.Config -> ByteString.ByteString
-strictTransportSecurity config = if isSecure config then "86400" else "0"
+strictTransportSecurity config = "max-age=" <> if isSecure config then "86400" else "0"
 
 isSecure :: Config.Config -> Bool
 isSecure = List.isPrefixOf "https:" . Config.url
