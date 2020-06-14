@@ -14,10 +14,12 @@ import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
-import qualified Monadoc.Type.GitHub.User as User
+import qualified Monadoc.Type.GitHub.User as GHUser
 import qualified Monadoc.Type.Guid as Guid
+import qualified Monadoc.Type.User as User
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
@@ -70,14 +72,27 @@ handle = do
       }
   response2 <- Trans.lift $ Client.httpLbs request2 manager
   Console.info $ show response2
-  user <-
+  ghUser <-
     either (WithCallStack.throw . userError) pure
     . Aeson.eitherDecode
     $ Client.responseBody response2
 
-  -- TODO: Store user information.
+  -- Store user information.
   guid <- Trans.lift $ Random.getStdRandom Guid.random
-  Console.info $ show (guid, user :: User.User, token)
+  let
+    user = User.User
+      { User.guid = guid
+      , User.id = GHUser.id ghUser
+      , User.login = GHUser.login ghUser
+      , User.token = token
+      }
+  App.withConnection $ \connection -> Trans.lift $ Sql.execute
+    connection
+    "insert into users (guid, id, login, token) values (?, ?, ?, ?) \
+    \on conflict (id) do update set \
+    \login = excluded.login, token = excluded.token"
+    user
+  Console.info $ show user
 
   -- TODO: Redirect with cookie.
   WithCallStack.throw $ userError "TODO"

@@ -6,6 +6,7 @@ module Monadoc.Type.GitHub.UserId
 where
 
 import qualified Data.Aeson as Aeson
+import qualified Monadoc.Vendor.Sql as Sql
 
 -- | A GitHub user's integral ID. This isn't normally surfaced through their
 -- UI, but it's a stable identifier. Note that people can change their
@@ -16,6 +17,9 @@ newtype UserId
 
 instance Aeson.FromJSON UserId where
   parseJSON = fmap fromInt . Aeson.parseJSON
+
+instance Sql.ToField UserId where
+  toField = Sql.toField . toInt
 
 fromInt :: Int -> UserId
 fromInt = UserId

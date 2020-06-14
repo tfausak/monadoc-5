@@ -7,6 +7,7 @@ where
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Text as Text
+import qualified Monadoc.Vendor.Sql as Sql
 
 -- | A GitHub user's login, which is more commonly known as their username.
 -- This is the part that comes after \@, like \@tfausak.
@@ -16,6 +17,9 @@ newtype Login
 
 instance Aeson.FromJSON Login where
   parseJSON = fmap fromText . Aeson.parseJSON
+
+instance Sql.ToField Login where
+  toField = Sql.toField . toText
 
 fromText :: Text.Text -> Login
 fromText = Login

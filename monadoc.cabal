@@ -114,6 +114,7 @@ library
     Monadoc.Type.TestException
     Monadoc.Type.Timestamp
     Monadoc.Type.Url
+    Monadoc.Type.User
     Monadoc.Type.WithCallStack
     Monadoc.Utility.Utf8
     Monadoc.Vendor.Sql
@@ -177,6 +178,7 @@ test-suite test
     Monadoc.Type.TestExceptionSpec
     Monadoc.Type.TimestampSpec
     Monadoc.Type.UrlSpec
+    Monadoc.Type.UserSpec
     Monadoc.Type.WithCallStackSpec
     Monadoc.Utility.Utf8Spec
     Monadoc.Vendor.SqlSpec

@@ -1,4 +1,4 @@
-module Monadoc.Type.GitHub.UserSpec
+module Monadoc.Type.UserSpec
   ( spec
   )
 where
@@ -6,6 +6,6 @@ where
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.GitHub.User" $ do
+spec = Hspec.describe "Monadoc.Type.User" $ do
 
   Hspec.it "needs tests" Hspec.pending

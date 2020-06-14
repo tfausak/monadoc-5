@@ -8,6 +8,7 @@ where
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.UUID as Uuid
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified System.Random as Random
 
 -- | A thin wrapper around a UUID. This is called "GUID" because it's easier to
@@ -19,6 +20,9 @@ newtype Guid
 instance Random.Random Guid where
   random = Bifunctor.first fromUuid . Random.random
   randomR r = Bifunctor.first fromUuid . Random.randomR (both toUuid r)
+
+instance Sql.ToField Guid where
+  toField = Sql.toField . Uuid.toText . toUuid
 
 both :: Bifunctor.Bifunctor p => (a -> b) -> p a a -> p b b
 both f = Bifunctor.bimap f f
