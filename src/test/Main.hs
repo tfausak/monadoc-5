@@ -33,6 +33,7 @@ import qualified Monadoc.Type.ConfigResultSpec
 import qualified Monadoc.Type.ConfigSpec
 import qualified Monadoc.Type.ContextSpec
 import qualified Monadoc.Type.EtagSpec
+import qualified Monadoc.Type.GitHub.UserIdSpec
 import qualified Monadoc.Type.GuidSpec
 import qualified Monadoc.Type.MigrationMismatchSpec
 import qualified Monadoc.Type.MigrationSpec
@@ -81,6 +82,7 @@ main = Hspec.hspec $ do
   Monadoc.Type.ConfigSpec.spec
   Monadoc.Type.ContextSpec.spec
   Monadoc.Type.EtagSpec.spec
+  Monadoc.Type.GitHub.UserIdSpec.spec
   Monadoc.Type.GuidSpec.spec
   Monadoc.Type.MigrationMismatchSpec.spec
   Monadoc.Type.MigrationSpec.spec

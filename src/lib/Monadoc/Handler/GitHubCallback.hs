@@ -15,6 +15,7 @@ import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.GitHub.UserId as UserId
 import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
@@ -83,7 +84,7 @@ handle = do
   WithCallStack.throw $ userError "TODO"
 
 data User = User
-  { userId :: Int
+  { userId :: UserId.UserId
   , userLogin :: Text.Text
   } deriving (Eq, Show)
 
