@@ -17,6 +17,9 @@ newtype Guid
   = Guid Uuid.UUID
   deriving (Eq, Show)
 
+instance Sql.FromField Guid where
+  fromField = Sql.fromFieldVia $ fmap fromUuid . Uuid.fromText
+
 instance Random.Random Guid where
   random = Bifunctor.first fromUuid . Random.random
   randomR r = Bifunctor.first fromUuid . Random.randomR (both toUuid r)
