@@ -17,6 +17,7 @@ import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.NotFoundException as NotFoundException
+import qualified Monadoc.Type.TestException as TestException
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Client as Client
@@ -50,12 +51,13 @@ onException
   -> Maybe Wai.Request
   -> Exception.SomeException
   -> IO ()
-onException context _ exception = do
-  Console.warn $ Exception.displayException exception
-  Monad.when (Warp.defaultShouldDisplayException exception)
-    . Monad.void
-    . Concurrent.forkIO
-    $ sendExceptionToDiscord context exception
+onException context _ exception
+  | not $ Warp.defaultShouldDisplayException exception = pure ()
+  | isType notFoundException exception = pure ()
+  | isType testException exception = pure ()
+  | otherwise = do
+    Console.warn $ Exception.displayException exception
+    Monad.void . Concurrent.forkIO $ sendExceptionToDiscord context exception
 
 sendExceptionToDiscord
   :: Context.Context request -> Exception.SomeException -> IO ()
@@ -79,6 +81,9 @@ onExceptionResponse config exception
 
 notFoundException :: Proxy.Proxy NotFoundException.NotFoundException
 notFoundException = Proxy.Proxy
+
+testException :: Proxy.Proxy TestException.TestException
+testException = Proxy.Proxy
 
 isType
   :: Exception.Exception e => Proxy.Proxy e -> Exception.SomeException -> Bool
