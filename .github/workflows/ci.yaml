@@ -78,10 +78,7 @@ jobs:
         with:
           name: monadoc
           template: aws/cloud-formation.yaml
-          parameter-overrides:
-            ClientSecret=${{ secrets.CLIENT_SECRET }}
-            DiscordUrl=${{ secrets.DISCORD_URL }}
-            Tag=${{ github.sha }}
+          parameter-overrides: ClientSecret=${{ secrets.CLIENT_SECRET }},DiscordUrl=${{ secrets.DISCORD_URL }},Tag=${{ github.sha }}
           no-fail-on-empty-changeset: '1'
           capabilities: CAPABILITY_NAMED_IAM
       - if: always()
