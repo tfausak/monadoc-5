@@ -13,6 +13,7 @@ import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
 import qualified Monadoc.GhcSpec
 import qualified Monadoc.Handler.FaviconSpec
+import qualified Monadoc.Handler.GitHubCallbackSpec
 import qualified Monadoc.Handler.IndexSpec
 import qualified Monadoc.Handler.LogoSpec
 import qualified Monadoc.Handler.PingSpec
@@ -59,6 +60,7 @@ main = Hspec.hspec $ do
   Monadoc.Data.VersionSpec.spec
   Monadoc.GhcSpec.spec
   Monadoc.Handler.FaviconSpec.spec
+  Monadoc.Handler.GitHubCallbackSpec.spec
   Monadoc.Handler.IndexSpec.spec
   Monadoc.Handler.LogoSpec.spec
   Monadoc.Handler.PingSpec.spec

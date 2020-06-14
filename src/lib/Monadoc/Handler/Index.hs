@@ -71,12 +71,14 @@ handle = do
                 "Monadoc"
               Lucid.a_
                 [ Lucid.class_ "color-inherit no-underline"
-                , Lucid.href_ . Text.pack $ mconcat
+                -- TODO: Include `state`.
+                -- TODO: Escape query parameters.
+                -- TODO: Redirect back to current URL.
+                , Lucid.href_ $ mconcat
                   [ "http://github.com/login/oauth/authorize?client_id="
-                  , Config.clientId config
+                  , Text.pack $ Config.clientId config
                   , "&redirect_uri="
-                  , Config.url config
-                  , "/todo"
+                  , Router.renderAbsoluteRoute config Route.GitHubCallback
                   ]
                 ]
                 "Log in with GitHub"

@@ -5,6 +5,7 @@ where
 
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Handler.Favicon as Handler.Favicon
+import qualified Monadoc.Handler.GitHubCallback as Handler.GitHubCallback
 import qualified Monadoc.Handler.Index as Handler.Index
 import qualified Monadoc.Handler.Logo as Handler.Logo
 import qualified Monadoc.Handler.Ping as Handler.Ping
@@ -41,6 +42,7 @@ runRoute maybeRoute = do
     maybeRoute
   case route of
     Route.Favicon -> Handler.Favicon.handle
+    Route.GitHubCallback -> Handler.GitHubCallback.handle
     Route.Index -> Handler.Index.handle
     Route.Logo -> Handler.Logo.handle
     Route.Ping -> Handler.Ping.handle

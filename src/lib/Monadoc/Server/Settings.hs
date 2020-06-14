@@ -2,6 +2,7 @@ module Monadoc.Server.Settings
   ( fromContext
   , onException
   , onExceptionResponse
+  , serverName
   )
 where
 
