@@ -3,22 +3,23 @@ module Monadoc.Server.Application
   )
 where
 
-import qualified Control.Monad.Trans.Reader as Reader
+import qualified GHC.Stack as Stack
 import qualified Monadoc.Handler.Favicon as Handler.Favicon
-import qualified Monadoc.Handler.HealthCheck as Handler.HealthCheck
 import qualified Monadoc.Handler.Index as Handler.Index
 import qualified Monadoc.Handler.Logo as Handler.Logo
+import qualified Monadoc.Handler.Ping as Handler.Ping
 import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
 import qualified Monadoc.Handler.Throw as Handler.Throw
-import qualified Monadoc.Server.Common as Common
+import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.NotFoundException as NotFoundException
 import qualified Monadoc.Type.Route as Route
-import qualified Network.HTTP.Types as Http
+import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
 
-application :: Context.Context request -> Wai.Application
+application :: Stack.HasCallStack => Context.Context request -> Wai.Application
 application context request respond = do
   response <-
     App.run context { Context.request = request } . runRoute $ parseRoute
@@ -27,30 +28,22 @@ application context request respond = do
 
 parseRoute :: Wai.Request -> Maybe Route.Route
 parseRoute request =
-  let
-    method = Wai.requestMethod request
-    path = Wai.pathInfo request
-  in case (method, path) of
-    ("GET", []) -> Just Route.Index
-    ("GET", ["favicon.ico"]) -> Just Route.Favicon
-    ("GET", ["health-check"]) -> Just Route.HealthCheck
-    ("GET", ["robots.txt"]) -> Just Route.Robots
-    ("GET", ["static", "logo.png"]) -> Just Route.Logo
-    ("GET", ["static", "tachyons-4-12-0.css"]) -> Just Route.Tachyons
-    ("GET", ["throw"]) -> Just Route.Throw
-    _ -> Nothing
+  Router.parseRoute (Wai.requestMethod request) (Wai.pathInfo request)
 
-runRoute :: Maybe Route.Route -> App.App Wai.Request Wai.Response
-runRoute maybeRoute = case maybeRoute of
-  Just route -> case route of
+runRoute
+  :: Stack.HasCallStack
+  => Maybe Route.Route
+  -> App.App Wai.Request Wai.Response
+runRoute maybeRoute = do
+  route <- maybe
+    (WithCallStack.throw NotFoundException.NotFoundException)
+    pure
+    maybeRoute
+  case route of
     Route.Favicon -> Handler.Favicon.handle
-    Route.HealthCheck -> Handler.HealthCheck.handle
     Route.Index -> Handler.Index.handle
     Route.Logo -> Handler.Logo.handle
+    Route.Ping -> Handler.Ping.handle
     Route.Robots -> Handler.Robots.handle
     Route.Tachyons -> Handler.Tachyons.handle
     Route.Throw -> Handler.Throw.handle
-  Nothing -> do
-    config <- Reader.asks Context.config
-    pure . Common.statusResponse Http.notFound404 $ Common.defaultHeaders
-      config

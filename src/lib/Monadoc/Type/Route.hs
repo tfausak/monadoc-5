@@ -8,9 +8,9 @@ where
 -- each route @R@ has a corresponding handler at @Monadoc.Handler.R@.
 data Route
   = Favicon
-  | HealthCheck
   | Index
   | Logo
+  | Ping
   | Robots
   | Tachyons
   | Throw

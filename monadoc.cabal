@@ -9,7 +9,7 @@ license: ISC
 maintainer: Taylor Fausak
 name: monadoc
 synopsis: Better Haskell documentation.
-version: 0.2020.6.12
+version: 0.2020.6.13
 
 source-repository head
   location: https://github.com/tfausak/monadoc
@@ -78,9 +78,9 @@ library
     Monadoc.Data.Version
     Monadoc.Ghc
     Monadoc.Handler.Favicon
-    Monadoc.Handler.HealthCheck
     Monadoc.Handler.Index
     Monadoc.Handler.Logo
+    Monadoc.Handler.Ping
     Monadoc.Handler.Robots
     Monadoc.Handler.Tachyons
     Monadoc.Handler.Throw
@@ -89,6 +89,7 @@ library
     Monadoc.Server.Common
     Monadoc.Server.Main
     Monadoc.Server.Middleware
+    Monadoc.Server.Router
     Monadoc.Server.Settings
     Monadoc.Type.App
     Monadoc.Type.Binary
@@ -98,9 +99,11 @@ library
     Monadoc.Type.Etag
     Monadoc.Type.Migration
     Monadoc.Type.MigrationMismatch
+    Monadoc.Type.NotFoundException
     Monadoc.Type.Route
     Monadoc.Type.Sha256
     Monadoc.Type.Size
+    Monadoc.Type.TestException
     Monadoc.Type.Timestamp
     Monadoc.Type.Url
     Monadoc.Type.WithCallStack
@@ -132,9 +135,9 @@ test-suite test
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
     Monadoc.Handler.FaviconSpec
-    Monadoc.Handler.HealthCheckSpec
     Monadoc.Handler.IndexSpec
     Monadoc.Handler.LogoSpec
+    Monadoc.Handler.PingSpec
     Monadoc.Handler.RobotsSpec
     Monadoc.Handler.TachyonsSpec
     Monadoc.Handler.ThrowSpec
@@ -143,6 +146,7 @@ test-suite test
     Monadoc.Server.CommonSpec
     Monadoc.Server.MainSpec
     Monadoc.Server.MiddlewareSpec
+    Monadoc.Server.RouterSpec
     Monadoc.Server.SettingsSpec
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
@@ -152,9 +156,11 @@ test-suite test
     Monadoc.Type.EtagSpec
     Monadoc.Type.MigrationMismatchSpec
     Monadoc.Type.MigrationSpec
+    Monadoc.Type.NotFoundExceptionSpec
     Monadoc.Type.RouteSpec
     Monadoc.Type.Sha256Spec
     Monadoc.Type.SizeSpec
+    Monadoc.Type.TestExceptionSpec
     Monadoc.Type.TimestampSpec
     Monadoc.Type.UrlSpec
     Monadoc.Type.WithCallStackSpec

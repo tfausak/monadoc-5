@@ -3,7 +3,7 @@ module Monadoc.Type.MigrationMismatch
   )
 where
 
-import qualified Control.Exception as Exception
+import qualified Control.Monad.Catch as Exception
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 

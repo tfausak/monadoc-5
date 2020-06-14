@@ -13,9 +13,9 @@ import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
 import qualified Monadoc.GhcSpec
 import qualified Monadoc.Handler.FaviconSpec
-import qualified Monadoc.Handler.HealthCheckSpec
 import qualified Monadoc.Handler.IndexSpec
 import qualified Monadoc.Handler.LogoSpec
+import qualified Monadoc.Handler.PingSpec
 import qualified Monadoc.Handler.RobotsSpec
 import qualified Monadoc.Handler.TachyonsSpec
 import qualified Monadoc.Handler.ThrowSpec
@@ -24,6 +24,7 @@ import qualified Monadoc.Server.ApplicationSpec
 import qualified Monadoc.Server.CommonSpec
 import qualified Monadoc.Server.MainSpec
 import qualified Monadoc.Server.MiddlewareSpec
+import qualified Monadoc.Server.RouterSpec
 import qualified Monadoc.Server.SettingsSpec
 import qualified Monadoc.Type.AppSpec
 import qualified Monadoc.Type.BinarySpec
@@ -33,9 +34,11 @@ import qualified Monadoc.Type.ContextSpec
 import qualified Monadoc.Type.EtagSpec
 import qualified Monadoc.Type.MigrationMismatchSpec
 import qualified Monadoc.Type.MigrationSpec
+import qualified Monadoc.Type.NotFoundExceptionSpec
 import qualified Monadoc.Type.RouteSpec
 import qualified Monadoc.Type.Sha256Spec
 import qualified Monadoc.Type.SizeSpec
+import qualified Monadoc.Type.TestExceptionSpec
 import qualified Monadoc.Type.TimestampSpec
 import qualified Monadoc.Type.UrlSpec
 import qualified Monadoc.Type.WithCallStackSpec
@@ -55,9 +58,9 @@ main = Hspec.hspec $ do
   Monadoc.Data.VersionSpec.spec
   Monadoc.GhcSpec.spec
   Monadoc.Handler.FaviconSpec.spec
-  Monadoc.Handler.HealthCheckSpec.spec
   Monadoc.Handler.IndexSpec.spec
   Monadoc.Handler.LogoSpec.spec
+  Monadoc.Handler.PingSpec.spec
   Monadoc.Handler.RobotsSpec.spec
   Monadoc.Handler.TachyonsSpec.spec
   Monadoc.Handler.ThrowSpec.spec
@@ -66,6 +69,7 @@ main = Hspec.hspec $ do
   Monadoc.Server.CommonSpec.spec
   Monadoc.Server.MainSpec.spec
   Monadoc.Server.MiddlewareSpec.spec
+  Monadoc.Server.RouterSpec.spec
   Monadoc.Server.SettingsSpec.spec
   Monadoc.Type.AppSpec.spec
   Monadoc.Type.BinarySpec.spec
@@ -75,9 +79,11 @@ main = Hspec.hspec $ do
   Monadoc.Type.EtagSpec.spec
   Monadoc.Type.MigrationMismatchSpec.spec
   Monadoc.Type.MigrationSpec.spec
+  Monadoc.Type.NotFoundExceptionSpec.spec
   Monadoc.Type.RouteSpec.spec
   Monadoc.Type.Sha256Spec.spec
   Monadoc.Type.SizeSpec.spec
+  Monadoc.Type.TestExceptionSpec.spec
   Monadoc.Type.TimestampSpec.spec
   Monadoc.Type.UrlSpec.spec
   Monadoc.Type.WithCallStackSpec.spec

@@ -9,26 +9,13 @@ import qualified Lucid
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Server.Common as Common
+import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-
-renderAbsoluteRoute :: Config.Config -> Route.Route -> Text.Text
-renderAbsoluteRoute config =
-  mappend (Text.pack $ Config.url config) . renderRelativeRoute
-
-renderRelativeRoute :: Route.Route -> Text.Text
-renderRelativeRoute route = case route of
-  Route.Favicon -> "/favicon.ico"
-  Route.HealthCheck -> "/health-check"
-  Route.Index -> "/"
-  Route.Logo -> "/static/logo.png"
-  Route.Robots -> "/robots.txt"
-  Route.Tachyons -> "/static/tachyons-4-12-0.css"
-  Route.Throw -> "/throw"
 
 handle :: App.App request Wai.Response
 handle = do
@@ -54,25 +41,45 @@ handle = do
               ]
         og "title" "Monadoc"
         og "type" "website"
-        let url = renderAbsoluteRoute config Route.Index
+        let url = Router.renderAbsoluteRoute config Route.Index
         og "url" url
-        og "image" $ renderAbsoluteRoute config Route.Logo
+        og "image" $ Router.renderAbsoluteRoute config Route.Logo
         Lucid.link_ [Lucid.rel_ "canonical", Lucid.href_ url]
         Lucid.link_
-          [Lucid.rel_ "icon", Lucid.href_ $ renderRelativeRoute Route.Favicon]
+          [ Lucid.rel_ "icon"
+          , Lucid.href_ $ Router.renderRelativeRoute Route.Favicon
+          ]
+        Lucid.link_
+          [ Lucid.rel_ "apple-touch-icon"
+          , Lucid.href_ $ Router.renderRelativeRoute Route.Logo
+          ]
         Lucid.link_
           [ Lucid.rel_ "stylesheet"
-          , Lucid.href_ $ renderRelativeRoute Route.Tachyons
+          , Lucid.href_ $ Router.renderRelativeRoute Route.Tachyons
           ]
         Lucid.title_ "Monadoc"
       Lucid.body_ [Lucid.class_ "bg-white black sans-serif"] $ do
-        Lucid.header_ [Lucid.class_ "bg-purple pa3 white"]
-          . Lucid.h1_ [Lucid.class_ "ma0 normal"]
-          $ Lucid.a_
-              [ Lucid.class_ "color-inherit no-underline"
-              , Lucid.href_ $ renderRelativeRoute Route.Index
-              ]
-              "Monadoc"
+        Lucid.header_
+            [ Lucid.class_
+                "bg-purple flex items-center justify-between pa3 white"
+            ]
+          $ do
+              Lucid.h1_ [Lucid.class_ "ma0 normal"] $ Lucid.a_
+                [ Lucid.class_ "color-inherit no-underline"
+                , Lucid.href_ $ Router.renderRelativeRoute Route.Index
+                ]
+                "Monadoc"
+              Lucid.a_
+                [ Lucid.class_ "color-inherit no-underline"
+                , Lucid.href_ . Text.pack $ mconcat
+                  [ "http://github.com/login/oauth/authorize?client_id="
+                  , Config.clientId config
+                  , "&redirect_uri="
+                  , Config.url config
+                  , "/todo"
+                  ]
+                ]
+                "Log in with GitHub"
         Lucid.main_ [Lucid.class_ "pa3"]
           $ Lucid.p_ "\x1f516 Better Haskell documentation."
         Lucid.footer_ [Lucid.class_ "mid-gray pa3 tc"] . Lucid.p_ $ do

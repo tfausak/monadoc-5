@@ -8,6 +8,7 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Server.Main as Server
@@ -20,7 +21,7 @@ import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
 import qualified Monadoc.Worker.Main as Worker
 
-run :: App.App request ()
+run :: Stack.HasCallStack => App.App request ()
 run = do
   runMigrations
   context <- Reader.ask

@@ -3,7 +3,8 @@ module Main
   )
 where
 
+import qualified GHC.Stack as Stack
 import qualified Monadoc
 
-main :: IO ()
+main :: Stack.HasCallStack => IO ()
 main = Monadoc.monadoc

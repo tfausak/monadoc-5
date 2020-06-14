@@ -3,6 +3,7 @@ module Monadoc.Type.WithCallStack
   , catch
   , throw
   , withCallStack
+  , withoutCallStack
   )
 where
 
@@ -23,16 +24,17 @@ instance Eq a => Eq (WithCallStack a) where
       && Function.on (==) value x y
 
 instance Exception.Exception e => Exception.Exception (WithCallStack e) where
-  displayException x = mconcat
-    [ Exception.displayException $ value x
-    , "\n"
-    , Stack.prettyCallStack $ callStack x
-    ]
+  displayException x =
+    let string = Exception.displayException $ value x
+    in
+      case Stack.prettyCallStack $ callStack x of
+        "" -> string
+        stack -> mconcat [string, "\n", stack]
 
 -- | Catches an exception, removing call stacks as necessary. This wraps
--- 'value' to make it easy to catch an exception without a call stack even if
--- it was thrown with one. You should prefer this over 'Exception.catch' when
--- possible.
+-- 'withoutCallStack' to make it easy to catch an exception without a call
+-- stack even if it was thrown with one. You should prefer this over
+-- 'Exception.catch' when possible.
 catch
   :: (Exception.MonadCatch m, Exception.Exception e)
   => m a
@@ -41,9 +43,10 @@ catch
 catch x f = Exception.catches
   x
   [ Exception.Handler f
-  , Exception.Handler $ \e -> case Exception.fromException $ value e of
-    Just y -> f y
-    _ -> Exception.throwM e
+  , Exception.Handler $ \se ->
+    case Exception.fromException $ withoutCallStack se of
+      Just e -> f e
+      Nothing -> Exception.throwM se
   ]
 
 -- | Throws an exception with a call stack. This wraps 'withCallStack' and
@@ -62,6 +65,13 @@ withCallStack
 withCallStack x = case Exception.fromException x of
   Just (WithCallStack _ (Exception.SomeException _)) -> x
   Nothing -> Exception.toException WithCallStack
-    { callStack = Stack.callStack
+    { callStack = Stack.popCallStack Stack.callStack
     , value = x
     }
+
+-- | Removes any call stacks. Instead of calling this function directly,
+-- consider using 'catch' instead.
+withoutCallStack :: Exception.SomeException -> Exception.SomeException
+withoutCallStack e1 = case Exception.fromException e1 of
+  Just (WithCallStack _ e2) -> withoutCallStack e2
+  Nothing -> e1

@@ -1,10 +1,10 @@
-module Monadoc.Handler.HealthCheckSpec
+module Monadoc.Handler.PingSpec
   ( spec
   )
 where
 
 import qualified Monadoc
-import qualified Monadoc.Handler.HealthCheck as HealthCheck
+import qualified Monadoc.Handler.Ping as Ping
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
@@ -13,7 +13,7 @@ import qualified Network.Wai as Wai
 import qualified Test.Hspec as Hspec
 
 spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Handler.HealthCheck" $ do
+spec = Hspec.describe "Monadoc.Handler.Ping" $ do
 
   Hspec.describe "handle" $ do
 
@@ -23,5 +23,5 @@ spec = Hspec.describe "Monadoc.Handler.HealthCheck" $ do
         }
       response <- App.run
         context { Context.request = Wai.defaultRequest }
-        HealthCheck.handle
+        Ping.handle
       Wai.responseStatus response `Hspec.shouldBe` Http.ok200

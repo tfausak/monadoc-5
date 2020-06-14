@@ -8,6 +8,25 @@
 
 Parameters:
 
+  ClientId:
+    Type: String
+    Description:
+      The client ID for the GitHub OAuth application. You can get this at
+      <https://github.com/settings/developers>.
+    Default: 658122d4ef8c24039953
+
+  ClientSecret:
+    Type: String
+    Description:
+      The client secret for the GitHub OAuth application. See the "ClientId"
+      parameter for details.
+
+  DiscordUrl:
+    Type: String
+    Description:
+      The URL to the Discord webhook for reporting exceptions. This is the full
+      URL, not just the ID and token.
+
   Domain:
     Type: String
     Description:
@@ -158,7 +177,10 @@ Resources:
         containerDefinitions:
           - command:
               - monadoc
+              - !Sub --client-id=${ClientId}
+              - !Sub --client-secret=${ClientSecret}
               - --database=/efs/monadoc.sqlite3
+              - !Sub --discord-url=${DiscordUrl}
               - --host=*
               - !Sub --port=${Port}
               - !Sub --url=https://www.${Domain}
@@ -311,7 +333,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckPath: /health-check
+      HealthCheckPath: /api/ping
       Name: !Sub ${AWS::StackName}-target-group
       Port: !Ref Port
       Protocol: HTTP

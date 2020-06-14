@@ -1,29 +1,38 @@
 module Monadoc.Server.Settings
-  ( fromConfig
+  ( fromContext
   , onException
   , onExceptionResponse
   )
 where
 
+import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Data.ByteString as ByteString
+import qualified Data.Proxy as Proxy
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.Config as Config
+import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.NotFoundException as NotFoundException
+import qualified Monadoc.Type.TestException as TestException
+import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
+import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 
--- | Builds Warp server settings from a config.
-fromConfig :: Config.Config -> Warp.Settings
-fromConfig config =
-  Warp.setBeforeMainLoop (beforeMainLoop config)
+-- | Builds Warp server settings from a context.
+fromContext :: Context.Context request -> Warp.Settings
+fromContext context =
+  let config = Context.config context
+  in
+    Warp.setBeforeMainLoop (beforeMainLoop config)
     . Warp.setHost (Config.host config)
-    . Warp.setOnException onException
+    . Warp.setOnException (onException context)
     . Warp.setOnExceptionResponse (onExceptionResponse config)
     . Warp.setPort (Config.port config)
     $ Warp.setServerName serverName Warp.defaultSettings
@@ -37,16 +46,54 @@ beforeMainLoop config = Console.info $ unwords
   , "..."
   ]
 
-onException :: Maybe Wai.Request -> Exception.SomeException -> IO ()
-onException _ someException@(Exception.SomeException exception) =
-  Monad.when (Warp.defaultShouldDisplayException someException)
-    . Console.warn
-    $ Exception.displayException exception
+onException
+  :: Context.Context request
+  -> Maybe Wai.Request
+  -> Exception.SomeException
+  -> IO ()
+onException context _ exception
+  | not $ Warp.defaultShouldDisplayException exception = pure ()
+  | isType notFoundException exception = pure ()
+  | isType testException exception = pure ()
+  | otherwise = do
+    Console.warn $ Exception.displayException exception
+    Monad.void . Concurrent.forkIO $ sendExceptionToDiscord context exception
+
+sendExceptionToDiscord
+  :: Context.Context request -> Exception.SomeException -> IO ()
+sendExceptionToDiscord context exception = do
+  initialRequest <- Client.parseRequest . Config.discordUrl $ Context.config
+    context
+  let
+    content = Utf8.fromString
+      $ mconcat ["```\n", Exception.displayException exception, "```"]
+    request = Client.urlEncodedBody [("content", content)] initialRequest
+    manager = Context.manager context
+  Monad.void $ Client.httpLbs request manager
 
 onExceptionResponse :: Config.Config -> Exception.SomeException -> Wai.Response
-onExceptionResponse config _ =
-  Common.statusResponse Http.internalServerError500
-    $ Common.defaultHeaders config
+onExceptionResponse config exception
+  | isType notFoundException exception = Common.statusResponse
+    Http.notFound404
+    headers
+  | otherwise = Common.statusResponse Http.internalServerError500 headers
+  where headers = Common.defaultHeaders config
+
+notFoundException :: Proxy.Proxy NotFoundException.NotFoundException
+notFoundException = Proxy.Proxy
+
+testException :: Proxy.Proxy TestException.TestException
+testException = Proxy.Proxy
+
+isType
+  :: Exception.Exception e => Proxy.Proxy e -> Exception.SomeException -> Bool
+isType proxy =
+  maybe False (const True . asType proxy)
+    . Exception.fromException
+    . WithCallStack.withoutCallStack
+
+asType :: Proxy.Proxy a -> a -> a
+asType _ = id
 
 serverName :: ByteString.ByteString
 serverName =
