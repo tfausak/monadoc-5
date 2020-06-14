@@ -9,12 +9,15 @@ import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Data.ByteString as ByteString
+import qualified Data.Proxy as Proxy
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.NotFoundException as NotFoundException
+import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
@@ -67,9 +70,25 @@ sendExceptionToDiscord context exception = do
   Monad.void $ Client.httpLbs request manager
 
 onExceptionResponse :: Config.Config -> Exception.SomeException -> Wai.Response
-onExceptionResponse config _ =
-  Common.statusResponse Http.internalServerError500
-    $ Common.defaultHeaders config
+onExceptionResponse config exception
+  | isType notFoundException exception = Common.statusResponse
+    Http.notFound404
+    headers
+  | otherwise = Common.statusResponse Http.internalServerError500 headers
+  where headers = Common.defaultHeaders config
+
+notFoundException :: Proxy.Proxy NotFoundException.NotFoundException
+notFoundException = Proxy.Proxy
+
+isType
+  :: Exception.Exception e => Proxy.Proxy e -> Exception.SomeException -> Bool
+isType proxy =
+  maybe False (const True . asType proxy)
+    . Exception.fromException
+    . WithCallStack.withoutCallStack
+
+asType :: Proxy.Proxy a -> a -> a
+asType _ = id
 
 serverName :: ByteString.ByteString
 serverName =

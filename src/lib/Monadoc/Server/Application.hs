@@ -3,7 +3,6 @@ module Monadoc.Server.Application
   )
 where
 
-import qualified Control.Monad.Trans.Reader as Reader
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Handler.Favicon as Handler.Favicon
 import qualified Monadoc.Handler.HealthCheck as Handler.HealthCheck
@@ -12,12 +11,12 @@ import qualified Monadoc.Handler.Logo as Handler.Logo
 import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
 import qualified Monadoc.Handler.Throw as Handler.Throw
-import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.NotFoundException as NotFoundException
 import qualified Monadoc.Type.Route as Route
-import qualified Network.HTTP.Types as Http
+import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
 
 application :: Stack.HasCallStack => Context.Context request -> Wai.Application
@@ -35,8 +34,12 @@ runRoute
   :: Stack.HasCallStack
   => Maybe Route.Route
   -> App.App Wai.Request Wai.Response
-runRoute maybeRoute = case maybeRoute of
-  Just route -> case route of
+runRoute maybeRoute = do
+  route <- maybe
+    (WithCallStack.throw NotFoundException.NotFoundException)
+    pure
+    maybeRoute
+  case route of
     Route.Favicon -> Handler.Favicon.handle
     Route.HealthCheck -> Handler.HealthCheck.handle
     Route.Index -> Handler.Index.handle
@@ -44,7 +47,3 @@ runRoute maybeRoute = case maybeRoute of
     Route.Robots -> Handler.Robots.handle
     Route.Tachyons -> Handler.Tachyons.handle
     Route.Throw -> Handler.Throw.handle
-  Nothing -> do
-    config <- Reader.asks Context.config
-    pure . Common.statusResponse Http.notFound404 $ Common.defaultHeaders
-      config
