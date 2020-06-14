@@ -31,10 +31,12 @@ import qualified System.IO as IO
 -- | The main app entrypoint. This is what the executable runs.
 monadoc :: Stack.HasCallStack => IO ()
 monadoc = do
-  mapM_ (flip IO.hSetBuffering IO.LineBuffering) [IO.stderr, IO.stdout]
+  Monad.forM_ [IO.stderr, IO.stdout] $ \handle -> do
+    IO.hSetBuffering handle IO.LineBuffering
+    IO.hSetEncoding handle IO.utf8
   config <- getConfig
   Console.info $ unwords
-    [ "Starting Monadoc version"
+    [ "\x1f516 Starting Monadoc version"
     , Version.string
     , "commit"
     , Maybe.fromMaybe "unknown" Commit.hash
