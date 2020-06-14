@@ -8,6 +8,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -31,6 +32,7 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified System.Random as Random
+import qualified Web.Cookie as Cookie
 
 handle :: Stack.HasCallStack => App.App Wai.Request Wai.Response
 handle = do
@@ -128,9 +130,14 @@ upsertUser token ghUser = do
 makeCookie :: Guid.Guid -> App.App request ByteString.ByteString
 makeCookie guid = do
   config <- Reader.asks Context.config
-  pure $ mconcat
-    [ "guid="
-    , Uuid.toASCIIBytes $ Guid.toUuid guid
-    , "; HttpOnly; Path=/; SameSite=Strict"
-    , if Common.isSecure config then "; Secure" else ""
-    ]
+  pure
+    . LazyByteString.toStrict
+    . Builder.toLazyByteString
+    $ Cookie.renderSetCookie Cookie.defaultSetCookie
+        { Cookie.setCookieHttpOnly = True
+        , Cookie.setCookieName = "guid"
+        , Cookie.setCookiePath = Just "/"
+        , Cookie.setCookieSameSite = Just Cookie.sameSiteLax
+        , Cookie.setCookieSecure = Common.isSecure config
+        , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
+        }
