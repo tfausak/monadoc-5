@@ -115,7 +115,7 @@ handle = do
         (mconcat
           [ "guid="
           , Uuid.toASCIIBytes $ Guid.toUuid guid
-          , "; HttpOnly; SameSite=Strict"
+          , "; HttpOnly; Path=/; SameSite=Strict"
           , if Common.isSecure config then "; Secure" else ""
           ]
         )
