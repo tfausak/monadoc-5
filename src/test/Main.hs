@@ -36,6 +36,7 @@ import qualified Monadoc.Type.MigrationMismatchSpec
 import qualified Monadoc.Type.MigrationSpec
 import qualified Monadoc.Type.NotFoundExceptionSpec
 import qualified Monadoc.Type.RouteSpec
+import qualified Monadoc.Type.ServiceSpec
 import qualified Monadoc.Type.Sha256Spec
 import qualified Monadoc.Type.SizeSpec
 import qualified Monadoc.Type.TestExceptionSpec
@@ -81,6 +82,7 @@ main = Hspec.hspec $ do
   Monadoc.Type.MigrationSpec.spec
   Monadoc.Type.NotFoundExceptionSpec.spec
   Monadoc.Type.RouteSpec.spec
+  Monadoc.Type.ServiceSpec.spec
   Monadoc.Type.Sha256Spec.spec
   Monadoc.Type.SizeSpec.spec
   Monadoc.Type.TestExceptionSpec.spec

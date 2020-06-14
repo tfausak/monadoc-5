@@ -32,11 +32,13 @@ import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
 run :: App.App request ()
-run = Monad.forever $ do
-  pruneBlobs
-  updateIndex
-  processIndex
-  sleep $ 15 * 60
+run = do
+  Console.info "Starting worker ..."
+  Monad.forever $ do
+    pruneBlobs
+    updateIndex
+    processIndex
+    sleep $ 15 * 60
 
 pruneBlobs :: App.App request ()
 pruneBlobs = App.withConnection $ \connection -> Trans.lift $ do

@@ -4,6 +4,8 @@ module Monadoc.Type.Config
   )
 where
 
+import qualified Data.Set as Set
+import qualified Monadoc.Type.Service as Service
 import qualified Network.Wai.Handler.Warp as Warp
 
 -- | Application configuration. This contains all the stuff necessary to start
@@ -33,6 +35,7 @@ data Config = Config
   -- ^ The host to bind on. In typical usage you'll want to set this to @"*"@.
   , port :: Warp.Port
   -- ^ The port to bind on.
+  , services :: Set.Set Service.Service
   , url :: String
   -- ^ The base URL that the site is available at. Be sure to change this if
   -- you change the port.
@@ -50,6 +53,7 @@ initial = Config
   , help = False
   , host = "127.0.0.1"
   , port = 4444
+  , services = Set.fromList [Service.Server, Service.Worker]
   , url = "http://localhost:4444"
   , version = False
   }

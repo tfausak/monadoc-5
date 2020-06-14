@@ -13,8 +13,11 @@ import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Server.Main as Server
 import qualified Monadoc.Type.App as App
+import qualified Monadoc.Type.Config as Config
+import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
+import qualified Monadoc.Type.Service as Service
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sql as Sql
@@ -26,10 +29,18 @@ run = do
   runMigrations
   context <- Reader.ask
   Trans.lift
-    $ Async.race_ (App.run context Server.run) (App.run context Worker.run)
+    . Async.mapConcurrently_ (App.run context . runService)
+    . Config.services
+    $ Context.config context
+
+runService :: Stack.HasCallStack => Service.Service -> App.App request ()
+runService service = case service of
+  Service.Server -> Server.run
+  Service.Worker -> Worker.run
 
 runMigrations :: App.App request ()
 runMigrations = do
+  Console.info "Running migrations ..."
   App.withConnection $ \connection -> Trans.lift $ do
     Sql.execute_ connection "pragma journal_mode = wal"
     Sql.execute_

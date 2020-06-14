@@ -101,6 +101,7 @@ library
     Monadoc.Type.MigrationMismatch
     Monadoc.Type.NotFoundException
     Monadoc.Type.Route
+    Monadoc.Type.Service
     Monadoc.Type.Sha256
     Monadoc.Type.Size
     Monadoc.Type.TestException
@@ -158,6 +159,7 @@ test-suite test
     Monadoc.Type.MigrationSpec
     Monadoc.Type.NotFoundExceptionSpec
     Monadoc.Type.RouteSpec
+    Monadoc.Type.ServiceSpec
     Monadoc.Type.Sha256Spec
     Monadoc.Type.SizeSpec
     Monadoc.Type.TestExceptionSpec
