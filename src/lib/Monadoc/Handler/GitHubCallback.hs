@@ -7,7 +7,6 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as LazyByteString
-import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
@@ -15,6 +14,7 @@ import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.GitHub.UserId as UserId
 import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.WithCallStack as WithCallStack
@@ -85,7 +85,7 @@ handle = do
 
 data User = User
   { userId :: UserId.UserId
-  , userLogin :: Text.Text
+  , userLogin :: Login.Login
   } deriving (Eq, Show)
 
 instance Aeson.FromJSON User where
