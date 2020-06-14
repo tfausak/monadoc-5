@@ -5,8 +5,11 @@ where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
+import qualified Data.UUID as Uuid
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
@@ -18,6 +21,7 @@ import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
+import qualified System.Random as Random
 
 handle :: Stack.HasCallStack => App.App Wai.Request result
 handle = do
@@ -66,8 +70,25 @@ handle = do
       }
   response2 <- Trans.lift $ Client.httpLbs request2 manager
   Console.info $ show response2
+  user <-
+    either (WithCallStack.throw . userError) pure
+    . Aeson.eitherDecode
+    $ Client.responseBody response2
 
-  -- TODO: Parse user information.
   -- TODO: Store user information.
+  uuid <- Trans.lift Random.randomIO
+  Console.info $ show (uuid :: Uuid.UUID, user :: User, token)
+
   -- TODO: Redirect with cookie.
   WithCallStack.throw $ userError "TODO"
+
+data User = User
+  { userId :: Int
+  , userLogin :: Text.Text
+  } deriving (Eq, Show)
+
+instance Aeson.FromJSON User where
+  parseJSON = Aeson.withObject "User" $ \object -> do
+    id_ <- object Aeson..: "id"
+    login <- object Aeson..: "login"
+    pure User { userId = id_, userLogin = login }
