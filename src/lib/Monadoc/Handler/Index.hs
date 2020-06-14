@@ -5,8 +5,8 @@ where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
@@ -125,7 +125,6 @@ handle = do
               Lucid.code_ . Lucid.toHtml $ take 7 commit
           "."
 
--- TODO: Include `state`.
 makeLoginUrl :: App.App Wai.Request Text.Text
 makeLoginUrl = do
   context <- Reader.ask
