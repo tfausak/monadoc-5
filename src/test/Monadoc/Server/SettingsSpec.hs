@@ -3,9 +3,9 @@ module Monadoc.Server.SettingsSpec
   )
 where
 
+import qualified Monadoc
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.Config as Config
-import qualified Monadoc
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Test.Hspec as Hspec
 

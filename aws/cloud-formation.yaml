@@ -453,6 +453,8 @@ Resources:
             - OPTIONS
           Compress: false
           ForwardedValues:
+            Cookies:
+              Forward: all
             Headers:
               - Accept-Encoding
             QueryString: true

@@ -8,6 +8,7 @@ where
 -- each route @R@ has a corresponding handler at @Monadoc.Handler.R@.
 data Route
   = Favicon
+  | GitHubCallback
   | Index
   | Logo
   | Ping

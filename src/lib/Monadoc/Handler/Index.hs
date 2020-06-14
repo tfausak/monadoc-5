@@ -3,8 +3,16 @@ module Monadoc.Handler.Index
   )
 where
 
+import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Builder as Builder
+import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import qualified Data.Text.Encoding.Error as Text
+import qualified Data.UUID as Uuid
 import qualified Lucid
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
@@ -13,13 +21,34 @@ import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.GitHub.Login as Login
+import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.Route as Route
+import qualified Monadoc.Type.User as User
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
+import qualified Web.Cookie as Cookie
 
-handle :: App.App request Wai.Response
+handle :: App.App Wai.Request Wai.Response
 handle = do
-  config <- Reader.asks Context.config
+  context <- Reader.ask
+  maybeUser <-
+    case lookup Http.hCookie . Wai.requestHeaders $ Context.request context of
+      Nothing -> pure Nothing
+      Just cookie -> case lookup "guid" $ Cookie.parseCookiesText cookie of
+        Nothing -> pure Nothing
+        Just text -> case Guid.fromUuid <$> Uuid.fromText text of
+          Nothing -> pure Nothing
+          Just guid ->
+            fmap Maybe.listToMaybe . App.withConnection $ \connection ->
+              Trans.lift $ Sql.query
+                connection
+                "select * from users where guid = ?"
+                [guid]
+
+  let config = Context.config context
+  loginUrl <- makeLoginUrl
   pure . Common.htmlResponse Http.ok200 (Common.defaultHeaders config) $ do
     Lucid.doctype_
     Lucid.html_ [Lucid.lang_ "en-US"] $ do
@@ -69,17 +98,15 @@ handle = do
                 , Lucid.href_ $ Router.renderRelativeRoute Route.Index
                 ]
                 "Monadoc"
-              Lucid.a_
-                [ Lucid.class_ "color-inherit no-underline"
-                , Lucid.href_ . Text.pack $ mconcat
-                  [ "http://github.com/login/oauth/authorize?client_id="
-                  , Config.clientId config
-                  , "&redirect_uri="
-                  , Config.url config
-                  , "/todo"
+              case maybeUser of
+                Nothing -> Lucid.a_
+                  [ Lucid.class_ "color-inherit no-underline"
+                  , Lucid.href_ loginUrl
                   ]
-                ]
-                "Log in with GitHub"
+                  "Log in with GitHub"
+                Just user -> do
+                  "@"
+                  Lucid.toHtml . Login.toText $ User.login user
         Lucid.main_ [Lucid.class_ "pa3"]
           $ Lucid.p_ "\x1f516 Better Haskell documentation."
         Lucid.footer_ [Lucid.class_ "mid-gray pa3 tc"] . Lucid.p_ $ do
@@ -97,3 +124,27 @@ handle = do
               " commit "
               Lucid.code_ . Lucid.toHtml $ take 7 commit
           "."
+
+makeLoginUrl :: App.App Wai.Request Text.Text
+makeLoginUrl = do
+  context <- Reader.ask
+  let
+    config = Context.config context
+    clientId = Text.pack $ Config.clientId config
+    route = Router.renderAbsoluteRoute config Route.GitHubCallback
+    request = Context.request context
+    current = Wai.rawPathInfo request <> Wai.rawQueryString request
+    redirectUri =
+      route <> fromUtf8 (Http.renderSimpleQuery True [("redirect", current)])
+    query = Http.renderQueryText
+      True
+      [("client_id", Just clientId), ("redirect_uri", Just redirectUri)]
+  pure
+    . fromUtf8
+    . LazyByteString.toStrict
+    . Builder.toLazyByteString
+    $ "https://github.com/login/oauth/authorize"
+    <> query
+
+fromUtf8 :: ByteString.ByteString -> Text.Text
+fromUtf8 = Text.decodeUtf8With Text.lenientDecode

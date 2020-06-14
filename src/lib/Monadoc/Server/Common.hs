@@ -3,6 +3,7 @@ module Monadoc.Server.Common
   , defaultHeaders
   , fileResponse
   , htmlResponse
+  , isSecure
   , responseBS
   , simpleFileResponse
   , statusResponse
@@ -91,5 +92,7 @@ contentSecurityPolicy :: ByteString.ByteString
 contentSecurityPolicy = "base-uri 'none'; default-src 'self'"
 
 strictTransportSecurity :: Config.Config -> ByteString.ByteString
-strictTransportSecurity config =
-  if List.isPrefixOf "https:" $ Config.url config then "86400" else "0"
+strictTransportSecurity config = if isSecure config then "86400" else "0"
+
+isSecure :: Config.Config -> Bool
+isSecure = List.isPrefixOf "https:" . Config.url

@@ -3,8 +3,13 @@ module Monadoc.Data.Options
   )
 where
 
+import qualified Control.Monad as Monad
+import qualified Data.List as List
+import qualified Data.Set as Set
 import qualified Data.String as String
+import qualified Data.Text as Text
 import qualified Monadoc.Type.Config as Config
+import qualified Monadoc.Type.Service as Service
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Console.GetOpt as GetOpt
 import qualified Text.Read as Read
@@ -22,6 +27,7 @@ options =
   , helpOption
   , hostOption
   , portOption
+  , servicesOption
   , urlOption
   , versionOption
   ]
@@ -120,6 +126,42 @@ portOption =
 
 showPort :: Warp.Port -> String
 showPort = show . show
+
+servicesOption :: Option
+servicesOption =
+  option
+      []
+      ["services"]
+      ("Sets the services to run. Separate services with commas. Defaults to "
+      <> showServices (Config.services Config.initial)
+      <> " which is all the services."
+      )
+    . argument "STRING"
+    $ \rawServices config -> case readServices rawServices of
+        Nothing -> Left $ "invalid services: " <> show rawServices
+        Just services -> Right config { Config.services = services }
+
+readServices :: String -> Maybe (Set.Set Service.Service)
+readServices string = do
+  list <- mapM readService . Text.splitOn "," $ Text.pack string
+  Monad.guard . not $ null list
+  let set = Set.fromList list
+  Monad.guard $ length set == length list
+  pure set
+
+readService :: Text.Text -> Maybe Service.Service
+readService text = case text of
+  "server" -> Just Service.Server
+  "worker" -> Just Service.Worker
+  _ -> Nothing
+
+showServices :: Set.Set Service.Service -> String
+showServices = show . List.intercalate "," . fmap showService . Set.toList
+
+showService :: Service.Service -> String
+showService service = case service of
+  Service.Server -> "server"
+  Service.Worker -> "worker"
 
 urlOption :: Option
 urlOption =

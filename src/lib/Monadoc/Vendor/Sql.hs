@@ -10,6 +10,7 @@ where
 
 import Database.SQLite.Simple
   ( Connection
+  , FromRow(fromRow)
   , Only(Only, fromOnly)
   , Query(Query, fromQuery)
   , SQLData(SQLBlob, SQLFloat, SQLInteger, SQLNull, SQLText)
@@ -17,6 +18,7 @@ import Database.SQLite.Simple
   , close
   , execute
   , execute_
+  , field
   , open
   , query
   , query_
@@ -43,11 +45,9 @@ fromFieldVia
   => (a -> Maybe b)
   -> Sql.Field
   -> Sql.Ok b
-fromFieldVia f field = do
-  x <- Sql.fromField field
-  case f x of
+fromFieldVia f x = do
+  y <- Sql.fromField x
+  case f y of
     Nothing ->
-      Sql.returnError Sql.ConversionFailed field
-        $ "failed to convert "
-        <> show x
-    Just y -> pure y
+      Sql.returnError Sql.ConversionFailed x $ "failed to convert " <> show y
+    Just z -> pure z

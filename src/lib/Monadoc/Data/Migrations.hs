@@ -34,6 +34,13 @@ migrations = Set.fromList
   , makeMigration
     (2020, 6, 10, 19, 46, 0)
     "create table files (digest text not null, name text primary key)"
+  , makeMigration
+    (2020, 6, 14, 12, 31, 0)
+    "create table users (\
+    \guid text not null unique, \
+    \id integer not null primary key, \
+    \login text not null, \
+    \token text not null)"
   ]
 
 makeMigration
