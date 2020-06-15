@@ -1,7 +1,7 @@
 # [Monadoc](https://www.monadoc.com)
 
 <a href='https://github.com/tfausak/monadoc/actions'>
-  <img align='right' alt='' src='https://github.com/tfausak/monadoc/workflows/.github/workflows/ci.yaml/badge.svg'>
+  <img align='right' alt='' src='https://github.com/tfausak/monadoc/workflows/CI/badge.svg'>
 </a>
 
 :bookmark: Better Haskell documentation. This is still a work in progress. I've made a bunch of proofs of concept before. This one is meant to be a real service. Here's a summary of the previous attempts:
