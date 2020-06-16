@@ -19,7 +19,7 @@ spec = Test.describe "Monadoc.Server.Router" $ do
   Test.describe "renderAbsoluteRoute" $ do
 
     Test.it "works" $ do
-      let config = Config.initial { Config.url = "http://test" }
+      let config = Test.config { Config.url = "http://test" }
       Router.renderAbsoluteRoute config Route.Index
         `Test.shouldBe` "http://test/"
 

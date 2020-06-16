@@ -7,7 +7,6 @@ import qualified Control.Monad.Catch as Exception
 import qualified Monadoc
 import qualified Monadoc.Handler.Throw as Throw
 import qualified Monadoc.Type.App as App
-import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.TestException as TestException
 import qualified Monadoc.Type.WithCallStack as WithCallStack
@@ -20,9 +19,7 @@ spec = Test.describe "Monadoc.Handler.Throw" $ do
   Test.describe "handle" $ do
 
     Test.it "works" $ do
-      context <- Monadoc.configToContext Config.initial
-        { Config.database = ":memory:"
-        }
+      context <- Monadoc.configToContext Test.config
       let
         it =
           App.run context { Context.request = Wai.defaultRequest } Throw.handle

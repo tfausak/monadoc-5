@@ -195,4 +195,5 @@ test-suite test
     Monadoc.Worker.MainSpec
     MonadocSpec
     Test
+    Test.Extra
   type: exitcode-stdio-1.0

@@ -49,7 +49,7 @@ spec = Test.describe "Monadoc" $ do
   Test.describe "configToContext" $ do
 
     Test.it "works" $ do
-      let config = Config.initial { Config.database = ":memory:" }
+      let config = Test.config
       context <- Monadoc.configToContext config
       Context.config context `Test.shouldBe` config
 

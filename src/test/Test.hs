@@ -1,8 +1,10 @@
 {-# OPTIONS_GHC -Wno-missing-import-lists #-}
 
 module Test
-  ( module Test.Hspec
+  ( module Test.Extra
+  , module Test.Hspec
   )
 where
 
+import Test.Extra
 import Test.Hspec
