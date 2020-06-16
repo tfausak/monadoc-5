@@ -3,22 +3,33 @@ module Monadoc.Handler.LogOut
   )
 where
 
-import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.Pool as Pool
+import qualified Data.Map as Map
+import qualified Data.Text.Encoding as Text
+import qualified Data.UUID as Uuid
+import qualified Monadoc.Handler.GitHubCallback as GitHubCallback
 import qualified Monadoc.Server.Common as Common
+import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Monadoc.Type.Guid as Guid
+import qualified Monadoc.Type.Route as Route
+import qualified Monadoc.Vendor.Time as Time
 import qualified Network.HTTP.Types as Http
+import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
+import qualified Web.Cookie as Cookie
 
-handle :: App.App request Wai.Response
+handle :: App.App Wai.Request Wai.Response
 handle = do
-  pool <- Reader.asks Context.pool
-  Trans.lift . Pool.withResource pool $ \connection -> do
-    rows <- Sql.query_ connection "select 1"
-    Monad.guard $ rows == [Sql.Only (1 :: Int)]
   config <- Reader.asks Context.config
-  pure . Common.statusResponse Http.ok200 $ Common.defaultHeaders config
+  cookie <- GitHubCallback.makeCookie $ Guid.fromUuid Uuid.nil
+  let
+    headers = Map.union (Common.defaultHeaders config) $ Map.fromList
+      [ (Http.hLocation, Text.encodeUtf8 $ Router.renderAbsoluteRoute config Route.Index)
+      , ( Http.hSetCookie
+        , GitHubCallback.renderCookie cookie
+          { Cookie.setCookieExpires = Just $ Time.utcTime 2000 1 1 0 0 0 }
+        )
+      ]
+  pure $ Common.statusResponse Http.found302 headers

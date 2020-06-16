@@ -10,9 +10,11 @@ import qualified Data.Text.Encoding as Text
 import qualified Lucid as Html
 import qualified Monadoc.Handler.Index as Index
 import qualified Monadoc.Server.Common as Common
+import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
@@ -38,5 +40,8 @@ handle = do
           ]
           "OAuth application"
         " access on GitHub. Or you can "
-        Html.a_ [Html.href_ "#todo"] "log out"
+        Html.form_
+          [ Html.method_ "post"
+          , Html.action_ $ Router.renderAbsoluteRoute config Route.LogOut
+          ] $ Html.input_ [Html.type_ "submit", Html.value_ "log out"]
         "."

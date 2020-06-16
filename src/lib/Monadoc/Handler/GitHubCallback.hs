@@ -1,5 +1,8 @@
 module Monadoc.Handler.GitHubCallback
   ( handle
+  -- TODO: Move these somewhere else.
+  , makeCookie
+  , renderCookie
   )
 where
 
@@ -62,7 +65,7 @@ handle = do
   pure
     . Common.statusResponse Http.found302
     . Map.insert Http.hLocation redirect
-    . Map.insert Http.hSetCookie cookie
+    . Map.insert Http.hSetCookie (renderCookie cookie)
     $ Common.defaultHeaders config
 
 getCode :: App.App Wai.Request (Maybe ByteString.ByteString)
@@ -128,20 +131,22 @@ upsertUser token ghUser = do
         [User.id user]
       pure . fmap Sql.fromOnly $ Maybe.listToMaybe rows
 
-makeCookie :: Guid.Guid -> App.App request ByteString.ByteString
+makeCookie :: Guid.Guid -> App.App request Cookie.SetCookie
 makeCookie guid = do
   config <- Reader.asks Context.config
-  pure
-    . LazyByteString.toStrict
-    . Builder.toLazyByteString
-    $ Cookie.renderSetCookie Cookie.defaultSetCookie
-        { Cookie.setCookieHttpOnly = True
-        , Cookie.setCookieName = "guid"
-        , Cookie.setCookiePath = Just "/"
-        , Cookie.setCookieSameSite = Just Cookie.sameSiteLax
-        , Cookie.setCookieSecure = Common.isSecure config
-        , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
-        }
+  pure Cookie.defaultSetCookie
+    { Cookie.setCookieHttpOnly = True
+    , Cookie.setCookieName = "guid"
+    , Cookie.setCookiePath = Just "/"
+    , Cookie.setCookieSameSite = Just Cookie.sameSiteLax
+    , Cookie.setCookieSecure = Common.isSecure config
+    , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
+    }
+
+renderCookie :: Cookie.SetCookie -> ByteString.ByteString
+renderCookie = LazyByteString.toStrict
+  . Builder.toLazyByteString
+  . Cookie.renderSetCookie
 
 getRedirect :: App.App Wai.Request ByteString.ByteString
 getRedirect =
