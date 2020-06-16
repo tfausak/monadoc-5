@@ -2,6 +2,7 @@ module Monadoc.Handler.Index
   ( handle
   -- TODO: Move these somewhere else.
   , getCookieUser
+  , makeLoginUrl
   )
 where
 
