@@ -3,7 +3,6 @@ module Monadoc.Handler.LogoSpec
   )
 where
 
-import qualified Monadoc
 import qualified Monadoc.Handler.Logo as Logo
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
@@ -17,7 +16,7 @@ spec = Test.describe "Monadoc.Handler.Logo" $ do
   Test.describe "handle" $ do
 
     Test.it "works" $ do
-      context <- Monadoc.configToContext Test.config
+      context <- Test.makeContext
       response <- App.run
         context { Context.request = Wai.defaultRequest }
         Logo.handle

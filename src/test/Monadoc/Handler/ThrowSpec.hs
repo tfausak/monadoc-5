@@ -4,7 +4,6 @@ module Monadoc.Handler.ThrowSpec
 where
 
 import qualified Control.Monad.Catch as Exception
-import qualified Monadoc
 import qualified Monadoc.Handler.Throw as Throw
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
@@ -19,7 +18,7 @@ spec = Test.describe "Monadoc.Handler.Throw" $ do
   Test.describe "handle" $ do
 
     Test.it "works" $ do
-      context <- Monadoc.configToContext Test.config
+      context <- Test.makeContext
       let
         it =
           App.run context { Context.request = Wai.defaultRequest } Throw.handle

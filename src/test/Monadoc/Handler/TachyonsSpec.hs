@@ -3,7 +3,6 @@ module Monadoc.Handler.TachyonsSpec
   )
 where
 
-import qualified Monadoc
 import qualified Monadoc.Handler.Tachyons as Tachyons
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
@@ -17,7 +16,7 @@ spec = Test.describe "Monadoc.Handler.Tachyons" $ do
   Test.describe "handle" $ do
 
     Test.it "works" $ do
-      context <- Monadoc.configToContext Test.config
+      context <- Test.makeContext
       response <- App.run
         context { Context.request = Wai.defaultRequest }
         Tachyons.handle
