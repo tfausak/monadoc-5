@@ -12,7 +12,6 @@ import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Settings as Settings
@@ -94,7 +93,7 @@ getUser token = do
   let
     request = initialRequest
       { Client.requestHeaders =
-        [ (Http.hAuthorization, "Bearer " <> Text.encodeUtf8 token)
+        [ (Http.hAuthorization, "Bearer " <> Utf8.fromText token)
         , (Http.hUserAgent, Settings.serverName)
         ]
       }
