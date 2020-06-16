@@ -29,6 +29,10 @@ handle = do
       $ Map.insert Http.hLocation (Text.encodeUtf8 loginUrl) headers
     Just _ -> Common.htmlResponse Http.ok200 headers
       . Index.makeHtmlWith config maybeUser loginUrl
+      . Html.form_
+        [ Html.method_ "post"
+        , Html.action_ $ Router.renderAbsoluteRoute config Route.LogOut
+        ]
       . Html.p_
       $ do
         "You are logged in. You can manage your "
@@ -40,8 +44,9 @@ handle = do
           ]
           "OAuth application"
         " access on GitHub. Or you can "
-        Html.form_
-          [ Html.method_ "post"
-          , Html.action_ $ Router.renderAbsoluteRoute config Route.LogOut
-          ] $ Html.input_ [Html.type_ "submit", Html.value_ "log out"]
-        "."
+        Html.input_
+          [ Html.type_ "submit"
+          , Html.value_ "log out"
+          , Html.class_ "bg-inherit bn input-reset pa0 pointer red underline"
+          ]
+        " of Monadoc."
