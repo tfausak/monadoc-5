@@ -9,7 +9,7 @@ license: ISC
 maintainer: Taylor Fausak
 name: monadoc
 synopsis: Better Haskell documentation.
-version: 0.2020.6.15
+version: 0.2020.6.16
 
 source-repository head
   location: https://github.com/tfausak/monadoc
