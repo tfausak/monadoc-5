@@ -31,22 +31,19 @@ import qualified System.FilePath as FilePath
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
 
-htmlResponse :: Http.Status -> Headers -> Html.Html a -> Wai.Response
-htmlResponse status headers =
-  responseBS
-      status
-      (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
-    . LazyByteString.toStrict
-    . Html.renderBS
-
-simpleFileResponse
-  :: FilePath -> ByteString.ByteString -> App.App request Wai.Response
-simpleFileResponse file mime = do
-  config <- Reader.asks Context.config
-  fileResponse
-    Http.ok200
-    (Map.insert Http.hContentType mime $ defaultHeaders config)
-    file
+defaultHeaders :: Config.Config -> Headers
+defaultHeaders config =
+  let
+    contentSecurityPolicy = "base-uri 'none'; default-src 'self'"
+    strictTransportSecurity =
+      "max-age=" <> if isSecure config then "86400" else "0"
+  in Map.fromList
+    [ ("Content-Security-Policy", contentSecurityPolicy)
+    , ("Referrer-Policy", "no-referrer")
+    , ("Strict-Transport-Security", strictTransportSecurity)
+    , ("X-Content-Type-Options", "nosniff")
+    , ("X-Frame-Options", "deny")
+    ]
 
 fileResponse
   :: Http.Status -> Headers -> FilePath -> App.App request Wai.Response
@@ -56,16 +53,16 @@ fileResponse status headers name = Trans.lift $ do
   contents <- ByteString.readFile absolute
   pure $ responseBS status headers contents
 
-statusResponse :: Http.Status -> Headers -> Wai.Response
-statusResponse status headers = stringResponse status headers $ unwords
-  [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
-
-stringResponse :: Http.Status -> Headers -> String -> Wai.Response
-stringResponse status headers =
+htmlResponse :: Http.Status -> Headers -> Html.Html a -> Wai.Response
+htmlResponse status headers =
   responseBS
       status
-      (Map.insert Http.hContentType "text/plain;charset=utf-8" headers)
-    . Utf8.fromString
+      (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
+    . LazyByteString.toStrict
+    . Html.renderBS
+
+isSecure :: Config.Config -> Bool
+isSecure = List.isPrefixOf "https:" . Config.url
 
 responseBS :: Http.Status -> Headers -> ByteString.ByteString -> Wai.Response
 responseBS status headers body =
@@ -79,21 +76,22 @@ responseBS status headers body =
     (Map.toList $ Map.union extraHeaders headers)
     (LazyByteString.fromStrict body)
 
-defaultHeaders :: Config.Config -> Headers
-defaultHeaders config = Map.fromList
-  [ ("Content-Security-Policy", contentSecurityPolicy)
-  , ("Referrer-Policy", "no-referrer")
-  , ("Strict-Transport-Security", strictTransportSecurity config)
-  , ("X-Content-Type-Options", "nosniff")
-  , ("X-Frame-Options", "deny")
-  ]
+simpleFileResponse
+  :: FilePath -> ByteString.ByteString -> App.App request Wai.Response
+simpleFileResponse file mime = do
+  config <- Reader.asks Context.config
+  fileResponse
+    Http.ok200
+    (Map.insert Http.hContentType mime $ defaultHeaders config)
+    file
 
-contentSecurityPolicy :: ByteString.ByteString
-contentSecurityPolicy = "base-uri 'none'; default-src 'self'"
+statusResponse :: Http.Status -> Headers -> Wai.Response
+statusResponse status headers = stringResponse status headers $ unwords
+  [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
 
-strictTransportSecurity :: Config.Config -> ByteString.ByteString
-strictTransportSecurity config =
-  "max-age=" <> if isSecure config then "86400" else "0"
-
-isSecure :: Config.Config -> Bool
-isSecure = List.isPrefixOf "https:" . Config.url
+stringResponse :: Http.Status -> Headers -> String -> Wai.Response
+stringResponse status headers =
+  responseBS
+      status
+      (Map.insert Http.hContentType "text/plain;charset=utf-8" headers)
+    . Utf8.fromString
