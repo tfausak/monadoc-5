@@ -42,7 +42,8 @@ handle = do
   loginUrl <- makeLoginUrl
   pure
     . Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
-    $ makeHtmlWith config maybeUser loginUrl
+    . makeHtmlWith config maybeUser loginUrl
+    $ Html.p_ "\x1f516 Better Haskell documentation."
 
 getCookieUser :: App.App Wai.Request (Maybe User.User)
 getCookieUser = do
@@ -84,8 +85,8 @@ makeLoginUrl = do
 fromUtf8 :: ByteString.ByteString -> Text.Text
 fromUtf8 = Text.decodeUtf8With Text.lenientDecode
 
-makeHtmlWith :: Config.Config -> Maybe User.User -> Text.Text -> Html.Html ()
-makeHtmlWith config maybeUser loginUrl = do
+makeHtmlWith :: Config.Config -> Maybe User.User -> Text.Text -> Html.Html () -> Html.Html ()
+makeHtmlWith config maybeUser loginUrl content = do
   Html.doctype_
   Html.html_ [Html.lang_ "en-US"] $ do
     Html.head_ $ do
@@ -99,10 +100,10 @@ makeHtmlWith config maybeUser loginUrl = do
         , Html.content_ "initial-scale=1,width=device-width"
         ]
       let
-        og property content =
+        og k v =
           Html.meta_
-            [ Html.term "property" $ "og:" <> property
-            , Html.content_ content
+            [ Html.term "property" $ "og:" <> k
+            , Html.content_ v
             ]
       og "title" "Monadoc"
       og "type" "website"
@@ -146,8 +147,7 @@ makeHtmlWith config maybeUser loginUrl = do
                 ] $ do
                   "@"
                   Html.toHtml . Login.toText $ User.login user
-      Html.main_ [Html.class_ "pa3"]
-        $ Html.p_ "\x1f516 Better Haskell documentation."
+      Html.main_ [Html.class_ "pa3"] content
       Html.footer_ [Html.class_ "mid-gray pa3 tc"] . Html.p_ $ do
         "Powered by "
         Html.a_
