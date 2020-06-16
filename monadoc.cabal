@@ -97,6 +97,7 @@ library
     Monadoc.Server.Middleware
     Monadoc.Server.Router
     Monadoc.Server.Settings
+    Monadoc.Server.Template
     Monadoc.Type.App
     Monadoc.Type.Binary
     Monadoc.Type.Config
@@ -163,6 +164,7 @@ test-suite test
     Monadoc.Server.MiddlewareSpec
     Monadoc.Server.RouterSpec
     Monadoc.Server.SettingsSpec
+    Monadoc.Server.TemplateSpec
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
     Monadoc.Type.ConfigResultSpec

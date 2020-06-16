@@ -7,9 +7,9 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.Text as Text
 import qualified Lucid as Html
-import qualified Monadoc.Handler.Index as Index
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Router as Router
+import qualified Monadoc.Server.Template as Template
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
@@ -29,7 +29,7 @@ handle = do
       $ Map.insert Http.hLocation (Utf8.fromText loginUrl) headers
     Just _ ->
       Common.htmlResponse Http.ok200 headers
-        . Index.makeHtmlWith config maybeUser loginUrl
+        . Template.makeHtmlWith config maybeUser loginUrl
         . Html.form_
             [ Html.method_ "post"
             , Html.action_ $ Router.renderAbsoluteRoute config Route.LogOut
