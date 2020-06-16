@@ -40,84 +40,9 @@ handle = do
 
   let config = Context.config context
   loginUrl <- makeLoginUrl
-  pure . Common.htmlResponse Http.ok200 (Common.defaultHeaders config) $ do
-    Html.doctype_
-    Html.html_ [Html.lang_ "en-US"] $ do
-      Html.head_ $ do
-        Html.meta_ [Html.charset_ "utf-8"]
-        Html.meta_
-          [ Html.name_ "description"
-          , Html.content_ "\x1f516 Better Haskell documentation."
-          ]
-        Html.meta_
-          [ Html.name_ "viewport"
-          , Html.content_ "initial-scale=1,width=device-width"
-          ]
-        let
-          og property content =
-            Html.meta_
-              [ Html.term "property" $ "og:" <> property
-              , Html.content_ content
-              ]
-        og "title" "Monadoc"
-        og "type" "website"
-        let url = Router.renderAbsoluteRoute config Route.Index
-        og "url" url
-        og "image" $ Router.renderAbsoluteRoute config Route.Logo
-        Html.link_ [Html.rel_ "canonical", Html.href_ url]
-        Html.link_
-          [ Html.rel_ "icon"
-          , Html.href_ $ Router.renderAbsoluteRoute config Route.Favicon
-          ]
-        Html.link_
-          [ Html.rel_ "apple-touch-icon"
-          , Html.href_ $ Router.renderAbsoluteRoute config Route.Logo
-          ]
-        Html.link_
-          [ Html.rel_ "stylesheet"
-          , Html.href_ $ Router.renderAbsoluteRoute config Route.Tachyons
-          ]
-        Html.title_ "Monadoc"
-      Html.body_ [Html.class_ "bg-white black sans-serif"] $ do
-        Html.header_
-            [ Html.class_
-                "bg-purple flex items-center justify-between pa3 white"
-            ]
-          $ do
-              Html.h1_ [Html.class_ "ma0 normal"] $ Html.a_
-                [ Html.class_ "color-inherit no-underline"
-                , Html.href_ $ Router.renderAbsoluteRoute config Route.Index
-                ]
-                "Monadoc"
-              Html.p_ $ case maybeUser of
-                Nothing -> Html.a_
-                  [ Html.class_ "color-inherit no-underline"
-                  , Html.href_ loginUrl
-                  ]
-                  "Log in with GitHub"
-                Just user -> Html.a_
-                  [ Html.class_ "color-inherit no-underline"
-                  , Html.href_ $ Router.renderAbsoluteRoute config Route.Account
-                  ] $ do
-                    "@"
-                    Html.toHtml . Login.toText $ User.login user
-        Html.main_ [Html.class_ "pa3"]
-          $ Html.p_ "\x1f516 Better Haskell documentation."
-        Html.footer_ [Html.class_ "mid-gray pa3 tc"] . Html.p_ $ do
-          "Powered by "
-          Html.a_
-            [ Html.class_ "color-inherit"
-            , Html.href_ "https://github.com/tfausak/monadoc"
-            ]
-            "Monadoc"
-          " version "
-          Html.code_ $ Html.toHtml Version.string
-          case Commit.hash of
-            Nothing -> pure ()
-            Just commit -> do
-              " commit "
-              Html.code_ . Html.toHtml $ take 7 commit
-          "."
+  pure
+    . Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
+    $ makeHtmlWith config maybeUser loginUrl
 
 getCookieUser :: App.App Wai.Request (Maybe User.User)
 getCookieUser = do
@@ -158,3 +83,83 @@ makeLoginUrl = do
 
 fromUtf8 :: ByteString.ByteString -> Text.Text
 fromUtf8 = Text.decodeUtf8With Text.lenientDecode
+
+makeHtmlWith :: Config.Config -> Maybe User.User -> Text.Text -> Html.Html ()
+makeHtmlWith config maybeUser loginUrl = do
+  Html.doctype_
+  Html.html_ [Html.lang_ "en-US"] $ do
+    Html.head_ $ do
+      Html.meta_ [Html.charset_ "utf-8"]
+      Html.meta_
+        [ Html.name_ "description"
+        , Html.content_ "\x1f516 Better Haskell documentation."
+        ]
+      Html.meta_
+        [ Html.name_ "viewport"
+        , Html.content_ "initial-scale=1,width=device-width"
+        ]
+      let
+        og property content =
+          Html.meta_
+            [ Html.term "property" $ "og:" <> property
+            , Html.content_ content
+            ]
+      og "title" "Monadoc"
+      og "type" "website"
+      let url = Router.renderAbsoluteRoute config Route.Index
+      og "url" url
+      og "image" $ Router.renderAbsoluteRoute config Route.Logo
+      Html.link_ [Html.rel_ "canonical", Html.href_ url]
+      Html.link_
+        [ Html.rel_ "icon"
+        , Html.href_ $ Router.renderAbsoluteRoute config Route.Favicon
+        ]
+      Html.link_
+        [ Html.rel_ "apple-touch-icon"
+        , Html.href_ $ Router.renderAbsoluteRoute config Route.Logo
+        ]
+      Html.link_
+        [ Html.rel_ "stylesheet"
+        , Html.href_ $ Router.renderAbsoluteRoute config Route.Tachyons
+        ]
+      Html.title_ "Monadoc"
+    Html.body_ [Html.class_ "bg-white black sans-serif"] $ do
+      Html.header_
+          [ Html.class_
+              "bg-purple flex items-center justify-between pa3 white"
+          ]
+        $ do
+            Html.h1_ [Html.class_ "ma0 normal"] $ Html.a_
+              [ Html.class_ "color-inherit no-underline"
+              , Html.href_ $ Router.renderAbsoluteRoute config Route.Index
+              ]
+              "Monadoc"
+            Html.p_ $ case maybeUser of
+              Nothing -> Html.a_
+                [ Html.class_ "color-inherit no-underline"
+                , Html.href_ loginUrl
+                ]
+                "Log in with GitHub"
+              Just user -> Html.a_
+                [ Html.class_ "color-inherit no-underline"
+                , Html.href_ $ Router.renderAbsoluteRoute config Route.Account
+                ] $ do
+                  "@"
+                  Html.toHtml . Login.toText $ User.login user
+      Html.main_ [Html.class_ "pa3"]
+        $ Html.p_ "\x1f516 Better Haskell documentation."
+      Html.footer_ [Html.class_ "mid-gray pa3 tc"] . Html.p_ $ do
+        "Powered by "
+        Html.a_
+          [ Html.class_ "color-inherit"
+          , Html.href_ "https://github.com/tfausak/monadoc"
+          ]
+          "Monadoc"
+        " version "
+        Html.code_ $ Html.toHtml Version.string
+        case Commit.hash of
+          Nothing -> pure ()
+          Just commit -> do
+            " commit "
+            Html.code_ . Html.toHtml $ take 7 commit
+        "."
