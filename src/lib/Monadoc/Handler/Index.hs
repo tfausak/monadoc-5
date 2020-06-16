@@ -76,15 +76,15 @@ handle = do
         Lucid.link_ [Lucid.rel_ "canonical", Lucid.href_ url]
         Lucid.link_
           [ Lucid.rel_ "icon"
-          , Lucid.href_ $ Router.renderRelativeRoute Route.Favicon
+          , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Favicon
           ]
         Lucid.link_
           [ Lucid.rel_ "apple-touch-icon"
-          , Lucid.href_ $ Router.renderRelativeRoute Route.Logo
+          , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Logo
           ]
         Lucid.link_
           [ Lucid.rel_ "stylesheet"
-          , Lucid.href_ $ Router.renderRelativeRoute Route.Tachyons
+          , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Tachyons
           ]
         Lucid.title_ "Monadoc"
       Lucid.body_ [Lucid.class_ "bg-white black sans-serif"] $ do
@@ -95,7 +95,7 @@ handle = do
           $ do
               Lucid.h1_ [Lucid.class_ "ma0 normal"] $ Lucid.a_
                 [ Lucid.class_ "color-inherit no-underline"
-                , Lucid.href_ $ Router.renderRelativeRoute Route.Index
+                , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Index
                 ]
                 "Monadoc"
               case maybeUser of
