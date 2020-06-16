@@ -9,13 +9,10 @@ where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
-import qualified Data.Text.Encoding.Error as Text
 import qualified Data.UUID as Uuid
 import qualified Lucid as Html
 import qualified Monadoc.Data.Commit as Commit
@@ -29,6 +26,7 @@ import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.User as User
+import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
@@ -71,20 +69,17 @@ makeLoginUrl = do
     route = Router.renderAbsoluteRoute config Route.GitHubCallback
     request = Context.request context
     current = Wai.rawPathInfo request <> Wai.rawQueryString request
-    redirectUri =
-      route <> fromUtf8 (Http.renderSimpleQuery True [("redirect", current)])
+    redirectUri = route
+      <> Utf8.toText (Http.renderSimpleQuery True [("redirect", current)])
     query = Http.renderQueryText
       True
       [("client_id", Just clientId), ("redirect_uri", Just redirectUri)]
   pure
-    . fromUtf8
+    . Utf8.toText
     . LazyByteString.toStrict
     . Builder.toLazyByteString
     $ "https://github.com/login/oauth/authorize"
     <> query
-
-fromUtf8 :: ByteString.ByteString -> Text.Text
-fromUtf8 = Text.decodeUtf8With Text.lenientDecode
 
 makeHtmlWith
   :: Config.Config

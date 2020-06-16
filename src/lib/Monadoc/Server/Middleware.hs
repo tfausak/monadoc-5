@@ -10,8 +10,6 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
-import qualified Data.Text.Encoding.Error as Text
 import qualified GHC.Clock as Clock
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
@@ -113,7 +111,7 @@ acceptsGzip =
   elem "gzip"
     . fmap Text.strip
     . Text.splitOn ","
-    . Text.decodeUtf8With Text.lenientDecode
+    . Utf8.toText
     . Maybe.fromMaybe ""
     . lookup Http.hAcceptEncoding
     . Wai.requestHeaders
