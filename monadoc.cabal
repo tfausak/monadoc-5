@@ -122,7 +122,9 @@ library
     Monadoc.Type.WithCallStack
     Monadoc.Utility.Utf8
     Monadoc.Vendor.Sql
+    Monadoc.Vendor.Sql.Extra
     Monadoc.Vendor.Time
+    Monadoc.Vendor.Time.Extra
     Monadoc.Worker.Main
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
