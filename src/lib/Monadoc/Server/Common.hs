@@ -5,6 +5,7 @@ module Monadoc.Server.Common
   , fileResponse
   , htmlResponse
   , isSecure
+  , makeCookie
   , renderCookie
   , simpleFileResponse
   , statusResponse
@@ -20,10 +21,12 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Data.UUID as Uuid
 import qualified Lucid as Html
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
@@ -79,6 +82,18 @@ htmlResponse status headers =
 
 isSecure :: Config.Config -> Bool
 isSecure = List.isPrefixOf "https:" . Config.url
+
+makeCookie :: Guid.Guid -> App.App request Cookie.SetCookie
+makeCookie guid = do
+  config <- Reader.asks Context.config
+  pure Cookie.defaultSetCookie
+    { Cookie.setCookieHttpOnly = True
+    , Cookie.setCookieName = "guid"
+    , Cookie.setCookiePath = Just "/"
+    , Cookie.setCookieSameSite = Just Cookie.sameSiteLax
+    , Cookie.setCookieSecure = isSecure config
+    , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
+    }
 
 renderCookie :: Cookie.SetCookie -> ByteString.ByteString
 renderCookie =

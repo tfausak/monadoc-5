@@ -7,7 +7,6 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.Text.Encoding as Text
 import qualified Data.UUID as Uuid
-import qualified Monadoc.Handler.GitHubCallback as GitHubCallback
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
@@ -23,7 +22,7 @@ import qualified Web.Cookie as Cookie
 handle :: App.App Wai.Request Wai.Response
 handle = do
   config <- Reader.asks Context.config
-  cookie <- GitHubCallback.makeCookie $ Guid.fromUuid Uuid.nil
+  cookie <- Common.makeCookie $ Guid.fromUuid Uuid.nil
   let
     headers = Map.union (Common.defaultHeaders config) $ Map.fromList
       [ ( Http.hLocation

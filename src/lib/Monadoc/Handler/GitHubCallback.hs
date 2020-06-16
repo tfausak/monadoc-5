@@ -1,7 +1,5 @@
 module Monadoc.Handler.GitHubCallback
   ( handle
-  -- TODO: Move these somewhere else.
-  , makeCookie
   )
 where
 
@@ -15,7 +13,6 @@ import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
-import qualified Data.UUID as Uuid
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Settings as Settings
@@ -33,7 +30,6 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified System.Random as Random
-import qualified Web.Cookie as Cookie
 
 handle :: Stack.HasCallStack => App.App Wai.Request Wai.Response
 handle = do
@@ -57,7 +53,7 @@ handle = do
     Nothing -> WithCallStack.throw $ userError "no guid"
     Just guid -> pure guid
 
-  cookie <- makeCookie guid
+  cookie <- Common.makeCookie guid
   redirect <- getRedirect
   config <- Reader.asks Context.config
   pure
@@ -128,18 +124,6 @@ upsertUser token ghUser = do
         "select guid from users where id = ?"
         [User.id user]
       pure . fmap Sql.fromOnly $ Maybe.listToMaybe rows
-
-makeCookie :: Guid.Guid -> App.App request Cookie.SetCookie
-makeCookie guid = do
-  config <- Reader.asks Context.config
-  pure Cookie.defaultSetCookie
-    { Cookie.setCookieHttpOnly = True
-    , Cookie.setCookieName = "guid"
-    , Cookie.setCookiePath = Just "/"
-    , Cookie.setCookieSameSite = Just Cookie.sameSiteLax
-    , Cookie.setCookieSecure = Common.isSecure config
-    , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
-    }
 
 getRedirect :: App.App Wai.Request ByteString.ByteString
 getRedirect =
