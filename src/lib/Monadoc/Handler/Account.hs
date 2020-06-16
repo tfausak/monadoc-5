@@ -23,7 +23,7 @@ handle = do
   config <- Reader.asks Context.config
   let headers = Common.defaultHeaders config
   maybeUser <- Index.getCookieUser
-  loginUrl <- Index.makeLoginUrl
+  loginUrl <- Common.makeLoginUrl
   pure $ case maybeUser of
     Nothing -> Common.statusResponse Http.found302
       $ Map.insert Http.hLocation (Utf8.fromText loginUrl) headers

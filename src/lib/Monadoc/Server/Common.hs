@@ -6,6 +6,7 @@ module Monadoc.Server.Common
   , htmlResponse
   , isSecure
   , makeCookie
+  , makeLoginUrl
   , renderCookie
   , simpleFileResponse
   , statusResponse
@@ -21,12 +22,15 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Data.Text as Text
 import qualified Data.UUID as Uuid
 import qualified Lucid as Html
+import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Guid as Guid
+import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
@@ -94,6 +98,27 @@ makeCookie guid = do
     , Cookie.setCookieSecure = isSecure config
     , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
     }
+
+makeLoginUrl :: App.App Wai.Request Text.Text
+makeLoginUrl = do
+  context <- Reader.ask
+  let
+    config = Context.config context
+    clientId = Text.pack $ Config.clientId config
+    route = Router.renderAbsoluteRoute config Route.GitHubCallback
+    request = Context.request context
+    current = Wai.rawPathInfo request <> Wai.rawQueryString request
+    redirectUri = route
+      <> Utf8.toText (Http.renderSimpleQuery True [("redirect", current)])
+    query = Http.renderQueryText
+      True
+      [("client_id", Just clientId), ("redirect_uri", Just redirectUri)]
+  pure
+    . Utf8.toText
+    . LazyByteString.toStrict
+    . Builder.toLazyByteString
+    $ "https://github.com/login/oauth/authorize"
+    <> query
 
 renderCookie :: Cookie.SetCookie -> ByteString.ByteString
 renderCookie =

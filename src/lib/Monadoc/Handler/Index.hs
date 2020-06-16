@@ -3,14 +3,11 @@ module Monadoc.Handler.Index
   -- TODO: Move these somewhere else.
   , getCookieUser
   , makeHtmlWith
-  , makeLoginUrl
   )
 where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Data.ByteString.Builder as Builder
-import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.UUID as Uuid
@@ -26,7 +23,6 @@ import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.User as User
-import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
@@ -38,7 +34,7 @@ handle = do
   maybeUser <- getCookieUser
 
   let config = Context.config context
-  loginUrl <- makeLoginUrl
+  loginUrl <- Common.makeLoginUrl
   pure
     . Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
     . makeHtmlWith config maybeUser loginUrl
@@ -59,27 +55,6 @@ getCookieUser = do
               connection
               "select * from users where guid = ?"
               [guid]
-
-makeLoginUrl :: App.App Wai.Request Text.Text
-makeLoginUrl = do
-  context <- Reader.ask
-  let
-    config = Context.config context
-    clientId = Text.pack $ Config.clientId config
-    route = Router.renderAbsoluteRoute config Route.GitHubCallback
-    request = Context.request context
-    current = Wai.rawPathInfo request <> Wai.rawQueryString request
-    redirectUri = route
-      <> Utf8.toText (Http.renderSimpleQuery True [("redirect", current)])
-    query = Http.renderQueryText
-      True
-      [("client_id", Just clientId), ("redirect_uri", Just redirectUri)]
-  pure
-    . Utf8.toText
-    . LazyByteString.toStrict
-    . Builder.toLazyByteString
-    $ "https://github.com/login/oauth/authorize"
-    <> query
 
 makeHtmlWith
   :: Config.Config
