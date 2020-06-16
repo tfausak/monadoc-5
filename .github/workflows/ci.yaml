@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
     branches:
-      - master
+      - main
   push:
     branches:
-      - master
+      - main
 
 jobs:
 
@@ -62,7 +62,7 @@ jobs:
           path: docker
 
   deploy:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     needs: push
     runs-on: ubuntu-18.04
     steps:
