@@ -1,10 +1,10 @@
 module Monadoc.Server.Common
   ( Headers
+  , byteStringResponse
   , defaultHeaders
   , fileResponse
   , htmlResponse
   , isSecure
-  , responseBS
   , simpleFileResponse
   , statusResponse
   , stringResponse
@@ -31,6 +31,19 @@ import qualified System.FilePath as FilePath
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
 
+byteStringResponse
+  :: Http.Status -> Headers -> ByteString.ByteString -> Wai.Response
+byteStringResponse status headers body =
+  let
+    contentLength = Utf8.fromString . show $ ByteString.length body
+    etag = Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
+    extraHeaders =
+      Map.fromList [(Http.hContentLength, contentLength), (Http.hETag, etag)]
+  in Wai.responseLBS
+    status
+    (Map.toList $ Map.union extraHeaders headers)
+    (LazyByteString.fromStrict body)
+
 defaultHeaders :: Config.Config -> Headers
 defaultHeaders config =
   let
@@ -51,11 +64,11 @@ fileResponse status headers name = Trans.lift $ do
   let relative = FilePath.combine "data" name
   absolute <- Package.getDataFileName relative
   contents <- ByteString.readFile absolute
-  pure $ responseBS status headers contents
+  pure $ byteStringResponse status headers contents
 
 htmlResponse :: Http.Status -> Headers -> Html.Html a -> Wai.Response
 htmlResponse status headers =
-  responseBS
+  byteStringResponse
       status
       (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
     . LazyByteString.toStrict
@@ -63,18 +76,6 @@ htmlResponse status headers =
 
 isSecure :: Config.Config -> Bool
 isSecure = List.isPrefixOf "https:" . Config.url
-
-responseBS :: Http.Status -> Headers -> ByteString.ByteString -> Wai.Response
-responseBS status headers body =
-  let
-    contentLength = Utf8.fromString . show $ ByteString.length body
-    etag = Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
-    extraHeaders =
-      Map.fromList [(Http.hContentLength, contentLength), (Http.hETag, etag)]
-  in Wai.responseLBS
-    status
-    (Map.toList $ Map.union extraHeaders headers)
-    (LazyByteString.fromStrict body)
 
 simpleFileResponse
   :: FilePath -> ByteString.ByteString -> App.App request Wai.Response
@@ -91,7 +92,7 @@ statusResponse status headers = stringResponse status headers $ unwords
 
 stringResponse :: Http.Status -> Headers -> String -> Wai.Response
 stringResponse status headers =
-  responseBS
+  byteStringResponse
       status
       (Map.insert Http.hContentType "text/plain;charset=utf-8" headers)
     . Utf8.fromString
