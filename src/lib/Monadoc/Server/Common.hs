@@ -18,7 +18,7 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.List as List
 import qualified Data.Map as Map
-import qualified Lucid
+import qualified Lucid as Html
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
@@ -31,13 +31,13 @@ import qualified System.FilePath as FilePath
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
 
-htmlResponse :: Http.Status -> Headers -> Lucid.Html a -> Wai.Response
+htmlResponse :: Http.Status -> Headers -> Html.Html a -> Wai.Response
 htmlResponse status headers =
   responseBS
       status
       (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
     . LazyByteString.toStrict
-    . Lucid.renderBS
+    . Html.renderBS
 
 simpleFileResponse
   :: FilePath -> ByteString.ByteString -> App.App request Wai.Response

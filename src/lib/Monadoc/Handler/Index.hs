@@ -16,7 +16,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
 import qualified Data.UUID as Uuid
-import qualified Lucid
+import qualified Lucid as Html
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Server.Common as Common
@@ -41,82 +41,82 @@ handle = do
   let config = Context.config context
   loginUrl <- makeLoginUrl
   pure . Common.htmlResponse Http.ok200 (Common.defaultHeaders config) $ do
-    Lucid.doctype_
-    Lucid.html_ [Lucid.lang_ "en-US"] $ do
-      Lucid.head_ $ do
-        Lucid.meta_ [Lucid.charset_ "utf-8"]
-        Lucid.meta_
-          [ Lucid.name_ "description"
-          , Lucid.content_ "\x1f516 Better Haskell documentation."
+    Html.doctype_
+    Html.html_ [Html.lang_ "en-US"] $ do
+      Html.head_ $ do
+        Html.meta_ [Html.charset_ "utf-8"]
+        Html.meta_
+          [ Html.name_ "description"
+          , Html.content_ "\x1f516 Better Haskell documentation."
           ]
-        Lucid.meta_
-          [ Lucid.name_ "viewport"
-          , Lucid.content_ "initial-scale=1,width=device-width"
+        Html.meta_
+          [ Html.name_ "viewport"
+          , Html.content_ "initial-scale=1,width=device-width"
           ]
         let
           og property content =
-            Lucid.meta_
-              [ Lucid.term "property" $ "og:" <> property
-              , Lucid.content_ content
+            Html.meta_
+              [ Html.term "property" $ "og:" <> property
+              , Html.content_ content
               ]
         og "title" "Monadoc"
         og "type" "website"
         let url = Router.renderAbsoluteRoute config Route.Index
         og "url" url
         og "image" $ Router.renderAbsoluteRoute config Route.Logo
-        Lucid.link_ [Lucid.rel_ "canonical", Lucid.href_ url]
-        Lucid.link_
-          [ Lucid.rel_ "icon"
-          , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Favicon
+        Html.link_ [Html.rel_ "canonical", Html.href_ url]
+        Html.link_
+          [ Html.rel_ "icon"
+          , Html.href_ $ Router.renderAbsoluteRoute config Route.Favicon
           ]
-        Lucid.link_
-          [ Lucid.rel_ "apple-touch-icon"
-          , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Logo
+        Html.link_
+          [ Html.rel_ "apple-touch-icon"
+          , Html.href_ $ Router.renderAbsoluteRoute config Route.Logo
           ]
-        Lucid.link_
-          [ Lucid.rel_ "stylesheet"
-          , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Tachyons
+        Html.link_
+          [ Html.rel_ "stylesheet"
+          , Html.href_ $ Router.renderAbsoluteRoute config Route.Tachyons
           ]
-        Lucid.title_ "Monadoc"
-      Lucid.body_ [Lucid.class_ "bg-white black sans-serif"] $ do
-        Lucid.header_
-            [ Lucid.class_
+        Html.title_ "Monadoc"
+      Html.body_ [Html.class_ "bg-white black sans-serif"] $ do
+        Html.header_
+            [ Html.class_
                 "bg-purple flex items-center justify-between pa3 white"
             ]
           $ do
-              Lucid.h1_ [Lucid.class_ "ma0 normal"] $ Lucid.a_
-                [ Lucid.class_ "color-inherit no-underline"
-                , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Index
+              Html.h1_ [Html.class_ "ma0 normal"] $ Html.a_
+                [ Html.class_ "color-inherit no-underline"
+                , Html.href_ $ Router.renderAbsoluteRoute config Route.Index
                 ]
                 "Monadoc"
-              Lucid.p_ $ case maybeUser of
-                Nothing -> Lucid.a_
-                  [ Lucid.class_ "color-inherit no-underline"
-                  , Lucid.href_ loginUrl
+              Html.p_ $ case maybeUser of
+                Nothing -> Html.a_
+                  [ Html.class_ "color-inherit no-underline"
+                  , Html.href_ loginUrl
                   ]
                   "Log in with GitHub"
-                Just user -> Lucid.a_
-                  [ Lucid.class_ "color-inherit no-underline"
-                  , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Account
+                Just user -> Html.a_
+                  [ Html.class_ "color-inherit no-underline"
+                  , Html.href_ $ Router.renderAbsoluteRoute config Route.Account
                   ] $ do
                     "@"
-                    Lucid.toHtml . Login.toText $ User.login user
-        Lucid.main_ [Lucid.class_ "pa3"]
-          $ Lucid.p_ "\x1f516 Better Haskell documentation."
-        Lucid.footer_ [Lucid.class_ "mid-gray pa3 tc"] . Lucid.p_ $ do
+                    Html.toHtml . Login.toText $ User.login user
+        Html.main_ [Html.class_ "pa3"]
+          $ Html.p_ "\x1f516 Better Haskell documentation."
+        Html.footer_ [Html.class_ "mid-gray pa3 tc"] . Html.p_ $ do
           "Powered by "
-          Lucid.a_
-            [ Lucid.class_ "color-inherit"
-            , Lucid.href_ "https://github.com/tfausak/monadoc"
+          Html.a_
+            [ Html.class_ "color-inherit"
+            , Html.href_ "https://github.com/tfausak/monadoc"
             ]
             "Monadoc"
           " version "
-          Lucid.code_ $ Lucid.toHtml Version.string
+          Html.code_ $ Html.toHtml Version.string
           case Commit.hash of
             Nothing -> pure ()
             Just commit -> do
               " commit "
-              Lucid.code_ . Lucid.toHtml $ take 7 commit
+              Html.code_ . Html.toHtml $ take 7 commit
           "."
 
 getCookieUser :: App.App Wai.Request (Maybe User.User)
