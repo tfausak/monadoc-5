@@ -12,6 +12,7 @@ data Route
   | GitHubCallback
   | Index
   | Logo
+  | LogOut
   | Ping
   | Robots
   | Tachyons

@@ -15,6 +15,7 @@ parseRoute method path = case (method, path) of
   ("GET", []) -> Just Route.Index
   ("GET", ["account"]) -> Just Route.Account
   ("GET", ["api", "github-callback"]) -> Just Route.GitHubCallback
+  ("POST", ["api", "log-out"]) -> Just Route.LogOut
   ("GET", ["api", "ping"]) -> Just Route.Ping
   ("GET", ["api", "throw"]) -> Just Route.Throw
   ("GET", ["favicon.ico"]) -> Just Route.Favicon
@@ -30,6 +31,7 @@ renderRelativeRoute route = case route of
   Route.GitHubCallback -> "/api/github-callback"
   Route.Index -> "/"
   Route.Logo -> "/static/logo.png"
+  Route.LogOut -> "/api/log-out"
   Route.Ping -> "/api/ping"
   Route.Robots -> "/robots.txt"
   Route.Tachyons -> "/static/tachyons-4-12-0.css"

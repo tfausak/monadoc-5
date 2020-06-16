@@ -17,6 +17,7 @@ import qualified Monadoc.Handler.FaviconSpec
 import qualified Monadoc.Handler.GitHubCallbackSpec
 import qualified Monadoc.Handler.IndexSpec
 import qualified Monadoc.Handler.LogoSpec
+import qualified Monadoc.Handler.LogOutSpec
 import qualified Monadoc.Handler.PingSpec
 import qualified Monadoc.Handler.RobotsSpec
 import qualified Monadoc.Handler.TachyonsSpec
@@ -70,6 +71,7 @@ main = Hspec.hspec $ do
   Monadoc.Handler.GitHubCallbackSpec.spec
   Monadoc.Handler.IndexSpec.spec
   Monadoc.Handler.LogoSpec.spec
+  Monadoc.Handler.LogOutSpec.spec
   Monadoc.Handler.PingSpec.spec
   Monadoc.Handler.RobotsSpec.spec
   Monadoc.Handler.TachyonsSpec.spec

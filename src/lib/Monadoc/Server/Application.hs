@@ -9,6 +9,7 @@ import qualified Monadoc.Handler.Favicon as Handler.Favicon
 import qualified Monadoc.Handler.GitHubCallback as Handler.GitHubCallback
 import qualified Monadoc.Handler.Index as Handler.Index
 import qualified Monadoc.Handler.Logo as Handler.Logo
+import qualified Monadoc.Handler.LogOut as Handler.LogOut
 import qualified Monadoc.Handler.Ping as Handler.Ping
 import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
@@ -47,6 +48,7 @@ runRoute maybeRoute = do
     Route.GitHubCallback -> Handler.GitHubCallback.handle
     Route.Index -> Handler.Index.handle
     Route.Logo -> Handler.Logo.handle
+    Route.LogOut -> Handler.LogOut.handle
     Route.Ping -> Handler.Ping.handle
     Route.Robots -> Handler.Robots.handle
     Route.Tachyons -> Handler.Tachyons.handle
