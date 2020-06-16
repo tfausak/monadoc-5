@@ -144,9 +144,8 @@ makeCookie guid = do
     }
 
 renderCookie :: Cookie.SetCookie -> ByteString.ByteString
-renderCookie = LazyByteString.toStrict
-  . Builder.toLazyByteString
-  . Cookie.renderSetCookie
+renderCookie =
+  LazyByteString.toStrict . Builder.toLazyByteString . Cookie.renderSetCookie
 
 getRedirect :: App.App Wai.Request ByteString.ByteString
 getRedirect =

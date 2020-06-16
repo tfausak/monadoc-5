@@ -27,26 +27,28 @@ handle = do
   pure $ case maybeUser of
     Nothing -> Common.statusResponse Http.found302
       $ Map.insert Http.hLocation (Text.encodeUtf8 loginUrl) headers
-    Just _ -> Common.htmlResponse Http.ok200 headers
-      . Index.makeHtmlWith config maybeUser loginUrl
-      . Html.form_
-        [ Html.method_ "post"
-        , Html.action_ $ Router.renderAbsoluteRoute config Route.LogOut
-        ]
-      . Html.p_
-      $ do
-        "You are logged in. You can manage your "
-        Html.a_
-          [ Html.href_
-          . Text.pack
-          $ "https://github.com/settings/connections/applications/"
-          <> Config.clientId config
-          ]
-          "OAuth application"
-        " access on GitHub. Or you can "
-        Html.input_
-          [ Html.type_ "submit"
-          , Html.value_ "log out"
-          , Html.class_ "bg-inherit bn input-reset pa0 pointer red underline"
-          ]
-        " of Monadoc."
+    Just _ ->
+      Common.htmlResponse Http.ok200 headers
+        . Index.makeHtmlWith config maybeUser loginUrl
+        . Html.form_
+            [ Html.method_ "post"
+            , Html.action_ $ Router.renderAbsoluteRoute config Route.LogOut
+            ]
+        . Html.p_
+        $ do
+            "You are logged in. You can manage your "
+            Html.a_
+              [ Html.href_
+                . Text.pack
+                $ "https://github.com/settings/connections/applications/"
+                <> Config.clientId config
+              ]
+              "OAuth application"
+            " access on GitHub. Or you can "
+            Html.input_
+              [ Html.type_ "submit"
+              , Html.value_ "log out"
+              , Html.class_
+                "bg-inherit bn input-reset pa0 pointer red underline"
+              ]
+            " of Monadoc."

@@ -26,10 +26,13 @@ handle = do
   cookie <- GitHubCallback.makeCookie $ Guid.fromUuid Uuid.nil
   let
     headers = Map.union (Common.defaultHeaders config) $ Map.fromList
-      [ (Http.hLocation, Text.encodeUtf8 $ Router.renderAbsoluteRoute config Route.Index)
+      [ ( Http.hLocation
+        , Text.encodeUtf8 $ Router.renderAbsoluteRoute config Route.Index
+        )
       , ( Http.hSetCookie
         , GitHubCallback.renderCookie cookie
-          { Cookie.setCookieExpires = Just $ Time.utcTime 2000 1 1 0 0 0 }
+          { Cookie.setCookieExpires = Just $ Time.utcTime 2000 1 1 0 0 0
+          }
         )
       ]
   pure $ Common.statusResponse Http.found302 headers

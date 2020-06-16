@@ -86,7 +86,12 @@ makeLoginUrl = do
 fromUtf8 :: ByteString.ByteString -> Text.Text
 fromUtf8 = Text.decodeUtf8With Text.lenientDecode
 
-makeHtmlWith :: Config.Config -> Maybe User.User -> Text.Text -> Html.Html () -> Html.Html ()
+makeHtmlWith
+  :: Config.Config
+  -> Maybe User.User
+  -> Text.Text
+  -> Html.Html ()
+  -> Html.Html ()
 makeHtmlWith config maybeUser loginUrl content = do
   Html.doctype_
   Html.html_ [Html.lang_ "en-US"] $ do
@@ -102,10 +107,7 @@ makeHtmlWith config maybeUser loginUrl content = do
         ]
       let
         og k v =
-          Html.meta_
-            [ Html.term "property" $ "og:" <> k
-            , Html.content_ v
-            ]
+          Html.meta_ [Html.term "property" $ "og:" <> k, Html.content_ v]
       og "title" "Monadoc"
       og "type" "website"
       let url = Router.renderAbsoluteRoute config Route.Index
@@ -127,9 +129,7 @@ makeHtmlWith config maybeUser loginUrl content = do
       Html.title_ "Monadoc"
     Html.body_ [Html.class_ "bg-white black sans-serif"] $ do
       Html.header_
-          [ Html.class_
-              "bg-purple flex items-center justify-between pa3 white"
-          ]
+          [Html.class_ "bg-purple flex items-center justify-between pa3 white"]
         $ do
             Html.h1_ [Html.class_ "ma0 normal"] $ Html.a_
               [ Html.class_ "color-inherit no-underline"
@@ -138,16 +138,17 @@ makeHtmlWith config maybeUser loginUrl content = do
               "Monadoc"
             Html.p_ $ case maybeUser of
               Nothing -> Html.a_
-                [ Html.class_ "color-inherit no-underline"
-                , Html.href_ loginUrl
-                ]
+                [Html.class_ "color-inherit no-underline", Html.href_ loginUrl]
                 "Log in with GitHub"
-              Just user -> Html.a_
-                [ Html.class_ "color-inherit no-underline"
-                , Html.href_ $ Router.renderAbsoluteRoute config Route.Account
-                ] $ do
-                  "@"
-                  Html.toHtml . Login.toText $ User.login user
+              Just user ->
+                Html.a_
+                    [ Html.class_ "color-inherit no-underline"
+                    , Html.href_
+                      $ Router.renderAbsoluteRoute config Route.Account
+                    ]
+                  $ do
+                      "@"
+                      Html.toHtml . Login.toText $ User.login user
       Html.main_ [Html.class_ "pa3"] content
       Html.footer_ [Html.class_ "mid-gray pa3 tc"] . Html.p_ $ do
         "Powered by "
