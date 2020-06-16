@@ -1,6 +1,8 @@
 module Monadoc.Utility.Utf8
   ( fromString
+  , fromText
   , toString
+  , toText
   )
 where
 
@@ -9,12 +11,20 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
 
--- | Converts a string into a UTF-8 encoded byte string.
+-- | Converts a string into a UTF-8 encoded byte string. See 'fromText'.
 fromString :: String -> ByteString.ByteString
-fromString = Text.encodeUtf8 . Text.pack
+fromString = fromText . Text.pack
 
--- | Converts a byte string into a string, assuming that the bytes are UTF-8.
+-- | Converts text into a UTF-8 encoded byte string.
+fromText :: Text.Text -> ByteString.ByteString
+fromText = Text.encodeUtf8
+
+-- | Converts a UTF-8 encoded byte string into a string. See 'toText'.
+toString :: ByteString.ByteString -> String
+toString = Text.unpack . toText
+
+-- | Converts a UTF-8 byte string into text, assuming that the bytes are UTF-8.
 -- Any invalid bytes will be replaced with U+FFFD, the Unicode replacement
 -- character.
-toString :: ByteString.ByteString -> String
-toString = Text.unpack . Text.decodeUtf8With Text.lenientDecode
+toText :: ByteString.ByteString -> Text.Text
+toText = Text.decodeUtf8With Text.lenientDecode

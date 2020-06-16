@@ -8,13 +8,10 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
-import qualified Data.UUID as Uuid
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Settings as Settings
@@ -32,7 +29,6 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified System.Random as Random
-import qualified Web.Cookie as Cookie
 
 handle :: Stack.HasCallStack => App.App Wai.Request Wai.Response
 handle = do
@@ -56,13 +52,13 @@ handle = do
     Nothing -> WithCallStack.throw $ userError "no guid"
     Just guid -> pure guid
 
-  cookie <- makeCookie guid
+  cookie <- Common.makeCookie guid
   redirect <- getRedirect
   config <- Reader.asks Context.config
   pure
     . Common.statusResponse Http.found302
     . Map.insert Http.hLocation redirect
-    . Map.insert Http.hSetCookie cookie
+    . Map.insert Http.hSetCookie (Common.renderCookie cookie)
     $ Common.defaultHeaders config
 
 getCode :: App.App Wai.Request (Maybe ByteString.ByteString)
@@ -97,7 +93,7 @@ getUser token = do
   let
     request = initialRequest
       { Client.requestHeaders =
-        [ (Http.hAuthorization, "Bearer " <> Text.encodeUtf8 token)
+        [ (Http.hAuthorization, "Bearer " <> Utf8.fromText token)
         , (Http.hUserAgent, Settings.serverName)
         ]
       }
@@ -127,21 +123,6 @@ upsertUser token ghUser = do
         "select guid from users where id = ?"
         [User.id user]
       pure . fmap Sql.fromOnly $ Maybe.listToMaybe rows
-
-makeCookie :: Guid.Guid -> App.App request ByteString.ByteString
-makeCookie guid = do
-  config <- Reader.asks Context.config
-  pure
-    . LazyByteString.toStrict
-    . Builder.toLazyByteString
-    $ Cookie.renderSetCookie Cookie.defaultSetCookie
-        { Cookie.setCookieHttpOnly = True
-        , Cookie.setCookieName = "guid"
-        , Cookie.setCookiePath = Just "/"
-        , Cookie.setCookieSameSite = Just Cookie.sameSiteLax
-        , Cookie.setCookieSecure = Common.isSecure config
-        , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
-        }
 
 getRedirect :: App.App Wai.Request ByteString.ByteString
 getRedirect =

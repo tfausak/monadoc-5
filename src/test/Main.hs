@@ -12,10 +12,12 @@ import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
 import qualified Monadoc.GhcSpec
+import qualified Monadoc.Handler.AccountSpec
 import qualified Monadoc.Handler.FaviconSpec
 import qualified Monadoc.Handler.GitHubCallbackSpec
 import qualified Monadoc.Handler.IndexSpec
 import qualified Monadoc.Handler.LogoSpec
+import qualified Monadoc.Handler.LogOutSpec
 import qualified Monadoc.Handler.PingSpec
 import qualified Monadoc.Handler.RobotsSpec
 import qualified Monadoc.Handler.TachyonsSpec
@@ -27,6 +29,7 @@ import qualified Monadoc.Server.MainSpec
 import qualified Monadoc.Server.MiddlewareSpec
 import qualified Monadoc.Server.RouterSpec
 import qualified Monadoc.Server.SettingsSpec
+import qualified Monadoc.Server.TemplateSpec
 import qualified Monadoc.Type.AppSpec
 import qualified Monadoc.Type.BinarySpec
 import qualified Monadoc.Type.ConfigResultSpec
@@ -64,10 +67,12 @@ main = Hspec.hspec $ do
   Monadoc.Data.OptionsSpec.spec
   Monadoc.Data.VersionSpec.spec
   Monadoc.GhcSpec.spec
+  Monadoc.Handler.AccountSpec.spec
   Monadoc.Handler.FaviconSpec.spec
   Monadoc.Handler.GitHubCallbackSpec.spec
   Monadoc.Handler.IndexSpec.spec
   Monadoc.Handler.LogoSpec.spec
+  Monadoc.Handler.LogOutSpec.spec
   Monadoc.Handler.PingSpec.spec
   Monadoc.Handler.RobotsSpec.spec
   Monadoc.Handler.TachyonsSpec.spec
@@ -79,6 +84,7 @@ main = Hspec.hspec $ do
   Monadoc.Server.MiddlewareSpec.spec
   Monadoc.Server.RouterSpec.spec
   Monadoc.Server.SettingsSpec.spec
+  Monadoc.Server.TemplateSpec.spec
   Monadoc.Type.AppSpec.spec
   Monadoc.Type.BinarySpec.spec
   Monadoc.Type.ConfigResultSpec.spec
