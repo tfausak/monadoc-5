@@ -12,6 +12,7 @@ import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
 import qualified Monadoc.GhcSpec
+import qualified Monadoc.Handler.AccountSpec
 import qualified Monadoc.Handler.FaviconSpec
 import qualified Monadoc.Handler.GitHubCallbackSpec
 import qualified Monadoc.Handler.IndexSpec
@@ -64,6 +65,7 @@ main = Hspec.hspec $ do
   Monadoc.Data.OptionsSpec.spec
   Monadoc.Data.VersionSpec.spec
   Monadoc.GhcSpec.spec
+  Monadoc.Handler.AccountSpec.spec
   Monadoc.Handler.FaviconSpec.spec
   Monadoc.Handler.GitHubCallbackSpec.spec
   Monadoc.Handler.IndexSpec.spec

@@ -13,6 +13,7 @@ import qualified Network.HTTP.Types as Http
 parseRoute :: Http.Method -> [Text.Text] -> Maybe Route.Route
 parseRoute method path = case (method, path) of
   ("GET", []) -> Just Route.Index
+  ("GET", ["account"]) -> Just Route.Account
   ("GET", ["api", "github-callback"]) -> Just Route.GitHubCallback
   ("GET", ["api", "ping"]) -> Just Route.Ping
   ("GET", ["api", "throw"]) -> Just Route.Throw
@@ -24,6 +25,7 @@ parseRoute method path = case (method, path) of
 
 renderRelativeRoute :: Route.Route -> Text.Text
 renderRelativeRoute route = case route of
+  Route.Account -> "/account"
   Route.Favicon -> "/favicon.ico"
   Route.GitHubCallback -> "/api/github-callback"
   Route.Index -> "/"

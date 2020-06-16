@@ -80,6 +80,7 @@ library
     Monadoc.Data.Options
     Monadoc.Data.Version
     Monadoc.Ghc
+    Monadoc.Handler.Account
     Monadoc.Handler.Favicon
     Monadoc.Handler.GitHubCallback
     Monadoc.Handler.Index
@@ -144,6 +145,7 @@ test-suite test
     Monadoc.Data.OptionsSpec
     Monadoc.Data.VersionSpec
     Monadoc.GhcSpec
+    Monadoc.Handler.AccountSpec
     Monadoc.Handler.FaviconSpec
     Monadoc.Handler.GitHubCallbackSpec
     Monadoc.Handler.IndexSpec

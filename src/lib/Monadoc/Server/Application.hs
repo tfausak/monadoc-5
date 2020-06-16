@@ -4,6 +4,7 @@ module Monadoc.Server.Application
 where
 
 import qualified GHC.Stack as Stack
+import qualified Monadoc.Handler.Account as Handler.Account
 import qualified Monadoc.Handler.Favicon as Handler.Favicon
 import qualified Monadoc.Handler.GitHubCallback as Handler.GitHubCallback
 import qualified Monadoc.Handler.Index as Handler.Index
@@ -41,6 +42,7 @@ runRoute maybeRoute = do
     pure
     maybeRoute
   case route of
+    Route.Account -> Handler.Account.handle
     Route.Favicon -> Handler.Favicon.handle
     Route.GitHubCallback -> Handler.GitHubCallback.handle
     Route.Index -> Handler.Index.handle

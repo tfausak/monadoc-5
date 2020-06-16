@@ -98,15 +98,18 @@ handle = do
                 , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Index
                 ]
                 "Monadoc"
-              case maybeUser of
+              Lucid.p_ $ case maybeUser of
                 Nothing -> Lucid.a_
                   [ Lucid.class_ "color-inherit no-underline"
                   , Lucid.href_ loginUrl
                   ]
                   "Log in with GitHub"
-                Just user -> do
-                  "@"
-                  Lucid.toHtml . Login.toText $ User.login user
+                Just user -> Lucid.a_
+                  [ Lucid.class_ "color-inherit no-underline"
+                  , Lucid.href_ $ Router.renderAbsoluteRoute config Route.Account
+                  ] $ do
+                    "@"
+                    Lucid.toHtml . Login.toText $ User.login user
         Lucid.main_ [Lucid.class_ "pa3"]
           $ Lucid.p_ "\x1f516 Better Haskell documentation."
         Lucid.footer_ [Lucid.class_ "mid-gray pa3 tc"] . Lucid.p_ $ do

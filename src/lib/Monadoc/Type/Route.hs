@@ -7,7 +7,8 @@ where
 -- noted, routes probably respond to HTTP GET requests. It is expected that
 -- each route @R@ has a corresponding handler at @Monadoc.Handler.R@.
 data Route
-  = Favicon
+  = Account
+  | Favicon
   | GitHubCallback
   | Index
   | Logo
