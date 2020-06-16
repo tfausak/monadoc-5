@@ -22,7 +22,7 @@ handle :: App.App Wai.Request Wai.Response
 handle = do
   config <- Reader.asks Context.config
   let headers = Common.defaultHeaders config
-  maybeUser <- Index.getCookieUser
+  maybeUser <- Common.getCookieUser
   loginUrl <- Common.makeLoginUrl
   pure $ case maybeUser of
     Nothing -> Common.statusResponse Http.found302

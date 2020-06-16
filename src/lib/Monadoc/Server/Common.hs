@@ -3,6 +3,7 @@ module Monadoc.Server.Common
   , byteStringResponse
   , defaultHeaders
   , fileResponse
+  , getCookieUser
   , htmlResponse
   , isSecure
   , makeCookie
@@ -22,6 +23,7 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.UUID as Uuid
 import qualified Lucid as Html
@@ -31,7 +33,9 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.Route as Route
+import qualified Monadoc.Type.User as User
 import qualified Monadoc.Utility.Utf8 as Utf8
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
@@ -75,6 +79,22 @@ fileResponse status headers name = Trans.lift $ do
   absolute <- Package.getDataFileName relative
   contents <- ByteString.readFile absolute
   pure $ byteStringResponse status headers contents
+
+getCookieUser :: App.App Wai.Request (Maybe User.User)
+getCookieUser = do
+  context <- Reader.ask
+  case lookup Http.hCookie . Wai.requestHeaders $ Context.request context of
+    Nothing -> pure Nothing
+    Just cookie -> case lookup "guid" $ Cookie.parseCookiesText cookie of
+      Nothing -> pure Nothing
+      Just text -> case Guid.fromUuid <$> Uuid.fromText text of
+        Nothing -> pure Nothing
+        Just guid ->
+          fmap Maybe.listToMaybe . App.withConnection $ \connection ->
+            Trans.lift $ Sql.query
+              connection
+              "select * from users where guid = ?"
+              [guid]
 
 htmlResponse :: Http.Status -> Headers -> Html.Html a -> Wai.Response
 htmlResponse status headers =
