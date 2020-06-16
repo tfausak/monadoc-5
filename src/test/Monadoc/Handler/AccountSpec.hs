@@ -24,4 +24,4 @@ spec = Hspec.describe "Monadoc.Handler.Account" $ do
       response <- App.run
         context { Context.request = Wai.defaultRequest }
         Account.handle
-      Wai.responseStatus response `Hspec.shouldBe` Http.ok200
+      Wai.responseStatus response `Hspec.shouldBe` Http.forbidden403

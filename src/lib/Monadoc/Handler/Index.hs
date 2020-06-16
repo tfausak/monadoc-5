@@ -1,5 +1,7 @@
 module Monadoc.Handler.Index
   ( handle
+  -- TODO: Move these somewhere else.
+  , getCookieUser
   )
 where
 
@@ -33,19 +35,7 @@ import qualified Web.Cookie as Cookie
 handle :: App.App Wai.Request Wai.Response
 handle = do
   context <- Reader.ask
-  maybeUser <-
-    case lookup Http.hCookie . Wai.requestHeaders $ Context.request context of
-      Nothing -> pure Nothing
-      Just cookie -> case lookup "guid" $ Cookie.parseCookiesText cookie of
-        Nothing -> pure Nothing
-        Just text -> case Guid.fromUuid <$> Uuid.fromText text of
-          Nothing -> pure Nothing
-          Just guid ->
-            fmap Maybe.listToMaybe . App.withConnection $ \connection ->
-              Trans.lift $ Sql.query
-                connection
-                "select * from users where guid = ?"
-                [guid]
+  maybeUser <- getCookieUser
 
   let config = Context.config context
   loginUrl <- makeLoginUrl
@@ -127,6 +117,22 @@ handle = do
               " commit "
               Lucid.code_ . Lucid.toHtml $ take 7 commit
           "."
+
+getCookieUser :: App.App Wai.Request (Maybe User.User)
+getCookieUser = do
+  context <- Reader.ask
+  case lookup Http.hCookie . Wai.requestHeaders $ Context.request context of
+    Nothing -> pure Nothing
+    Just cookie -> case lookup "guid" $ Cookie.parseCookiesText cookie of
+      Nothing -> pure Nothing
+      Just text -> case Guid.fromUuid <$> Uuid.fromText text of
+        Nothing -> pure Nothing
+        Just guid ->
+          fmap Maybe.listToMaybe . App.withConnection $ \connection ->
+            Trans.lift $ Sql.query
+              connection
+              "select * from users where guid = ?"
+              [guid]
 
 makeLoginUrl :: App.App Wai.Request Text.Text
 makeLoginUrl = do
