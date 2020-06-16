@@ -30,7 +30,7 @@ handle = do
         , Text.encodeUtf8 $ Router.renderAbsoluteRoute config Route.Index
         )
       , ( Http.hSetCookie
-        , GitHubCallback.renderCookie cookie
+        , Common.renderCookie cookie
           { Cookie.setCookieExpires = Just $ Time.utcTime 2000 1 1 0 0 0
           }
         )

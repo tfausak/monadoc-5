@@ -2,7 +2,6 @@ module Monadoc.Handler.GitHubCallback
   ( handle
   -- TODO: Move these somewhere else.
   , makeCookie
-  , renderCookie
   )
 where
 
@@ -11,7 +10,6 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -65,7 +63,7 @@ handle = do
   pure
     . Common.statusResponse Http.found302
     . Map.insert Http.hLocation redirect
-    . Map.insert Http.hSetCookie (renderCookie cookie)
+    . Map.insert Http.hSetCookie (Common.renderCookie cookie)
     $ Common.defaultHeaders config
 
 getCode :: App.App Wai.Request (Maybe ByteString.ByteString)
@@ -142,10 +140,6 @@ makeCookie guid = do
     , Cookie.setCookieSecure = Common.isSecure config
     , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
     }
-
-renderCookie :: Cookie.SetCookie -> ByteString.ByteString
-renderCookie =
-  LazyByteString.toStrict . Builder.toLazyByteString . Cookie.renderSetCookie
 
 getRedirect :: App.App Wai.Request ByteString.ByteString
 getRedirect =

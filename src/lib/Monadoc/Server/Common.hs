@@ -5,6 +5,7 @@ module Monadoc.Server.Common
   , fileResponse
   , htmlResponse
   , isSecure
+  , renderCookie
   , simpleFileResponse
   , statusResponse
   , stringResponse
@@ -15,6 +16,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -28,6 +30,7 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified Paths_monadoc as Package
 import qualified System.FilePath as FilePath
+import qualified Web.Cookie as Cookie
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
 
@@ -76,6 +79,10 @@ htmlResponse status headers =
 
 isSecure :: Config.Config -> Bool
 isSecure = List.isPrefixOf "https:" . Config.url
+
+renderCookie :: Cookie.SetCookie -> ByteString.ByteString
+renderCookie =
+  LazyByteString.toStrict . Builder.toLazyByteString . Cookie.renderSetCookie
 
 simpleFileResponse
   :: FilePath -> ByteString.ByteString -> App.App request Wai.Response
