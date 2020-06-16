@@ -4,12 +4,12 @@ module Monadoc.Data.MigrationsSpec
 where
 
 import qualified Monadoc.Data.Migrations as Migrations
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Data.Migrations" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Data.Migrations" $ do
 
-  Hspec.describe "migrations" $ do
+  Test.describe "migrations" $ do
 
-    Hspec.it "has at least one migration" $ do
-      Migrations.migrations `Hspec.shouldSatisfy` not . null
+    Test.it "has at least one migration" $ do
+      Migrations.migrations `Test.shouldSatisfy` not . null

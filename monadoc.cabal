@@ -194,4 +194,5 @@ test-suite test
     Monadoc.Vendor.TimeSpec
     Monadoc.Worker.MainSpec
     MonadocSpec
+    Test
   type: exitcode-stdio-1.0

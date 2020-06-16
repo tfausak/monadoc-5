@@ -10,18 +10,18 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Handler.Account" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Handler.Account" $ do
 
-  Hspec.describe "handle" $ do
+  Test.describe "handle" $ do
 
-    Hspec.it "works" $ do
+    Test.it "works" $ do
       context <- Monadoc.configToContext Config.initial
         { Config.database = ":memory:"
         }
       response <- App.run
         context { Context.request = Wai.defaultRequest }
         Account.handle
-      Wai.responseStatus response `Hspec.shouldBe` Http.found302
+      Wai.responseStatus response `Test.shouldBe` Http.found302

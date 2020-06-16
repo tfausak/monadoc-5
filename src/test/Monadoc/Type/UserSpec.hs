@@ -3,9 +3,9 @@ module Monadoc.Type.UserSpec
   )
 where
 
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.User" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Type.User" $ do
 
-  Hspec.it "needs tests" Hspec.pending
+  Test.it "needs tests" Test.pending

@@ -3,9 +3,9 @@ module Monadoc.Type.GitHub.UserIdSpec
   )
 where
 
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.GitHub.UserId" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Type.GitHub.UserId" $ do
 
   pure ()

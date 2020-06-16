@@ -5,17 +5,17 @@ where
 
 import qualified Data.Either as Either
 import qualified Monadoc.Ghc as Ghc
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Ghc" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Ghc" $ do
 
-  Hspec.describe "parse" $ do
+  Test.describe "parse" $ do
 
-    Hspec.it "parses an empty module" $ do
+    Test.it "parses an empty module" $ do
       result <- Ghc.parse "" "module M where"
-      result `Hspec.shouldSatisfy` Either.isRight
+      result `Test.shouldSatisfy` Either.isRight
 
-    Hspec.it "fails to parse an invalid module" $ do
+    Test.it "fails to parse an invalid module" $ do
       result <- Ghc.parse "" "module"
-      result `Hspec.shouldSatisfy` Either.isLeft
+      result `Test.shouldSatisfy` Either.isLeft

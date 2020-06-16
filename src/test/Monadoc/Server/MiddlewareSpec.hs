@@ -3,9 +3,9 @@ module Monadoc.Server.MiddlewareSpec
   )
 where
 
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Server.Middleware" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Server.Middleware" $ do
 
-  Hspec.it "needs tests" Hspec.pending
+  Test.it "needs tests" Test.pending

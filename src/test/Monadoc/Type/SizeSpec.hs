@@ -5,23 +5,23 @@ where
 
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Vendor.Sql as Sql
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.Size" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Type.Size" $ do
 
-  Hspec.describe "fromField" $ do
+  Test.describe "fromField" $ do
 
-    Hspec.it "converts from an integer" $ do
+    Test.it "converts from an integer" $ do
       let
         field = Sql.Field (Sql.SQLInteger 123) 0
         size = Size.fromInt 123
-      Sql.fromField field `Hspec.shouldBe` pure size
+      Sql.fromField field `Test.shouldBe` pure size
 
-  Hspec.describe "toField" $ do
+  Test.describe "toField" $ do
 
-    Hspec.it "converts to an integer" $ do
+    Test.it "converts to an integer" $ do
       let
         size = Size.fromInt 123
         sqlData = Sql.SQLInteger 123
-      Sql.toField size `Hspec.shouldBe` sqlData
+      Sql.toField size `Test.shouldBe` sqlData

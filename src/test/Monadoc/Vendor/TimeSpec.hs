@@ -4,31 +4,31 @@ module Monadoc.Vendor.TimeSpec
 where
 
 import qualified Monadoc.Vendor.Time as Time
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Vendor.Time" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Vendor.Time" $ do
 
-  Hspec.describe "formatTime" $ do
+  Test.describe "formatTime" $ do
 
-    Hspec.it "formats a UTC time" $ do
+    Test.it "formats a UTC time" $ do
       Time.formatTime "%Y %m %d %H %M %S %3Q" (Time.utcTime 2001 2 3 4 5 6.007)
-        `Hspec.shouldBe` "2001 02 03 04 05 06 .007"
+        `Test.shouldBe` "2001 02 03 04 05 06 .007"
 
-  Hspec.describe "parseTime" $ do
+  Test.describe "parseTime" $ do
 
-    Hspec.it "parses a UTC time" $ do
+    Test.it "parses a UTC time" $ do
       Time.parseTime "%Y %m %d %H %M %S %Q" "2001 02 03 04 05 06 .007"
-        `Hspec.shouldBe` Just (Time.utcTime 2001 2 3 4 5 6.007)
+        `Test.shouldBe` Just (Time.utcTime 2001 2 3 4 5 6.007)
 
-    Hspec.it "returns nothing on failure" $ do
+    Test.it "returns nothing on failure" $ do
       Time.parseTime "%Y" "invalid"
-        `Hspec.shouldBe` (Nothing :: Maybe Time.UTCTime)
+        `Test.shouldBe` (Nothing :: Maybe Time.UTCTime)
 
-  Hspec.describe "utcTime" $ do
+  Test.describe "utcTime" $ do
 
-    Hspec.it "builds a UTC time" $ do
-      Time.utcTime 2001 2 3 4 5 6.007 `Hspec.shouldBe` Time.UTCTime
+    Test.it "builds a UTC time" $ do
+      Time.utcTime 2001 2 3 4 5 6.007 `Test.shouldBe` Time.UTCTime
         { Time.utctDay = Time.fromGregorian 2001 2 3
         , Time.utctDayTime = Time.timeOfDayToTime Time.TimeOfDay
           { Time.todHour = 4
@@ -37,8 +37,8 @@ spec = Hspec.describe "Monadoc.Vendor.Time" $ do
           }
         }
 
-    Hspec.it "clamps date values" $ do
-      Time.utcTime 2001 13 32 0 0 0 `Hspec.shouldBe` Time.UTCTime
+    Test.it "clamps date values" $ do
+      Time.utcTime 2001 13 32 0 0 0 `Test.shouldBe` Time.UTCTime
         { Time.utctDay = Time.fromGregorian 2001 12 31
         , Time.utctDayTime = Time.timeOfDayToTime Time.TimeOfDay
           { Time.todHour = 0
@@ -47,8 +47,8 @@ spec = Hspec.describe "Monadoc.Vendor.Time" $ do
           }
         }
 
-    Hspec.it "does not clamp time values" $ do
-      Time.utcTime 2001 1 1 25 61 61 `Hspec.shouldBe` Time.UTCTime
+    Test.it "does not clamp time values" $ do
+      Time.utcTime 2001 1 1 25 61 61 `Test.shouldBe` Time.UTCTime
         { Time.utctDay = Time.fromGregorian 2001 1 1
         , Time.utctDayTime = Time.timeOfDayToTime Time.TimeOfDay
           { Time.todHour = 25

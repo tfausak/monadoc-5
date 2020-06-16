@@ -8,14 +8,14 @@ import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Time as Time
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.MigrationMismatch" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Type.MigrationMismatch" $ do
 
-  Hspec.describe "displayException" $ do
+  Test.describe "displayException" $ do
 
-    Hspec.it "looks nice" $ do
+    Test.it "looks nice" $ do
       let
         expected = replicate 64 '0'
         actual = replicate 64 '1'
@@ -31,4 +31,4 @@ spec = Hspec.describe "Monadoc.Type.MigrationMismatch" $ do
           , " but got "
           , actual
           ]
-      Exception.displayException migrationMismatch `Hspec.shouldBe` string
+      Exception.displayException migrationMismatch `Test.shouldBe` string

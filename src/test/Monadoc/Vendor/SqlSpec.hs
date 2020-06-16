@@ -4,19 +4,19 @@ module Monadoc.Vendor.SqlSpec
 where
 
 import qualified Monadoc.Vendor.Sql as Sql
-import qualified Test.Hspec as Hspec
+import qualified Test
 import qualified Text.Read as Read
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Vendor.Sql" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Vendor.Sql" $ do
 
-  Hspec.describe "fromFieldVia" $ do
+  Test.describe "fromFieldVia" $ do
 
-    Hspec.it "handles success" $ do
+    Test.it "handles success" $ do
       let field = Sql.Field (Sql.SQLText "()") 0
-      Sql.fromFieldVia Read.readMaybe field `Hspec.shouldBe` Sql.Ok ()
+      Sql.fromFieldVia Read.readMaybe field `Test.shouldBe` Sql.Ok ()
 
-    Hspec.it "handles failure" $ do
+    Test.it "handles failure" $ do
       let field = Sql.Field (Sql.SQLText "not valid") 0
       Sql.fromFieldVia Read.readMaybe field
-        `Hspec.shouldBe` (Sql.Errors [] :: Sql.Ok ())
+        `Test.shouldBe` (Sql.Errors [] :: Sql.Ok ())

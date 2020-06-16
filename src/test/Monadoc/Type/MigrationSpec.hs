@@ -8,28 +8,28 @@ import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.Migration" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Type.Migration" $ do
 
-  Hspec.describe "sha256" $ do
+  Test.describe "sha256" $ do
 
-    Hspec.it "returns the digest of the query" $ do
+    Test.it "returns the digest of the query" $ do
       let
         migration = Migration.Migration
           { Migration.query = ""
           , Migration.timestamp = Timestamp.fromUtcTime
             $ Time.posixSecondsToUTCTime 0
           }
-      Migration.sha256 migration `Hspec.shouldBe` Sha256.fromDigest
+      Migration.sha256 migration `Test.shouldBe` Sha256.fromDigest
         (read
           "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         )
 
-  Hspec.describe "toRow" $ do
+  Test.describe "toRow" $ do
 
-    Hspec.it "converts into a SQL row" $ do
+    Test.it "converts into a SQL row" $ do
       let
         migration = Migration.Migration
           { Migration.query = ""
@@ -41,4 +41,4 @@ spec = Hspec.describe "Monadoc.Type.Migration" $ do
           , Sql.SQLText
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
           ]
-      Sql.toRow migration `Hspec.shouldBe` row
+      Sql.toRow migration `Test.shouldBe` row

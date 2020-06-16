@@ -3,9 +3,9 @@ module Monadoc.Worker.MainSpec
   )
 where
 
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Worker.Main" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Worker.Main" $ do
 
-  Hspec.it "needs tests" Hspec.pending
+  Test.it "needs tests" Test.pending
