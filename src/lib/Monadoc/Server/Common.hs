@@ -87,7 +87,7 @@ getCookieUser = do
     Nothing -> pure Nothing
     Just cookie -> case lookup "guid" $ Cookie.parseCookiesText cookie of
       Nothing -> pure Nothing
-      Just text -> case Guid.fromUuid <$> Uuid.fromText text of
+      Just text -> case fmap Guid.fromUuid $ Uuid.fromText text of
         Nothing -> pure Nothing
         Just guid ->
           fmap Maybe.listToMaybe . App.withConnection $ \connection ->
