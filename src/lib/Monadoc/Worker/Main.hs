@@ -129,7 +129,13 @@ handle200 response = do
       "insert into files (digest, name) values (?, ?) \
       \ on conflict (name) do update set \
       \ digest = excluded.digest"
-      (sha256, indexUrl)
+      (sha256, indexPath)
+
+-- | Even though this is a 'FilePath', we should be careful to avoid using the
+-- functions in "System.FilePath". We want the paths to be the same on
+-- different systems.
+indexPath :: FilePath
+indexPath = "hackage/01-index.tar.gz"
 
 handle304 :: App.App request ()
 handle304 = Console.info "Hackage index has not changed."
@@ -165,7 +171,7 @@ getSha256 = do
   rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
     connection
     "select digest from files where name = ?"
-    [indexUrl]
+    [indexPath]
   pure $ case rows of
     [] -> Nothing
     Sql.Only sha256 : _ -> Just sha256
