@@ -3,9 +3,9 @@ module Monadoc.Type.NotFoundExceptionSpec
   )
 where
 
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.NotFoundException" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Type.NotFoundException" $ do
 
   pure ()

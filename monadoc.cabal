@@ -9,7 +9,7 @@ license: ISC
 maintainer: Taylor Fausak
 name: monadoc
 synopsis: Better Haskell documentation.
-version: 0.2020.6.15
+version: 0.2020.6.16
 
 source-repository head
   location: https://github.com/tfausak/monadoc
@@ -122,7 +122,9 @@ library
     Monadoc.Type.WithCallStack
     Monadoc.Utility.Utf8
     Monadoc.Vendor.Sql
+    Monadoc.Vendor.Sql.Extra
     Monadoc.Vendor.Time
+    Monadoc.Vendor.Time.Extra
     Monadoc.Worker.Main
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
@@ -192,4 +194,6 @@ test-suite test
     Monadoc.Vendor.TimeSpec
     Monadoc.Worker.MainSpec
     MonadocSpec
+    Test
+    Test.Extra
   type: exitcode-stdio-1.0

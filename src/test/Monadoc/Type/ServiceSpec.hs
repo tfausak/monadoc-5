@@ -3,9 +3,9 @@ module Monadoc.Type.ServiceSpec
   )
 where
 
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.Service" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Type.Service" $ do
 
   pure ()

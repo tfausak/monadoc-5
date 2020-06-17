@@ -6,24 +6,24 @@ where
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Server.Router" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Server.Router" $ do
 
-  Hspec.describe "parseRoute" $ do
+  Test.describe "parseRoute" $ do
 
-    Hspec.it "works" $ do
-      Router.parseRoute "GET" [] `Hspec.shouldBe` Just Route.Index
+    Test.it "works" $ do
+      Router.parseRoute "GET" [] `Test.shouldBe` Just Route.Index
 
-  Hspec.describe "renderAbsoluteRoute" $ do
+  Test.describe "renderAbsoluteRoute" $ do
 
-    Hspec.it "works" $ do
-      let config = Config.initial { Config.url = "http://test" }
+    Test.it "works" $ do
+      let config = Test.config { Config.url = "http://test" }
       Router.renderAbsoluteRoute config Route.Index
-        `Hspec.shouldBe` "http://test/"
+        `Test.shouldBe` "http://test/"
 
-  Hspec.describe "renderRelativeRoute" $ do
+  Test.describe "renderRelativeRoute" $ do
 
-    Hspec.it "works" $ do
-      Router.renderRelativeRoute Route.Index `Hspec.shouldBe` "/"
+    Test.it "works" $ do
+      Router.renderRelativeRoute Route.Index `Test.shouldBe` "/"

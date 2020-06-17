@@ -4,14 +4,14 @@ module Monadoc.Data.CommitSpec
 where
 
 import qualified Monadoc.Data.Commit as Commit
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Data.Commit" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Data.Commit" $ do
 
-  Hspec.describe "hash" $ do
+  Test.describe "hash" $ do
 
-    Hspec.it "is not null if set" $ do
+    Test.it "is not null if set" $ do
       case Commit.hash of
         Nothing -> pure ()
-        Just hash -> hash `Hspec.shouldSatisfy` not . null
+        Just hash -> hash `Test.shouldSatisfy` not . null

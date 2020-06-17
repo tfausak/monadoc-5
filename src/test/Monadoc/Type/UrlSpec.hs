@@ -6,14 +6,14 @@ where
 import qualified Monadoc.Type.Url as Url
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.URI as Uri
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.Url" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Type.Url" $ do
 
-  Hspec.describe "fromField" $ do
+  Test.describe "fromField" $ do
 
-    Hspec.it "parses a basic URL" $ do
+    Test.it "parses a basic URL" $ do
       let
         field = Sql.Field (Sql.SQLText "http://monadoc.test") 0
         url = Url.fromUri $ Uri.URI
@@ -22,15 +22,15 @@ spec = Hspec.describe "Monadoc.Type.Url" $ do
           ""
           ""
           ""
-      Sql.fromField field `Hspec.shouldBe` pure url
+      Sql.fromField field `Test.shouldBe` pure url
 
-    Hspec.it "fails to parse an invalid URL" $ do
+    Test.it "fails to parse an invalid URL" $ do
       let field = Sql.Field (Sql.SQLText "not valid") 0
-      Sql.fromField field `Hspec.shouldBe` (Sql.Errors [] :: Sql.Ok Url.Url)
+      Sql.fromField field `Test.shouldBe` (Sql.Errors [] :: Sql.Ok Url.Url)
 
-  Hspec.describe "toField" $ do
+  Test.describe "toField" $ do
 
-    Hspec.it "renders a basic URL" $ do
+    Test.it "renders a basic URL" $ do
       let
         url = Url.fromUri $ Uri.URI
           "http:"
@@ -39,4 +39,4 @@ spec = Hspec.describe "Monadoc.Type.Url" $ do
           ""
           ""
         sqlData = Sql.SQLText "http://monadoc.test"
-      Sql.toField url `Hspec.shouldBe` sqlData
+      Sql.toField url `Test.shouldBe` sqlData

@@ -7,27 +7,21 @@ import qualified Monadoc
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.Config as Config
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Test.Hspec as Hspec
+import qualified Test
 
-spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Server.Settings" $ do
+spec :: Test.Spec
+spec = Test.describe "Monadoc.Server.Settings" $ do
 
-  Hspec.describe "fromConfig" $ do
+  Test.describe "fromConfig" $ do
 
-    Hspec.it "sets the host" $ do
-      let
-        config = Config.initial
-          { Config.database = ":memory:"
-          , Config.host = "1.2.3.4"
-          }
+    Test.it "sets the host" $ do
+      let config = Test.config { Config.host = "1.2.3.4" }
       context <- Monadoc.configToContext config
       let settings = Settings.fromContext context
-      Warp.getHost settings `Hspec.shouldBe` Config.host config
+      Warp.getHost settings `Test.shouldBe` Config.host config
 
-    Hspec.it "sets the port" $ do
-      let
-        config =
-          Config.initial { Config.database = ":memory:", Config.port = 1234 }
+    Test.it "sets the port" $ do
+      let config = Test.config { Config.database = ":memory:" }
       context <- Monadoc.configToContext config
       let settings = Settings.fromContext context
-      Warp.getPort settings `Hspec.shouldBe` Config.port config
+      Warp.getPort settings `Test.shouldBe` Config.port config

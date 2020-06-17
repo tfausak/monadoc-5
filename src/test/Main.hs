@@ -3,8 +3,6 @@ module Main
   )
 where
 
-import qualified Test.Hspec as Hspec
-
 import qualified Monadoc.CabalSpec
 import qualified Monadoc.ConsoleSpec
 import qualified Monadoc.Data.CommitSpec
@@ -57,9 +55,10 @@ import qualified Monadoc.Vendor.SqlSpec
 import qualified Monadoc.Vendor.TimeSpec
 import qualified Monadoc.Worker.MainSpec
 import qualified MonadocSpec
+import qualified Test
 
 main :: IO ()
-main = Hspec.hspec $ do
+main = Test.hspec $ do
   Monadoc.CabalSpec.spec
   Monadoc.ConsoleSpec.spec
   Monadoc.Data.CommitSpec.spec
