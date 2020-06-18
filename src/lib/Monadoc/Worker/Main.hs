@@ -21,6 +21,7 @@ import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Etag as Etag
+import qualified Monadoc.Type.Path as Path
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.WithCallStack as WithCallStack
@@ -131,11 +132,8 @@ handle200 response = do
       \ digest = excluded.digest"
       (sha256, indexPath)
 
--- | Even though this is a 'FilePath', we should be careful to avoid using the
--- functions in "System.FilePath". We want the paths to be the same on
--- different systems.
-indexPath :: FilePath
-indexPath = "hackage/01-index.tar.gz"
+indexPath :: Path.Path
+indexPath = Path.fromFilePath "hackage/01-index.tar.gz"
 
 handle304 :: App.App request ()
 handle304 = Console.info "Hackage index has not changed."
@@ -202,9 +200,9 @@ processIndexWith =
 processEntry :: Tar.Entry -> App.App request ()
 processEntry entry = case Tar.entryContent entry of
   Tar.NormalFile _contents _size ->
-    let path = Tar.entryPath entry
+    let path = Path.fromFilePath $ Tar.entryPath entry
     in
-      case FilePath.takeExtension path of
+      case FilePath.takeExtension $ Tar.entryPath entry of
         "" -> pure () -- preferred-versions
         ".cabal" -> Console.info $ show path
         ".json" -> pure () -- ignore

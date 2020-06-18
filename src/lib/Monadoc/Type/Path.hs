@@ -6,6 +6,7 @@ module Monadoc.Type.Path
 where
 
 import qualified Data.List as List
+import qualified Monadoc.Vendor.Sql as Sql
 import qualified System.FilePath.Windows as FilePath
 
 -- | A relative file path. Typically these come from tar entries. We store each
@@ -14,6 +15,9 @@ import qualified System.FilePath.Windows as FilePath
 newtype Path
   = Path [String]
   deriving (Eq, Show)
+
+instance Sql.ToField Path where
+  toField = Sql.toField . toFilePath
 
 -- | Converts from a file path by splitting on both @/@ and @\\@.
 fromFilePath :: FilePath -> Path
