@@ -192,26 +192,36 @@ getBinary sha256 = do
 
 processIndexWith :: Binary.Binary -> App.App request ()
 processIndexWith =
-  Console.info
-    . mappend "Index entry count: "
-    . show
-    . length
-    . Tar.foldEntries
-        (\entry entries -> case Tar.entryContent entry of
-          Tar.NormalFile _contents _size ->
-            case FilePath.takeExtension $ Tar.entryPath entry of
-              "" -> entry : entries -- preferred-versions
-              ".cabal" -> entry : entries
-              ".json" -> entries -- ignore
-              _ -> unsafeThrow . userError $ show entry
-          _ -> unsafeThrow . userError $ show entry
-        )
-        []
-        unsafeThrow
+  mapM_ processEntry
+    . Tar.foldEntries (:) [] unsafeThrow
     . Tar.read
     . Gzip.decompress
     . LazyByteString.fromStrict
     . Binary.toByteString
+
+processEntry :: Tar.Entry -> App.App request ()
+processEntry entry = case Tar.entryContent entry of
+  Tar.NormalFile _contents _size ->
+    let path = Tar.entryPath entry
+    in
+      case FilePath.takeExtension path of
+        "" -> pure () -- preferred-versions
+        ".cabal" -> Console.info $ show path
+        ".json" -> pure () -- ignore
+        _ -> WithCallStack.throw $ UnknownExtension entry
+  _ -> WithCallStack.throw $ UnknownEntry entry
+
+newtype UnknownExtension
+  = UnknownExtension Tar.Entry
+  deriving (Eq, Show)
+
+instance Exception.Exception UnknownExtension
+
+newtype UnknownEntry
+  = UnknownEntry Tar.Entry
+  deriving (Eq, Show)
+
+instance Exception.Exception UnknownEntry
 
 unsafeThrow :: (Stack.HasCallStack, Exception.Exception e) => e -> a
 unsafeThrow = Unsafe.unsafePerformIO . WithCallStack.throw
