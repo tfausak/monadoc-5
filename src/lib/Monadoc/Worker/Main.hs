@@ -199,12 +199,43 @@ processIndexWith =
 
 processEntry :: Tar.Entry -> App.App request ()
 processEntry entry = case Tar.entryContent entry of
-  Tar.NormalFile _contents _size ->
-    let path = Path.fromFilePath $ Tar.entryPath entry
+  Tar.NormalFile lazyContents _size ->
+    let
+      path = Path.fromFilePath $ Tar.entryPath entry
+      strictContents = LazyByteString.toStrict lazyContents
+      digest = Sha256.fromDigest $ Crypto.hash strictContents
     in
       case FilePath.takeExtension $ Tar.entryPath entry of
-        "" -> pure () -- preferred-versions
-        ".cabal" -> Console.info $ show path
+        "" -> pure () -- TODO: preferred-versions
+        ".cabal" -> App.withConnection $ \connection -> Trans.lift $ do
+          -- TODO: Handle revisions. Each path follows the format
+          -- `pkg/ver/pkg.cabal`. For example `HTTP/4000.2.4/HTTP.cabal`. We
+          -- need to keep track of how many package descriptions we've seen for
+          -- each pkg-ver. We should parse the path into the pkg-ver, then
+          -- write it back out somewhere else. Perhaps `pkg/ver/rev/pkg.cabal`
+          -- like `HTTP/400.2.4/0/HTTP.cabal`.
+          rows <- Sql.query
+            connection "select digest from files where name = ?" [path]
+          case rows of
+            [] -> do
+              Sql.execute
+                connection
+                "insert into blobs (octets, sha256, size) values (?, ?, ?) \
+                \on conflict (sha256) do nothing"
+                ( Binary.fromByteString strictContents
+                , digest
+                , Size.fromInt $ ByteString.length strictContents
+                )
+              Sql.execute
+                connection
+                "insert into files (digest, name) values (?, ?) \
+                \on conflict (name) do update set digest = excluded.digest"
+                (digest, path)
+            Sql.Only expected : _ ->
+              Monad.when (digest /= expected)
+                . WithCallStack.throw
+                . userError
+                $ show (expected, digest, entry)
         ".json" -> pure () -- ignore
         _ -> WithCallStack.throw $ UnknownExtension entry
   _ -> WithCallStack.throw $ UnknownEntry entry
