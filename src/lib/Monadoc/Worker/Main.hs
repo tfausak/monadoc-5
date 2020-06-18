@@ -6,6 +6,7 @@ where
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
+import qualified Control.Concurrent.STM as Stm
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.IO.Class as IO
@@ -14,7 +15,12 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
+import qualified Distribution.Parsec as Cabal
+import qualified Distribution.Pretty as Cabal
+import qualified Distribution.Types.PackageName as Cabal
+import qualified Distribution.Types.Version as Cabal
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
@@ -36,9 +42,11 @@ run :: App.App request ()
 run = do
   Console.info "Starting worker ..."
   Monad.forever $ do
+    Console.info "Worker running ..."
     pruneBlobs
     updateIndex
     processIndex
+    Console.info "Worker waiting ..."
     sleep $ 15 * 60
 
 pruneBlobs :: App.App request ()
@@ -189,39 +197,93 @@ getBinary sha256 = do
     Sql.Only binary : _ -> Just binary
 
 processIndexWith :: Binary.Binary -> App.App request ()
-processIndexWith =
-  mapM_ processEntry
+processIndexWith binary = do
+  var <- Trans.lift $ Stm.newTVarIO Map.empty
+  mapM_ (processEntry var)
     . Tar.foldEntries (:) [] unsafeThrow
     . Tar.read
     . Gzip.decompress
     . LazyByteString.fromStrict
-    . Binary.toByteString
+    $ Binary.toByteString binary
 
-processEntry :: Tar.Entry -> App.App request ()
-processEntry entry = case Tar.entryContent entry of
+processEntry
+  :: Stm.TVar (Map.Map Cabal.PackageName (Map.Map Cabal.Version Word))
+  -> Tar.Entry
+  -> App.App request ()
+processEntry var entry = case Tar.entryContent entry of
   Tar.NormalFile lazyContents _size ->
     let
       path = Path.fromFilePath $ Tar.entryPath entry
       strictContents = LazyByteString.toStrict lazyContents
       digest = Sha256.fromDigest $ Crypto.hash strictContents
-    in
-      case FilePath.takeExtension $ Tar.entryPath entry of
-        "" -> pure () -- TODO: preferred-versions
-        ".cabal" -> App.withConnection $ \connection -> Trans.lift $ do
-          -- TODO: Handle revisions. Each path follows the format
-          -- `pkg/ver/pkg.cabal`. For example `HTTP/4000.2.4/HTTP.cabal`. We
-          -- need to keep track of how many package descriptions we've seen for
-          -- each pkg-ver. We should parse the path into the pkg-ver, then
-          -- write it back out somewhere else. Perhaps `pkg/ver/rev/pkg.cabal`
-          -- like `HTTP/400.2.4/0/HTTP.cabal`.
+    in case FilePath.takeExtension $ Tar.entryPath entry of
+      "" -> pure () -- TODO: preferred-versions
+      ".cabal" -> do
+        -- Get the package name and version from the path.
+        (packageName, version) <- case Path.toStrings path of
+          [rawPackageName, rawVersion, _] -> do
+            packageName <- case Cabal.simpleParsec rawPackageName of
+              Nothing ->
+                WithCallStack.throw
+                  . userError
+                  $ "invalid package name: "
+                  <> show rawPackageName
+              Just packageName -> pure packageName
+            version <- case Cabal.simpleParsec rawVersion of
+              Nothing ->
+                WithCallStack.throw
+                  . userError
+                  $ "invalid version: "
+                  <> show rawVersion
+              Just version -> pure version
+            pure (packageName, version)
+          strings ->
+            WithCallStack.throw
+              . userError
+              $ "unexpected path: "
+              <> show strings
+        -- Get the revision number and update the map.
+        revision <- Trans.lift . Stm.atomically $ do
+          allRevisions <- Stm.readTVar var
+          case Map.lookup packageName allRevisions of
+            Nothing -> do
+              let revision = 0
+              Stm.modifyTVar var . Map.insert packageName $ Map.singleton
+                version
+                revision
+              pure revision
+            Just packageRevisions ->
+              case Map.lookup version packageRevisions of
+                Nothing -> do
+                  let revision = 0
+                  Stm.modifyTVar var
+                    $ Map.adjust (Map.insert version revision) packageName
+                  pure revision
+                Just versionRevision -> do
+                  let revision = versionRevision + 1
+                  Stm.modifyTVar var
+                    $ Map.adjust (Map.insert version revision) packageName
+                  pure revision
+        -- Build the new path with revision.
+        let
+          newPath = Path.fromStrings
+            [ Cabal.prettyShow packageName
+            , Cabal.prettyShow version
+            , show revision
+            , Cabal.prettyShow packageName <> ".cabal"
+            ]
+        -- Upsert the package description.
+        App.withConnection $ \connection -> Trans.lift $ do
           rows <- Sql.query
-            connection "select digest from files where name = ?" [path]
+            connection
+            "select digest from files where name = ?"
+            [newPath]
           case rows of
             [] -> do
               Sql.execute
                 connection
                 "insert into blobs (octets, sha256, size) values (?, ?, ?) \
-                \on conflict (sha256) do nothing"
+                  \on conflict (sha256) do nothing"
                 ( Binary.fromByteString strictContents
                 , digest
                 , Size.fromInt $ ByteString.length strictContents
@@ -229,15 +291,15 @@ processEntry entry = case Tar.entryContent entry of
               Sql.execute
                 connection
                 "insert into files (digest, name) values (?, ?) \
-                \on conflict (name) do update set digest = excluded.digest"
-                (digest, path)
+                  \on conflict (name) do update set digest = excluded.digest"
+                (digest, newPath)
             Sql.Only expected : _ ->
               Monad.when (digest /= expected)
                 . WithCallStack.throw
                 . userError
                 $ show (expected, digest, entry)
-        ".json" -> pure () -- ignore
-        _ -> WithCallStack.throw $ UnknownExtension entry
+      ".json" -> pure () -- ignore
+      _ -> WithCallStack.throw $ UnknownExtension entry
   _ -> WithCallStack.throw $ UnknownEntry entry
 
 newtype UnknownExtension

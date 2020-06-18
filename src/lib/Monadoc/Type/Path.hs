@@ -1,13 +1,15 @@
 module Monadoc.Type.Path
   ( Path
   , fromFilePath
+  , fromStrings
   , toFilePath
+  , toStrings
   )
 where
 
-import qualified Data.List as List
 import qualified Monadoc.Vendor.Sql as Sql
-import qualified System.FilePath.Windows as FilePath
+import qualified System.FilePath.Posix as Posix
+import qualified System.FilePath.Windows as Windows
 
 -- | A relative file path. Typically these come from tar entries. We store each
 -- path segment separately to avoid directory separator problems between Linux
@@ -21,8 +23,14 @@ instance Sql.ToField Path where
 
 -- | Converts from a file path by splitting on both @/@ and @\\@.
 fromFilePath :: FilePath -> Path
-fromFilePath = Path . FilePath.splitDirectories
+fromFilePath = fromStrings . Windows.splitDirectories
+
+fromStrings :: [String] -> Path
+fromStrings = Path
 
 -- | Converts to a file path by joining with @/@.
 toFilePath :: Path -> String
-toFilePath (Path strings) = List.intercalate "/" strings
+toFilePath = Posix.joinPath . toStrings
+
+toStrings :: Path -> [String]
+toStrings (Path strings) = strings
