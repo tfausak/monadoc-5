@@ -1,10 +1,8 @@
-# [Monadoc](https://www.monadoc.com)
+[![](https://github.com/tfausak/monadoc/workflows/CI/badge.svg)](https://github.com/tfausak/monadoc/actions)
 
-<a href='https://github.com/tfausak/monadoc/actions'>
-  <img align='right' alt='' src='https://github.com/tfausak/monadoc/workflows/CI/badge.svg'>
-</a>
+# [Monadoc](https://www.monadoc.com) :bookmark:
 
-:bookmark: Better Haskell documentation. This is still a work in progress. I've made a bunch of proofs of concept before. This one is meant to be a real service. Here's a summary of the previous attempts:
+Better Haskell documentation. This is still a work in progress. I've made a bunch of proofs of concept before. This one is meant to be a real service. Here's a summary of the previous attempts:
 
 - https://github.com/tfausak/grawlix/tree/3189fa2: This introduced the basic idea of commenting on Haskell documentation. It started life as a bookmarklet. I briefly considered making browser extensions, but I figured that wouldn't be able to get enough traction. So I started on the path of parsing the package index and building my own subset of the documentation. I made it a fair ways in that direction, but stopped for some reason.
 
