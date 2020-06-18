@@ -17,7 +17,17 @@ data User = User
   } deriving (Eq, Show)
 
 instance Sql.FromRow User where
-  fromRow = User <$> Sql.field <*> Sql.field <*> Sql.field <*> Sql.field
+  fromRow = do
+    theGuid <- Sql.field
+    theId <- Sql.field
+    theLogin <- Sql.field
+    theToken <- Sql.field
+    pure User
+      { guid = theGuid
+      , Monadoc.Type.User.id = theId
+      , login = theLogin
+      , token = theToken
+      }
 
 instance Sql.ToRow User where
   toRow user =

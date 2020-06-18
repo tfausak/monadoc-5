@@ -121,7 +121,7 @@ idleTime :: Time.NominalDiffTime
 idleTime = 60
 
 getMaxResources :: IO Int
-getMaxResources = max 1 <$> Concurrent.getNumCapabilities
+getMaxResources = fmap (max 1) Concurrent.getNumCapabilities
 
 isInMemory :: FilePath -> Bool
 isInMemory database = case database of
