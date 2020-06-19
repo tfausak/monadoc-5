@@ -1,0 +1,7 @@
+- extensions: [ { default: false } ]
+- flags: [ { default: false } ]
+- group: { name: dollar, enabled: true }
+- group: { name: generalise, enabled: true }
+- ignore: { name: Redundant do }
+- ignore: { name: Use <$> }
+- ignore: { name: Use =<< }
