@@ -119,14 +119,7 @@ handle200 response = do
     let
       body = LazyByteString.toStrict $ Client.responseBody response
       sha256 = Sha256.fromDigest $ Crypto.hash body
-    Sql.execute
-      connection
-      "insert into blobs (octets, sha256, size) \
-      \ values (?, ?, ?) on conflict (sha256) do nothing"
-      ( Binary.fromByteString body
-      , sha256
-      , Size.fromInt $ ByteString.length body
-      )
+    upsertBlob connection body sha256
     Sql.execute
       connection
       "insert into cache (etag, sha256, url) values (?, 'unused', ?) \
@@ -279,28 +272,37 @@ processEntry var entry = case Tar.entryContent entry of
             "select digest from files where name = ?"
             [newPath]
           case rows of
-            [] -> do
-              Sql.execute
-                connection
-                "insert into blobs (octets, sha256, size) values (?, ?, ?) \
-                  \on conflict (sha256) do nothing"
-                ( Binary.fromByteString strictContents
-                , digest
-                , Size.fromInt $ ByteString.length strictContents
-                )
-              Sql.execute
-                connection
-                "insert into files (digest, name) values (?, ?) \
-                  \on conflict (name) do update set digest = excluded.digest"
-                (digest, newPath)
+            [] -> pure ()
             Sql.Only expected : _ ->
-              Monad.when (digest /= expected)
-                . WithCallStack.throw
-                . userError
-                $ show (expected, digest, entry)
+              Monad.when (digest /= expected) . Console.warn $ mconcat
+                [ "Digest of "
+                , show newPath
+                , " changed from "
+                , show expected
+                , " to "
+                , show digest
+                , "!"
+                ]
+          upsertBlob connection strictContents digest
+          Sql.execute
+            connection
+            "insert into files (digest, name) values (?, ?) \
+            \on conflict (name) do update set digest = excluded.digest"
+            (digest, newPath)
       ".json" -> pure () -- ignore
       _ -> WithCallStack.throw $ UnknownExtension entry
   _ -> WithCallStack.throw $ UnknownEntry entry
+
+upsertBlob :: Sql.Connection -> ByteString.ByteString -> Sha256.Sha256 -> IO ()
+upsertBlob db contents sha256 = do
+  rows <- Sql.query db "select count(*) from blobs where sha256 = ?" [sha256]
+  let count = maybe (0 :: Int) Sql.fromOnly $ Maybe.listToMaybe rows
+  Monad.when (count < 1) $ Sql.execute db
+    "insert into blobs (octets, sha256, size) values (?, ?, ?)"
+    ( Binary.fromByteString contents
+    , sha256
+    , Size.fromInt $ ByteString.length contents
+    )
 
 newtype UnknownExtension
   = UnknownExtension Tar.Entry
