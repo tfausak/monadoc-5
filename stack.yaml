@@ -1,5 +1,4 @@
-resolver: lts-16.0
-compiler: ghc-8.10.1
+resolver: nightly-2020-06-19
 extra-deps:
   - direct-sqlite-2.3.26
   - sqlite-simple-0.4.18.0
