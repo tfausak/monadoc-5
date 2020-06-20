@@ -5,7 +5,6 @@ module Monadoc
   )
 where
 
-import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
@@ -99,8 +98,9 @@ argumentsToConfigResult name arguments =
 configToContext :: Config.Config -> IO (Context.Context ())
 configToContext config = do
   manager <- Tls.newTlsManager
-  let database = Config.database config
-  maxResources <- if isInMemory database then pure 1 else getMaxResources
+  let
+    database = Config.database config
+    maxResources = 1
   pool <- Pool.createPool
     (Sql.open database)
     Sql.close
@@ -119,12 +119,3 @@ stripeCount = 1
 
 idleTime :: Time.NominalDiffTime
 idleTime = 60
-
-getMaxResources :: IO Int
-getMaxResources = fmap (max 1) Concurrent.getNumCapabilities
-
-isInMemory :: FilePath -> Bool
-isInMemory database = case database of
-  "" -> True
-  ":memory:" -> True
-  _ -> False
