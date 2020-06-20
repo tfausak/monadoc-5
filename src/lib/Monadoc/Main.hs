@@ -43,6 +43,7 @@ runMigrations :: Stack.HasCallStack => App.App request ()
 runMigrations = do
   Console.info "Running migrations ..."
   App.withConnection $ \connection -> Trans.lift $ do
+    Sql.execute_ connection "pragma journal_mode = wal"
     Sql.execute_
       connection
       "create table if not exists migrations \
