@@ -192,8 +192,9 @@ getBinary sha256 = do
 
 processIndexWith :: Stack.HasCallStack => Binary.Binary -> App.App request ()
 processIndexWith binary = do
-  var <- Trans.lift $ Stm.newTVarIO Map.empty
-  mapM_ (processEntry var)
+  countVar <- Trans.lift $ Stm.newTVarIO 1
+  revisionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
+  mapM_ (processEntry countVar revisionsVar)
     . Tar.foldEntries (:) [] unsafeThrow
     . Tar.read
     . Gzip.decompress
@@ -201,87 +202,98 @@ processIndexWith binary = do
     $ Binary.toByteString binary
 
 processEntry
-  :: Stm.TVar (Map.Map Cabal.PackageName (Map.Map Cabal.Version Word))
+  :: Stm.TVar Word
+  -> Stm.TVar (Map.Map Cabal.PackageName (Map.Map Cabal.Version Word))
   -> Tar.Entry
   -> App.App request ()
-processEntry var entry = case Tar.entryContent entry of
-  Tar.NormalFile lazyContents _size ->
-    let
-      path = Path.fromFilePath $ Tar.entryPath entry
-      strictContents = LazyByteString.toStrict lazyContents
-      digest = Sha256.fromDigest $ Crypto.hash strictContents
-    in case FilePath.takeExtension $ Tar.entryPath entry of
-      "" -> pure () -- TODO: preferred-versions
-      ".cabal" -> do
-        -- Get the package name and version from the path.
-        (packageName, version) <- case Path.toStrings path of
-          [rawPackageName, rawVersion, _] -> do
-            packageName <- case Cabal.simpleParsec rawPackageName of
-              Nothing ->
-                WithCallStack.throw $ InvalidPackageName rawPackageName
-              Just packageName -> pure packageName
-            version <- case Cabal.simpleParsec rawVersion of
-              Nothing -> WithCallStack.throw $ InvalidVersionNumber rawVersion
-              Just version -> pure version
-            pure (packageName, version)
-          strings -> WithCallStack.throw $ UnexpectedPath strings
-        -- Get the revision number and update the map.
-        revision <- Trans.lift . Stm.atomically $ do
-          allRevisions <- Stm.readTVar var
-          case Map.lookup packageName allRevisions of
-            Nothing -> do
-              let revision = 0
-              Stm.modifyTVar var . Map.insert packageName $ Map.singleton
-                version
-                revision
-              pure revision
-            Just packageRevisions ->
-              case Map.lookup version packageRevisions of
-                Nothing -> do
-                  let revision = 0
-                  Stm.modifyTVar var
-                    $ Map.adjust (Map.insert version revision) packageName
-                  pure revision
-                Just versionRevision -> do
-                  let revision = versionRevision + 1
-                  Stm.modifyTVar var
-                    $ Map.adjust (Map.insert version revision) packageName
-                  pure revision
-        -- Build the new path with revision.
-        let
-          newPath = Path.fromStrings
-            [ Cabal.prettyShow packageName
-            , Cabal.prettyShow version
-            , show revision
-            , Cabal.prettyShow packageName <> ".cabal"
-            ]
-        -- Upsert the package description.
-        App.withConnection $ \connection -> Trans.lift $ do
-          rows <- Sql.query
-            connection
-            "select digest from files where name = ?"
-            [newPath]
-          case rows of
-            [] -> pure ()
-            Sql.Only expected : _ ->
-              Monad.when (digest /= expected) . Console.warn $ mconcat
-                [ "Digest of "
-                , show newPath
-                , " changed from "
-                , show expected
-                , " to "
-                , show digest
-                , "!"
-                ]
-          upsertBlob connection strictContents digest
-          Sql.execute
-            connection
-            "insert into files (digest, name) values (?, ?) \
-            \on conflict (name) do update set digest = excluded.digest"
-            (digest, newPath)
-      ".json" -> pure () -- ignore
-      _ -> WithCallStack.throw $ UnknownExtension entry
-  _ -> WithCallStack.throw $ UnknownEntry entry
+processEntry countVar revisionsVar entry = do
+  count <- Trans.lift . Stm.atomically $ do
+    count <- Stm.readTVar countVar
+    Stm.modifyTVar countVar (+ 1)
+    pure count
+  Monad.when (rem count 1000 == 0)
+    . Console.info
+    . unwords
+    $ ["Processing entry number", show count, "..."]
+  case Tar.entryContent entry of
+    Tar.NormalFile lazyContents _size ->
+      let
+        path = Path.fromFilePath $ Tar.entryPath entry
+        strictContents = LazyByteString.toStrict lazyContents
+        digest = Sha256.fromDigest $ Crypto.hash strictContents
+      in case FilePath.takeExtension $ Tar.entryPath entry of
+        "" -> pure () -- TODO: preferred-versions
+        ".cabal" -> do
+          -- Get the package name and version from the path.
+          (packageName, version) <- case Path.toStrings path of
+            [rawPackageName, rawVersion, _] -> do
+              packageName <- case Cabal.simpleParsec rawPackageName of
+                Nothing ->
+                  WithCallStack.throw $ InvalidPackageName rawPackageName
+                Just packageName -> pure packageName
+              version <- case Cabal.simpleParsec rawVersion of
+                Nothing ->
+                  WithCallStack.throw $ InvalidVersionNumber rawVersion
+                Just version -> pure version
+              pure (packageName, version)
+            strings -> WithCallStack.throw $ UnexpectedPath strings
+          -- Get the revision number and update the map.
+          revision <- Trans.lift . Stm.atomically $ do
+            allRevisions <- Stm.readTVar revisionsVar
+            case Map.lookup packageName allRevisions of
+              Nothing -> do
+                let revision = 0
+                Stm.modifyTVar revisionsVar
+                  . Map.insert packageName
+                  $ Map.singleton version revision
+                pure revision
+              Just packageRevisions ->
+                case Map.lookup version packageRevisions of
+                  Nothing -> do
+                    let revision = 0
+                    Stm.modifyTVar revisionsVar
+                      $ Map.adjust (Map.insert version revision) packageName
+                    pure revision
+                  Just versionRevision -> do
+                    let revision = versionRevision + 1
+                    Stm.modifyTVar revisionsVar
+                      $ Map.adjust (Map.insert version revision) packageName
+                    pure revision
+          -- Build the new path with revision.
+          let
+            newPath = Path.fromStrings
+              [ Cabal.prettyShow packageName
+              , Cabal.prettyShow version
+              , show revision
+              , Cabal.prettyShow packageName <> ".cabal"
+              ]
+          -- Upsert the package description.
+          App.withConnection $ \connection -> Trans.lift $ do
+            rows <- Sql.query
+              connection
+              "select digest from files where name = ?"
+              [newPath]
+            case rows of
+              [] -> pure ()
+              Sql.Only expected : _ ->
+                Monad.when (digest /= expected) . Console.warn $ mconcat
+                  [ "Digest of "
+                  , show newPath
+                  , " changed from "
+                  , show expected
+                  , " to "
+                  , show digest
+                  , "!"
+                  ]
+            upsertBlob connection strictContents digest
+            Sql.execute
+              connection
+              "insert into files (digest, name) values (?, ?) \
+              \on conflict (name) do update set digest = excluded.digest"
+              (digest, newPath)
+        ".json" -> pure () -- ignore
+        _ -> WithCallStack.throw $ UnknownExtension entry
+    _ -> WithCallStack.throw $ UnknownEntry entry
 
 newtype InvalidPackageName
   = InvalidPackageName String
