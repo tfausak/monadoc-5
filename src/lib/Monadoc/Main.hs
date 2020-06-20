@@ -20,6 +20,7 @@ import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Service as Service
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
+import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
 import qualified Monadoc.Worker.Main as Worker
@@ -38,7 +39,7 @@ runService service = case service of
   Service.Server -> Server.run
   Service.Worker -> Worker.run
 
-runMigrations :: App.App request ()
+runMigrations :: Stack.HasCallStack => App.App request ()
 runMigrations = do
   Console.info "Running migrations ..."
   App.withConnection $ \connection -> Trans.lift $ do
@@ -50,7 +51,8 @@ runMigrations = do
       \, sha256 text not null )"
   mapM_ ensureMigration Migrations.migrations
 
-ensureMigration :: Migration.Migration -> App.App request ()
+ensureMigration
+  :: Stack.HasCallStack => Migration.Migration -> App.App request ()
 ensureMigration migration = App.withConnection $ \connection ->
   Trans.lift . Sql.withTransaction connection $ do
     maybeDigest <- getDigest connection $ Migration.timestamp migration
@@ -84,10 +86,13 @@ runMigration connection migration = do
     migration
 
 checkDigest
-  :: Exception.MonadThrow m => Migration.Migration -> Sha256.Sha256 -> m ()
+  :: (Stack.HasCallStack, Exception.MonadThrow m)
+  => Migration.Migration
+  -> Sha256.Sha256
+  -> m ()
 checkDigest migration expectedSha256 = do
   let actualSha256 = Migration.sha256 migration
-  Monad.when (actualSha256 /= expectedSha256) $ Exception.throwM
+  Monad.when (actualSha256 /= expectedSha256) $ WithCallStack.throw
     MigrationMismatch.MigrationMismatch
       { MigrationMismatch.actual = actualSha256
       , MigrationMismatch.expected = expectedSha256
