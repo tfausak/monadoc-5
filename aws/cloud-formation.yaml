@@ -340,7 +340,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       Cluster: !Ref Cluster
-      DesiredCount: 1
+      DesiredCount: 0 # TODO: 1
       LaunchType: FARGATE
       LoadBalancers:
         - ContainerName: !Sub ${AWS::StackName}-custom-container
