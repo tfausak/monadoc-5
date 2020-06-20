@@ -104,6 +104,8 @@ library
     Monadoc.Server.Template
     Monadoc.Type.App
     Monadoc.Type.Binary
+    Monadoc.Type.Cabal.PackageName
+    Monadoc.Type.Cabal.VersionRange
     Monadoc.Type.Config
     Monadoc.Type.ConfigResult
     Monadoc.Type.Context
@@ -172,6 +174,8 @@ test-suite test
     Monadoc.Server.TemplateSpec
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
+    Monadoc.Type.Cabal.PackageNameSpec
+    Monadoc.Type.Cabal.VersionRangeSpec
     Monadoc.Type.ConfigResultSpec
     Monadoc.Type.ConfigSpec
     Monadoc.Type.ContextSpec

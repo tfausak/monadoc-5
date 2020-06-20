@@ -30,6 +30,8 @@ import qualified Monadoc.Server.SettingsSpec
 import qualified Monadoc.Server.TemplateSpec
 import qualified Monadoc.Type.AppSpec
 import qualified Monadoc.Type.BinarySpec
+import qualified Monadoc.Type.Cabal.PackageNameSpec
+import qualified Monadoc.Type.Cabal.VersionRangeSpec
 import qualified Monadoc.Type.ConfigResultSpec
 import qualified Monadoc.Type.ConfigSpec
 import qualified Monadoc.Type.ContextSpec
@@ -87,6 +89,8 @@ main = Test.hspec $ do
   Monadoc.Server.TemplateSpec.spec
   Monadoc.Type.AppSpec.spec
   Monadoc.Type.BinarySpec.spec
+  Monadoc.Type.Cabal.PackageNameSpec.spec
+  Monadoc.Type.Cabal.VersionRangeSpec.spec
   Monadoc.Type.ConfigResultSpec.spec
   Monadoc.Type.ConfigSpec.spec
   Monadoc.Type.ContextSpec.spec

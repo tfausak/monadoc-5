@@ -27,6 +27,8 @@ import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
+import qualified Monadoc.Type.Cabal.PackageName as PackageName
+import qualified Monadoc.Type.Cabal.VersionRange as VersionRange
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Path as Path
@@ -205,12 +207,23 @@ processIndexWith binary = do
     . LazyByteString.fromStrict
     $ Binary.toByteString binary
   versions <- Trans.lift . Stm.atomically $ Stm.readTVar versionsVar
-  Console.info . show $ Map.size versions
+  Console.info $ unwords
+    ["Updating", pluralize "preferred version" $ Map.size versions, "..."]
+  App.withConnection $ \connection ->
+    Trans.lift
+      . Monad.forM_ (Map.toList versions)
+      $ \(packageName, versionRange) -> Sql.execute
+          connection
+          "insert into preferred_versions (package_name, version_range) \
+          \values (?, ?) \
+          \on conflict (package_name) \
+          \do update set version_range = excluded.version_range"
+          (packageName, versionRange)
 
 processEntry
   :: Stm.TVar Word
-  -> Stm.TVar (Map.Map Cabal.PackageName (Map.Map Cabal.Version Word))
-  -> Stm.TVar (Map.Map Cabal.PackageName Cabal.VersionRange)
+  -> Stm.TVar (Map.Map PackageName.PackageName (Map.Map Cabal.Version Word))
+  -> Stm.TVar (Map.Map PackageName.PackageName VersionRange.VersionRange)
   -> Tar.Entry
   -> App.App request ()
 processEntry countVar revisionsVar versionsVar entry = do
@@ -232,18 +245,18 @@ processEntry countVar revisionsVar versionsVar entry = do
         "" -> do
           packageName <- case Path.toStrings path of
             [rawPackageName, "preferred-versions"] ->
-              case Cabal.simpleParsec rawPackageName of
+              case PackageName.fromString rawPackageName of
                 Nothing ->
                   WithCallStack.throw $ InvalidPackageName rawPackageName
                 Just packageName -> pure packageName
             strings -> WithCallStack.throw $ UnexpectedPath strings
           versionRange <- case Utf8.toString strictContents of
-            "" -> pure Cabal.anyVersion
+            "" -> pure $ VersionRange.fromCabal Cabal.anyVersion
             string -> case Cabal.simpleParsec string of
               Nothing -> WithCallStack.throw $ InvalidVersionConstraint string
               Just (Cabal.PackageVersionConstraint pn vr) ->
-                if pn == packageName
-                  then pure vr
+                if pn == PackageName.toCabal packageName
+                  then pure $ VersionRange.fromCabal vr
                   else WithCallStack.throw $ PackageNameMismatch packageName pn
           Trans.lift . Stm.atomically . Stm.modifyTVar versionsVar $ Map.insert
             packageName
@@ -252,7 +265,7 @@ processEntry countVar revisionsVar versionsVar entry = do
           -- Get the package name and version from the path.
           (packageName, version) <- case Path.toStrings path of
             [rawPackageName, rawVersion, _] -> do
-              packageName <- case Cabal.simpleParsec rawPackageName of
+              packageName <- case PackageName.fromString rawPackageName of
                 Nothing ->
                   WithCallStack.throw $ InvalidPackageName rawPackageName
                 Just packageName -> pure packageName
@@ -287,10 +300,10 @@ processEntry countVar revisionsVar versionsVar entry = do
           -- Build the new path with revision.
           let
             newPath = Path.fromStrings
-              [ Cabal.prettyShow packageName
+              [ PackageName.toString packageName
               , Cabal.prettyShow version
               , show revision
-              , Cabal.prettyShow packageName <> ".cabal"
+              , PackageName.toString packageName <> ".cabal"
               ]
           -- Upsert the package description.
           App.withConnection $ \connection -> Trans.lift $ do
@@ -345,7 +358,7 @@ newtype InvalidVersionConstraint
 instance Exception.Exception InvalidVersionConstraint
 
 data PackageNameMismatch
-  = PackageNameMismatch Cabal.PackageName Cabal.PackageName
+  = PackageNameMismatch PackageName.PackageName Cabal.PackageName
   deriving Show
 
 instance Exception.Exception PackageNameMismatch

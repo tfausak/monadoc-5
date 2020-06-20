@@ -41,6 +41,11 @@ migrations = Set.fromList
     \id integer not null primary key, \
     \login text not null, \
     \token text not null)"
+  , makeMigration
+    (2020, 6, 20, 8, 43, 0)
+    "create table preferred_versions (\
+    \package_name text not null primary key, \
+    \version_range text not null)"
   ]
 
 makeMigration
