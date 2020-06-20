@@ -20,7 +20,9 @@ import qualified Data.Maybe as Maybe
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal
 import qualified Distribution.Types.PackageName as Cabal
+import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
+import qualified Distribution.Types.VersionRange as Cabal
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Type.App as App
@@ -31,6 +33,7 @@ import qualified Monadoc.Type.Path as Path
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.WithCallStack as WithCallStack
+import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
@@ -194,19 +197,23 @@ processIndexWith :: Stack.HasCallStack => Binary.Binary -> App.App request ()
 processIndexWith binary = do
   countVar <- Trans.lift $ Stm.newTVarIO 1
   revisionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
-  mapM_ (processEntry countVar revisionsVar)
+  versionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
+  mapM_ (processEntry countVar revisionsVar versionsVar)
     . Tar.foldEntries (:) [] unsafeThrow
     . Tar.read
     . Gzip.decompress
     . LazyByteString.fromStrict
     $ Binary.toByteString binary
+  versions <- Trans.lift . Stm.atomically $ Stm.readTVar versionsVar
+  Console.info . show $ Map.size versions
 
 processEntry
   :: Stm.TVar Word
   -> Stm.TVar (Map.Map Cabal.PackageName (Map.Map Cabal.Version Word))
+  -> Stm.TVar (Map.Map Cabal.PackageName Cabal.VersionRange)
   -> Tar.Entry
   -> App.App request ()
-processEntry countVar revisionsVar entry = do
+processEntry countVar revisionsVar versionsVar entry = do
   count <- Trans.lift . Stm.atomically $ do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
@@ -222,7 +229,25 @@ processEntry countVar revisionsVar entry = do
         strictContents = LazyByteString.toStrict lazyContents
         digest = Sha256.fromDigest $ Crypto.hash strictContents
       in case FilePath.takeExtension $ Tar.entryPath entry of
-        "" -> pure () -- TODO: preferred-versions
+        "" -> do
+          packageName <- case Path.toStrings path of
+            [rawPackageName, "preferred-versions"] ->
+              case Cabal.simpleParsec rawPackageName of
+                Nothing ->
+                  WithCallStack.throw $ InvalidPackageName rawPackageName
+                Just packageName -> pure packageName
+            strings -> WithCallStack.throw $ UnexpectedPath strings
+          versionRange <- case Utf8.toString strictContents of
+            "" -> pure Cabal.anyVersion
+            string -> case Cabal.simpleParsec string of
+              Nothing -> WithCallStack.throw $ InvalidVersionConstraint string
+              Just (Cabal.PackageVersionConstraint pn vr) ->
+                if pn == packageName
+                  then pure vr
+                  else WithCallStack.throw $ PackageNameMismatch packageName pn
+          Trans.lift . Stm.atomically . Stm.modifyTVar versionsVar $ Map.insert
+            packageName
+            versionRange
         ".cabal" -> do
           -- Get the package name and version from the path.
           (packageName, version) <- case Path.toStrings path of
@@ -312,6 +337,18 @@ newtype UnexpectedPath
   deriving Show
 
 instance Exception.Exception UnexpectedPath
+
+newtype InvalidVersionConstraint
+  = InvalidVersionConstraint String
+  deriving Show
+
+instance Exception.Exception InvalidVersionConstraint
+
+data PackageNameMismatch
+  = PackageNameMismatch Cabal.PackageName Cabal.PackageName
+  deriving Show
+
+instance Exception.Exception PackageNameMismatch
 
 upsertBlob :: Sql.Connection -> ByteString.ByteString -> Sha256.Sha256 -> IO ()
 upsertBlob db contents sha256 = do
