@@ -29,17 +29,18 @@ import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
 import qualified Monadoc.Type.Cabal.VersionRange as VersionRange
+import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Path as Path
 import qualified Monadoc.Type.Sha256 as Sha256
-import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
+import qualified System.Directory as Directory
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
@@ -120,18 +121,18 @@ handle200 response = do
         . lookup Http.hETag
         $ Client.responseHeaders response
   Console.info $ mconcat ["Hackage index has changed to ", show etag, "."]
-  App.withConnection $ \connection -> Trans.lift $ do
+  App.withConnection $ \connection -> do
     let
       body = LazyByteString.toStrict $ Client.responseBody response
       sha256 = Sha256.fromDigest $ Crypto.hash body
-    upsertBlob connection body sha256
-    Sql.execute
+    upsertBlob body sha256
+    Trans.lift $ Sql.execute
       connection
       "insert into cache (etag, sha256, url) values (?, 'unused', ?) \
       \ on conflict (url) do update set \
       \ etag = excluded.etag, sha256 = excluded.sha256"
       (etag, indexUrl)
-    Sql.execute
+    Trans.lift $ Sql.execute
       connection
       "insert into files (digest, name) values (?, ?) \
       \ on conflict (name) do update set \
@@ -187,13 +188,15 @@ removeCache = App.withConnection $ \connection -> Trans.lift
 
 getBinary :: Sha256.Sha256 -> App.App request (Maybe Binary.Binary)
 getBinary sha256 = do
-  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
-    connection
-    "select octets from blobs where sha256 = ?"
-    [sha256]
-  pure $ case rows of
-    [] -> Nothing
-    Sql.Only binary : _ -> Just binary
+  database <- Reader.asks $ Config.database . Context.config
+  let
+    file = FilePath.joinPath
+      [FilePath.takeDirectory database, "blobs", show $ Sha256.toDigest sha256]
+  exists <- Trans.lift $ Directory.doesFileExist file
+  if exists
+    then Trans.lift . fmap (Just . Binary.fromByteString) $ ByteString.readFile
+      file
+    else pure Nothing
 
 processIndexWith :: Stack.HasCallStack => Binary.Binary -> App.App request ()
 processIndexWith binary = do
@@ -306,8 +309,8 @@ processEntry countVar revisionsVar versionsVar entry = do
               , PackageName.toString packageName <> ".cabal"
               ]
           -- Upsert the package description.
-          App.withConnection $ \connection -> Trans.lift $ do
-            rows <- Sql.query
+          App.withConnection $ \connection -> do
+            rows <- Trans.lift $ Sql.query
               connection
               "select digest from files where name = ?"
               [newPath]
@@ -323,8 +326,8 @@ processEntry countVar revisionsVar versionsVar entry = do
                   , show digest
                   , "!"
                   ]
-            upsertBlob connection strictContents digest
-            Sql.execute
+            upsertBlob strictContents digest
+            Trans.lift $ Sql.execute
               connection
               "insert into files (digest, name) values (?, ?) \
               \on conflict (name) do update set digest = excluded.digest"
@@ -363,17 +366,16 @@ data PackageNameMismatch
 
 instance Exception.Exception PackageNameMismatch
 
-upsertBlob :: Sql.Connection -> ByteString.ByteString -> Sha256.Sha256 -> IO ()
-upsertBlob db contents sha256 = do
-  rows <- Sql.query db "select count(*) from blobs where sha256 = ?" [sha256]
-  let count = maybe (0 :: Int) Sql.fromOnly $ Maybe.listToMaybe rows
-  Monad.when (count < 1) $ Sql.execute
-    db
-    "insert into blobs (octets, sha256, size) values (?, ?, ?)"
-    ( Binary.fromByteString contents
-    , sha256
-    , Size.fromInt $ ByteString.length contents
-    )
+upsertBlob :: ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
+upsertBlob contents sha256 = do
+  database <- Reader.asks $ Config.database . Context.config
+  let
+    directory = FilePath.combine (FilePath.takeDirectory database) "blobs"
+    file = FilePath.combine directory . show $ Sha256.toDigest sha256
+  exists <- Trans.lift $ Directory.doesFileExist file
+  Monad.unless exists . Trans.lift $ do
+    Directory.createDirectoryIfMissing True directory
+    ByteString.writeFile file contents
 
 newtype UnknownExtension
   = UnknownExtension Tar.Entry
