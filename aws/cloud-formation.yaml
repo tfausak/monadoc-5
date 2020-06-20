@@ -220,7 +220,7 @@ Resources:
               - monadoc
               - !Sub --client-id=${ClientId}
               - !Sub --client-secret=${ClientSecret}
-              - --database=/efs/monadoc.sqlite3
+              - --database=/efs/monadoc-attempt-1.sqlite3
               - !Sub --discord-url=${DiscordUrl}
               - --host=*
               - !Sub --port=${Port}
