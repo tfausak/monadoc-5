@@ -38,7 +38,7 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
-run :: App.App request ()
+run :: Stack.HasCallStack => App.App request ()
 run = do
   Console.info "Starting worker ..."
   Monad.forever $ do
@@ -69,7 +69,7 @@ pluralize :: String -> Int -> String
 pluralize word count =
   unwords [show count, if count == 1 then word else word <> "s"]
 
-updateIndex :: App.App request ()
+updateIndex :: Stack.HasCallStack => App.App request ()
 updateIndex = do
   etag <- getEtag
   Console.info $ unwords ["Updating Hackage index with", show etag, "..."]
@@ -140,7 +140,8 @@ handle304 :: App.App request ()
 handle304 = Console.info "Hackage index has not changed."
 
 handleOther
-  :: Client.Request
+  :: Stack.HasCallStack
+  => Client.Request
   -> Client.Response LazyByteString.ByteString
   -> App.App request ()
 handleOther request response =
@@ -150,7 +151,7 @@ handleOther request response =
     . LazyByteString.toStrict
     $ Client.responseBody response
 
-processIndex :: App.App request ()
+processIndex :: Stack.HasCallStack => App.App request ()
 processIndex = do
   maybeSha256 <- getSha256
   case maybeSha256 of
@@ -189,7 +190,7 @@ getBinary sha256 = do
     [] -> Nothing
     Sql.Only binary : _ -> Just binary
 
-processIndexWith :: Binary.Binary -> App.App request ()
+processIndexWith :: Stack.HasCallStack => Binary.Binary -> App.App request ()
 processIndexWith binary = do
   var <- Trans.lift $ Stm.newTVarIO Map.empty
   mapM_ (processEntry var)
@@ -217,24 +218,13 @@ processEntry var entry = case Tar.entryContent entry of
           [rawPackageName, rawVersion, _] -> do
             packageName <- case Cabal.simpleParsec rawPackageName of
               Nothing ->
-                WithCallStack.throw
-                  . userError
-                  $ "invalid package name: "
-                  <> show rawPackageName
+                WithCallStack.throw $ InvalidPackageName rawPackageName
               Just packageName -> pure packageName
             version <- case Cabal.simpleParsec rawVersion of
-              Nothing ->
-                WithCallStack.throw
-                  . userError
-                  $ "invalid version: "
-                  <> show rawVersion
+              Nothing -> WithCallStack.throw $ InvalidVersionNumber rawVersion
               Just version -> pure version
             pure (packageName, version)
-          strings ->
-            WithCallStack.throw
-              . userError
-              $ "unexpected path: "
-              <> show strings
+          strings -> WithCallStack.throw $ UnexpectedPath strings
         -- Get the revision number and update the map.
         revision <- Trans.lift . Stm.atomically $ do
           allRevisions <- Stm.readTVar var
@@ -293,11 +283,30 @@ processEntry var entry = case Tar.entryContent entry of
       _ -> WithCallStack.throw $ UnknownExtension entry
   _ -> WithCallStack.throw $ UnknownEntry entry
 
+newtype InvalidPackageName
+  = InvalidPackageName String
+  deriving Show
+
+instance Exception.Exception InvalidPackageName
+
+newtype InvalidVersionNumber
+  = InvalidVersionNumber String
+  deriving Show
+
+instance Exception.Exception InvalidVersionNumber
+
+newtype UnexpectedPath
+  = UnexpectedPath [String]
+  deriving Show
+
+instance Exception.Exception UnexpectedPath
+
 upsertBlob :: Sql.Connection -> ByteString.ByteString -> Sha256.Sha256 -> IO ()
 upsertBlob db contents sha256 = do
   rows <- Sql.query db "select count(*) from blobs where sha256 = ?" [sha256]
   let count = maybe (0 :: Int) Sql.fromOnly $ Maybe.listToMaybe rows
-  Monad.when (count < 1) $ Sql.execute db
+  Monad.when (count < 1) $ Sql.execute
+    db
     "insert into blobs (octets, sha256, size) values (?, ?, ?)"
     ( Binary.fromByteString contents
     , sha256
