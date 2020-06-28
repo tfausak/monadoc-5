@@ -1,3 +1,7 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+  https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html
+
 # Be sure to update the domain's name servers to point to the hosted zone's
 # name servers, otherwise DNS resolution won't work. This step is manual
 # because the domain isn't managed by CloudFormation.
@@ -6,14 +10,28 @@
 # CloudFormation, you must go to the certificate manager in the AWS console and
 # hit the "Create record in Route 53" button.
 
+# If you change the instance type, you will probably also want to change the
+# CPU and memory of the task definition. All of the instance's CPU is available
+# but some of the memory is taken. For example a t3a.micro instance has 2 vCPUs
+# and 1 GiB of memory, which turns into 2048 CPU units and 961 memory units. Be
+# sure to leave enough capacity for double instances on deploys!
+
 Parameters:
+
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
+    Description:
+      The ECS optimized Amazon Machine Image (AMI) ID to use for EC2 instances
+      in the auto scaling group. This value changes regularly. As of 2020-06-26
+      it is ami-00c7c1cf5bdc913ed.
 
   ClientId:
     Type: String
+    Default: 658122d4ef8c24039953
     Description:
       The client ID for the GitHub OAuth application. You can get this at
       <https://github.com/settings/developers>.
-    Default: 658122d4ef8c24039953
 
   ClientSecret:
     Type: String
@@ -27,28 +45,21 @@ Parameters:
       The URL to the Discord webhook for reporting exceptions. This is the full
       URL, not just the ID and token.
 
-  Domain:
+  DomainName:
     Type: String
+    Default: monadoc.com
     Description:
       The root (apex) domain name. You can include the final period after the
       TLD here, but you don't need to.
-    Default: monadoc.com
 
-  Image:
-    Type: String
-    Description:
-      The Docker image to use. Note that the tag is set separately. This can
-      be pretty much anything, but the image must be public.
-    Default: taylorfausak/monadoc
-
-  Port:
+  PortNumber:
     Type: Number
+    Default: 4444
     Description:
       The port number to bind inside the container. It's unlikely that you'll
       need to change this.
-    Default: 4444
 
-  Tag:
+  TagName:
     Type: String
     Description:
       The Docker image tag to deploy. Usually this is the HEAD of the default
@@ -56,15 +67,99 @@ Parameters:
 
 Resources:
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
-  LogGroup:
-    Type: AWS::Logs::LogGroup
+  ApexCertificate:
+    Type: AWS::CertificateManager::Certificate
     Properties:
-      LogGroupName: !Sub ${AWS::StackName}-log-group
-      RetentionInDays: 30
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
-  Role:
+  ApexDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Ref DomainName
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: false
+          TargetOriginId: !Ref DomainName
+          ViewerProtocolPolicy: redirect-to-https
+        Enabled: true
+        HttpVersion: http2
+        Origins:
+          - CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+            DomainName: !Select
+              - 1
+              - !Split
+                - //
+                - !GetAtt Bucket.WebsiteURL
+            Id: !Ref DomainName
+        ViewerCertificate:
+          AcmCertificateArn: !Ref ApexCertificate
+          MinimumProtocolVersion: TLSv1.2_2018
+          SslSupportMethod: sni-only
+
+  ApexRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget:
+        DNSName: !GetAtt ApexDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+      HostedZoneId: !Ref HostedZone
+      Name: !Ref DomainName
+      Type: A
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Ref DomainName
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: !Sub www.${DomainName}
+          Protocol: https
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${AWS::StackName}-cluster
+
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref DomainName
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref AmiId
+      InstanceType: t3a.micro
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      SubnetId: !Ref Subnet1
+      UserData:
+        Fn::Base64: !Sub |
+          #! /usr/bin/env sh
+          set -o errexit -o xtrace
+          echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+          mkfs.xfs /dev/sdz || true
+          mkdir /ebs
+          mount /dev/sdz /ebs
+          /opt/aws/bin/cfn-signal \
+            --exit-code $? \
+            --region ${AWS::Region} \
+            --resource AutoScalingGroup \
+            --stack ${AWS::StackName}
+      Volumes:
+        - Device: /dev/sdz
+          VolumeId: !Ref Volume
+
+  InstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -74,330 +169,22 @@ Resources:
             Effect: Allow
             Principal:
               Service:
-                - ecs-tasks.amazonaws.com
+                - ec2.amazonaws.com
         Version: 2012-10-17
-      Description: Role used to launch ECS tasks.
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-      RoleName: !Sub ${AWS::StackName}-role-${AWS::Region}
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      RoleName: !Sub ${AWS::StackName}-instance-role
 
-  # Unfortunately CloudFormation does not currently support attaching EFS
-  # volumes to task definitions. That means we have to jump through some hoops
-  # to get that set up. Keep an eye on this issue:
-  # <https://github.com/aws/containers-roadmap/issues/825>.
-  #
-  # Instead of defining a normal `AWS::ECS::TaskDefinition` we have to make a
-  # custom resource. Custom resources need to be executed by something, so we
-  # have to make a Lambda for that. And doing all this needs the right
-  # permissions, so we also have to make a new role. This was all adapted from
-  # the following gist:
-  # <https://gist.github.com/guillaumesmo/4782e26500a3ac768888daab3c55b139>.
-  CustomResourceRole:
-    Type: AWS::IAM::Role
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
     Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: 2012-10-17
-      Description: Manages custom task definition resources.
-      Policies:
-        - PolicyDocument:
-            Statement:
-            - Action:
-                - ecs:DeregisterTaskDefinition
-                - ecs:RegisterTaskDefinition
-                - logs:CreateLogGroup
-                - logs:CreateLogStream
-                - logs:PutLogEvents
-              Effect: Allow
-              Resource: '*'
-            - Action:
-                - iam:PassRole
-              Effect: Allow
-              Resource: !GetAtt Role.Arn
-          PolicyName: !Sub ${AWS::StackName}-custom-policy
-      RoleName: !Sub ${AWS::StackName}-custom-role-${AWS::Region}
-  CustomResourceFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Code:
-        ZipFile: |
-          const aws = require('aws-sdk')
-          const response = require('cfn-response')
-          const ecs = new aws.ECS({apiVersion: '2014-11-13'})
-          exports.handler = function(event, context) {
-            console.log("REQUEST RECEIVED:\n" + JSON.stringify(event))
-            if (event.RequestType === 'Create' || event.RequestType === 'Update') {
-              const taskDefinition = event.ResourceProperties.TaskDefinition;
-              taskDefinition.containerDefinitions[0].essential = taskDefinition.containerDefinitions[0].essential === 'true';
-              ecs.registerTaskDefinition(taskDefinition, function(err, data) {
-                if (err) {
-                  console.error(err);
-                  response.send(event, context, response.FAILED)
-                } else {
-                  console.log(`Created/Updated task definition ${data.taskDefinition.taskDefinitionArn}`)
-                  response.send(event, context, response.SUCCESS, {}, data.taskDefinition.taskDefinitionArn)
-                }
-              })
-            } else if (event.RequestType === 'Delete') {
-              ecs.deregisterTaskDefinition({taskDefinition: event.PhysicalResourceId}, function(err) {
-                if (err) {
-                  if (err.code === 'InvalidParameterException') {
-                    console.log(`Task definition: ${event.PhysicalResourceId} does not exist. Skipping deletion.`)
-                    response.send(event, context, response.SUCCESS)
-                  } else {
-                    console.error(err)
-                    response.send(event, context, response.FAILED)
-                  }
-                } else {
-                  console.log(`Removed task definition ${event.PhysicalResourceId}`)
-                  response.send(event, context, response.SUCCESS)
-                }
-              })
-            } else {
-              console.error(`Unsupported request type: ${event.RequestType}`)
-              response.send(event, context, response.FAILED)
-            }
-          }
-      Description: Manages custom task definition resources.
-      FunctionName: !Sub ${AWS::StackName}-custom-function
-      Handler: index.handler
-      Role: !GetAtt CustomResourceRole.Arn
-      Runtime: nodejs12.x
-      Timeout: 30
-  CustomTask:
-    Type: AWS::CloudFormation::CustomResource
-    Properties:
-      ServiceToken: !GetAtt CustomResourceFunction.Arn
-      TaskDefinition:
-        cpu: 256
-        containerDefinitions:
-          - command:
-              - monadoc
-              - !Sub --client-id=${ClientId}
-              - !Sub --client-secret=${ClientSecret}
-              - --database=/efs/monadoc.sqlite3
-              - !Sub --discord-url=${DiscordUrl}
-              - --host=*
-              - !Sub --port=${Port}
-              - --services=server
-              - !Sub --url=https://www.${Domain}
-            image: !Sub ${Image}:${Tag}
-            name: !Sub ${AWS::StackName}-custom-container
-            essential: true
-            logConfiguration:
-              logDriver: awslogs
-              options:
-                awslogs-group: !Ref LogGroup
-                awslogs-region: !Ref AWS::Region
-                awslogs-stream-prefix: !Sub server-${Tag}
-            mountPoints:
-              - containerPath: /efs
-                sourceVolume: !Sub ${AWS::StackName}-efs
-            portMappings:
-              - containerPort: !Ref Port
-        executionRoleArn: !Ref Role
-        family: !Sub ${AWS::StackName}-custom-task-definition
-        memory: 512
-        networkMode: awsvpc
-        requiresCompatibilities:
-          - FARGATE
-        volumes:
-          - efsVolumeConfiguration:
-              fileSystemId: !Ref FileSystem
-            name: !Sub ${AWS::StackName}-efs
-  WorkerTask:
-    Type: AWS::CloudFormation::CustomResource
-    Properties:
-      ServiceToken: !GetAtt CustomResourceFunction.Arn
-      TaskDefinition:
-        cpu: 256
-        containerDefinitions:
-          - command:
-              - monadoc
-              - !Sub --client-id=${ClientId}
-              - !Sub --client-secret=${ClientSecret}
-              - --database=/efs/monadoc.sqlite3
-              - !Sub --discord-url=${DiscordUrl}
-              - --host=*
-              - !Sub --port=${Port}
-              - --services=worker
-              - !Sub --url=https://www.${Domain}
-            image: !Sub ${Image}:${Tag}
-            name: !Sub ${AWS::StackName}-worker-container
-            essential: true
-            logConfiguration:
-              logDriver: awslogs
-              options:
-                awslogs-group: !Ref LogGroup
-                awslogs-region: !Ref AWS::Region
-                awslogs-stream-prefix: !Sub worker-${Tag}
-            mountPoints:
-              - containerPath: /efs
-                sourceVolume: !Sub ${AWS::StackName}-worker-efs
-        executionRoleArn: !Ref Role
-        family: !Sub ${AWS::StackName}-worker-task-definition
-        memory: 512
-        networkMode: awsvpc
-        requiresCompatibilities:
-          - FARGATE
-        volumes:
-          - efsVolumeConfiguration:
-              fileSystemId: !Ref FileSystem
-            name: !Sub ${AWS::StackName}-worker-efs
+      InstanceProfileName: !Sub ${AWS::StackName}-instance-profile
+      Roles:
+        - !Ref InstanceRole
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-cluster.html
-  Cluster:
-    Type: AWS::ECS::Cluster
-    Properties:
-      ClusterName: !Sub ${AWS::StackName}-cluster
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
-  Vpc:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.10.0.0/16
-      EnableDnsHostnames: true
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
-  Subnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone: !Select
-        - 0
-        - Fn::GetAZs: !Ref AWS::Region
-      CidrBlock: 10.10.1.0/24
-      VpcId: !Ref Vpc
-  Subnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone: !Select
-        - 1
-        - Fn::GetAZs: !Ref AWS::Region
-      CidrBlock: 10.10.2.0/24
-      VpcId: !Ref Vpc
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
-  SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: !Sub ${AWS::StackName}-security-group
-      GroupDescription: Allows everything.
-      SecurityGroupEgress:
-        CidrIp: 0.0.0.0/0
-        FromPort: -1
-        IpProtocol: -1
-        ToPort: -1
-      SecurityGroupIngress:
-        CidrIp: 0.0.0.0/0
-        FromPort: -1
-        IpProtocol: -1
-        ToPort: -1
-      VpcId: !Ref Vpc
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-internetgateway.html
   InternetGateway:
     Type: AWS::EC2::InternetGateway
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc-gateway-attachment.html
-  InternetGatewayAttachment:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      InternetGatewayId: !Ref InternetGateway
-      VpcId: !Ref Vpc
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route-table.html
-  RouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref Vpc
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
-  Route:
-    Type: AWS::EC2::Route
-    Properties:
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
-      RouteTableId: !Ref RouteTable
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html
-  RouteTableAssociation1:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref RouteTable
-      SubnetId: !Ref Subnet1
-  RouteTableAssociation2:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref RouteTable
-      SubnetId: !Ref Subnet2
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-service.html
-  Service:
-    Type: AWS::ECS::Service
-    Properties:
-      Cluster: !Ref Cluster
-      DesiredCount: 1
-      LaunchType: FARGATE
-      LoadBalancers:
-        - ContainerName: !Sub ${AWS::StackName}-custom-container
-          ContainerPort: !Ref Port
-          TargetGroupArn: !Ref TargetGroup
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
-          SecurityGroups:
-            - !Ref SecurityGroup
-          Subnets:
-            - !Ref Subnet1
-            - !Ref Subnet2
-      ServiceName: !Sub ${AWS::StackName}-custom-service
-      TaskDefinition: !Ref CustomTask
-      PlatformVersion: 1.4.0
-  WorkerService:
-    Type: AWS::ECS::Service
-    Properties:
-      Cluster: !Ref Cluster
-      DesiredCount: 1
-      LaunchType: FARGATE
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
-          SecurityGroups:
-            - !Ref SecurityGroup
-          Subnets:
-            - !Ref Subnet1
-            - !Ref Subnet2
-      ServiceName: !Sub ${AWS::StackName}-worker-service
-      TaskDefinition: !Ref WorkerTask
-      PlatformVersion: 1.4.0
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-loadbalancer.html
-  LoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Name: !Sub ${AWS::StackName}-load-balancer
-      SecurityGroups:
-        - !Ref SecurityGroup
-      Subnets:
-        - !Ref Subnet1
-        - !Ref Subnet2
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-targetgroup.html
-  TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckPath: /api/ping
-      Name: !Sub ${AWS::StackName}-target-group
-      Port: !Ref Port
-      Protocol: HTTP
-      TargetType: ip
-      VpcId: !Ref Vpc
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-listener.html
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -410,22 +197,28 @@ Resources:
       Port: 443
       Protocol: HTTPS
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-route53-hostedzone.html
-  HostedZone:
-    Type: AWS::Route53::HostedZone
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Ref Domain
+      Name: !Sub ${AWS::StackName}-load-balancer
+      SecurityGroups:
+        - !Ref SecurityGroup
+      Subnets:
+        - !Ref Subnet1
+        - !Ref Subnet2
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-recordset.html
-  RecordSet:
-    Type: AWS::Route53::RecordSet
+  LogGroup:
+    Type: AWS::Logs::LogGroup
     Properties:
-      AliasTarget:
-        DNSName: !GetAtt Distribution.DomainName
-        HostedZoneId: Z2FDTNDATAQYW2
-      HostedZoneId: !Ref HostedZone
-      Name: !Sub www.${Domain}
-      Type: A
+      LogGroupName: !Sub ${AWS::StackName}-log-group
+      RetentionInDays: 30
+
+  OriginCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub origin.${DomainName}
+      ValidationMethod: DNS
+
   OriginRecordSet:
     Type: AWS::Route53::RecordSet
     Properties:
@@ -433,68 +226,179 @@ Resources:
         DNSName: !GetAtt LoadBalancer.DNSName
         HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
       HostedZoneId: !Ref HostedZone
-      Name: !Sub origin.${Domain}
-      Type: A
-  ApexRecord:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      AliasTarget:
-        DNSName: !GetAtt ApexDistribution.DomainName
-        HostedZoneId: Z2FDTNDATAQYW2
-      HostedZoneId: !Ref HostedZone
-      Name: !Ref Domain
+      Name: !Sub origin.${DomainName}
       Type: A
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-filesystem.html
-  FileSystem:
-    Type: AWS::EFS::FileSystem
-
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-mounttarget.html
-  MountTarget1:
-    Type: AWS::EFS::MountTarget
+  Route:
+    Type: AWS::EC2::Route
     Properties:
-      FileSystemId: !Ref FileSystem
-      SecurityGroups:
-        - !Ref SecurityGroup
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows everything
+      GroupName: !Sub ${AWS::StackName}-security-group
+      SecurityGroupEgress:
+        CidrIp: 0.0.0.0/0
+        FromPort: -1
+        IpProtocol: -1
+        ToPort: -1
+      SecurityGroupIngress:
+        CidrIp: 0.0.0.0/0
+        FromPort: -1
+        IpProtocol: -1
+        ToPort: -1
+      VpcId: !Ref Vpc
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: Listener
+    Properties:
+      Cluster: !Ref Cluster
+      DesiredCount: 1
+      LoadBalancers:
+        - ContainerName: !Sub ${AWS::StackName}-container-definition
+          ContainerPort: !Ref PortNumber
+          TargetGroupArn: !Ref TargetGroup
+      ServiceName: !Sub ${AWS::StackName}-service
+      TaskDefinition: !Ref TaskDefinition
+
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref Vpc
+
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref AWS::Region
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref Vpc
+
+  SubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
       SubnetId: !Ref Subnet1
-  MountTarget2:
-    Type: AWS::EFS::MountTarget
+
+  SubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      FileSystemId: !Ref FileSystem
-      SecurityGroups:
-        - !Ref SecurityGroup
+      RouteTableId: !Ref RouteTable
       SubnetId: !Ref Subnet2
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-efs-accesspoint.html
-  AccessPoint:
-    Type: AWS::EFS::AccessPoint
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      FileSystemId: !Ref FileSystem
+      HealthCheckPath: /api/ping
+      Name: !Sub ${AWS::StackName}-target-group
+      Port: !Ref PortNumber
+      Protocol: HTTP
+      TargetType: instance
+      VpcId: !Ref Vpc
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-certificatemanager-certificate.html
-  Certificate:
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Command:
+            - monadoc
+            - !Sub --client-id=${ClientId}
+            - !Sub --client-secret=${ClientSecret}
+            - --database=/ebs/monadoc.sqlite3
+            - !Sub --discord-url=${DiscordUrl}
+            - --host=*
+            - !Sub --port=${PortNumber}
+            - !Sub --url=https://www.${DomainName}
+          Essential: true
+          Image: !Sub taylorfausak/monadoc:${TagName}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Ref TagName
+          MountPoints:
+            - ContainerPath: /ebs
+              SourceVolume: !Sub ${AWS::StackName}-volume
+          Name: !Sub ${AWS::StackName}-container-definition
+          PortMappings:
+            - ContainerPort: !Ref PortNumber
+      Cpu: 1024
+      ExecutionRoleArn: !Ref TaskRole
+      Family: !Sub ${AWS::StackName}-task-definition
+      Memory: 480
+      NetworkMode: bridge
+      Volumes:
+        - Host:
+            SourcePath: /ebs
+          Name: !Sub ${AWS::StackName}-volume
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      RoleName: !Sub ${AWS::StackName}-task-role
+
+  Volume:
+    Type: AWS::EC2::Volume
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      Encrypted: true
+      Size: 64
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+
+  VpcGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+
+  WwwCertificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
-      DomainName: !Sub www.${Domain}
-      ValidationMethod: DNS
-  OriginCertificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      DomainName: !Sub origin.${Domain}
-      ValidationMethod: DNS
-  ApexCertificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      DomainName: !Ref Domain
+      DomainName: !Sub www.${DomainName}
       ValidationMethod: DNS
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-distribution.html
-  Distribution:
+  WwwDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
         Aliases:
-          - !Sub www.${Domain}
+          - !Sub www.${DomainName}
         DefaultCacheBehavior:
           AllowedMethods:
             - DELETE
@@ -515,7 +419,7 @@ Resources:
             Headers:
               - Accept-Encoding
             QueryString: true
-          TargetOriginId: !Sub origin.${Domain}
+          TargetOriginId: !Sub origin.${DomainName}
           ViewerProtocolPolicy: redirect-to-https
         Enabled: true
         HttpVersion: http2
@@ -524,46 +428,19 @@ Resources:
               OriginProtocolPolicy: https-only
               OriginSSLProtocols:
                 - TLSv1.2
-            DomainName: !Sub origin.${Domain}
-            Id: !Sub origin.${Domain}
+            DomainName: !Sub origin.${DomainName}
+            Id: !Sub origin.${DomainName}
         ViewerCertificate:
-          AcmCertificateArn: !Ref Certificate
-          MinimumProtocolVersion: TLSv1.2_2018
-          SslSupportMethod: sni-only
-  ApexDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Aliases:
-          - !Ref Domain
-        DefaultCacheBehavior:
-          ForwardedValues:
-            QueryString: false
-          TargetOriginId: !Ref Domain
-          ViewerProtocolPolicy: redirect-to-https
-        Enabled: true
-        HttpVersion: http2
-        Origins:
-          - CustomOriginConfig:
-              OriginProtocolPolicy: http-only
-            DomainName: !Select
-              - 1
-              - !Split
-                - //
-                - !GetAtt Bucket.WebsiteURL
-            Id: !Ref Domain
-        ViewerCertificate:
-          AcmCertificateArn: !Ref ApexCertificate
+          AcmCertificateArn: !Ref WwwCertificate
           MinimumProtocolVersion: TLSv1.2_2018
           SslSupportMethod: sni-only
 
-  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket.html
-  Bucket:
-    Type: AWS::S3::Bucket
+  WwwRecordSet:
+    Type: AWS::Route53::RecordSet
     Properties:
-      AccessControl: PublicRead
-      BucketName: !Ref Domain
-      WebsiteConfiguration:
-        RedirectAllRequestsTo:
-          HostName: !Sub www.${Domain}
-          Protocol: https
+      AliasTarget:
+        DNSName: !GetAtt WwwDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub www.${DomainName}
+      Type: A
