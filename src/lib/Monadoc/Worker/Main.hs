@@ -227,92 +227,103 @@ processEntry countVar revisionsVar versionsVar entry = do
         strictContents = LazyByteString.toStrict lazyContents
         digest = Sha256.fromDigest $ Crypto.hash strictContents
       in case FilePath.takeExtension $ Tar.entryPath entry of
-        "" -> do
-          packageName <- case Path.toStrings path of
-            [rawPackageName, "preferred-versions"] ->
-              case PackageName.fromString rawPackageName of
-                Nothing ->
-                  WithCallStack.throw $ InvalidPackageName rawPackageName
-                Just packageName -> pure packageName
-            strings -> WithCallStack.throw $ UnexpectedPath strings
-          versionRange <- case Utf8.toString strictContents of
-            "" -> pure $ VersionRange.fromCabal Cabal.anyVersion
-            string -> case Cabal.simpleParsec string of
-              Nothing -> WithCallStack.throw $ InvalidVersionConstraint string
-              Just (Cabal.PackageVersionConstraint pn vr) ->
-                if pn == PackageName.toCabal packageName
-                  then pure $ VersionRange.fromCabal vr
-                  else WithCallStack.throw $ PackageNameMismatch packageName pn
-          Trans.lift . Stm.atomically . Stm.modifyTVar versionsVar $ Map.insert
-            packageName
-            versionRange
-        ".cabal" -> do
-          -- Get the package name and version from the path.
-          (packageName, version) <- case Path.toStrings path of
-            [rawPackageName, rawVersion, _] -> do
-              packageName <- case PackageName.fromString rawPackageName of
-                Nothing ->
-                  WithCallStack.throw $ InvalidPackageName rawPackageName
-                Just packageName -> pure packageName
-              version <- case Cabal.simpleParsec rawVersion of
-                Nothing ->
-                  WithCallStack.throw $ InvalidVersionNumber rawVersion
-                Just version -> pure version
-              pure (packageName, version)
-            strings -> WithCallStack.throw $ UnexpectedPath strings
-          -- Get the revision number and update the map.
-          revision <- Trans.lift . Stm.atomically $ do
-            allRevisions <- Stm.readTVar revisionsVar
-            case Map.lookup packageName allRevisions of
-              Nothing -> do
-                let revision = 0
-                Stm.modifyTVar revisionsVar
-                  . Map.insert packageName
-                  $ Map.singleton version revision
-                pure revision
-              Just packageRevisions ->
-                case Map.lookup version packageRevisions of
-                  Nothing -> do
-                    let revision = 0
-                    Stm.modifyTVar revisionsVar
-                      $ Map.adjust (Map.insert version revision) packageName
-                    pure revision
-                  Just versionRevision -> do
-                    let revision = versionRevision + 1
-                    Stm.modifyTVar revisionsVar
-                      $ Map.adjust (Map.insert version revision) packageName
-                    pure revision
-          -- Build the new path with revision.
-          let
-            newPath = Path.fromStrings
-              [ PackageName.toString packageName
-              , Cabal.prettyShow version
-              , show revision
-              , PackageName.toString packageName <> ".cabal"
-              ]
-          -- Upsert the package description.
-          rows <- App.sql "select digest from files where name = ?" [newPath]
-          case rows of
-            [] -> pure ()
-            Sql.Only expected : _ ->
-              Monad.when (digest /= expected) . Console.warn $ mconcat
-                [ "Digest of "
-                , show newPath
-                , " changed from "
-                , show expected
-                , " to "
-                , show digest
-                , "!"
-                ]
-          upsertBlob strictContents digest
-          App.sql_
-            "insert into files (digest, name) values (?, ?) \
-
-            \on conflict (name) do update set digest = excluded.digest"
-            (digest, newPath)
+        "" -> processPreferredVersion versionsVar path strictContents
+        ".cabal" ->
+          processPackageDescription revisionsVar path strictContents digest
         ".json" -> pure () -- ignore
         _ -> WithCallStack.throw $ UnknownExtension entry
     _ -> WithCallStack.throw $ UnknownEntry entry
+
+processPreferredVersion
+  :: Stm.TVar (Map.Map PackageName.PackageName VersionRange.VersionRange)
+  -> Path.Path
+  -> ByteString.ByteString
+  -> App.App request ()
+processPreferredVersion versionsVar path strictContents = do
+  packageName <- case Path.toStrings path of
+    [rawPackageName, "preferred-versions"] ->
+      case PackageName.fromString rawPackageName of
+        Nothing -> WithCallStack.throw $ InvalidPackageName rawPackageName
+        Just packageName -> pure packageName
+    strings -> WithCallStack.throw $ UnexpectedPath strings
+  versionRange <- case Utf8.toString strictContents of
+    "" -> pure $ VersionRange.fromCabal Cabal.anyVersion
+    string -> case Cabal.simpleParsec string of
+      Nothing -> WithCallStack.throw $ InvalidVersionConstraint string
+      Just (Cabal.PackageVersionConstraint pn vr) ->
+        if pn == PackageName.toCabal packageName
+          then pure $ VersionRange.fromCabal vr
+          else WithCallStack.throw $ PackageNameMismatch packageName pn
+  Trans.lift . Stm.atomically . Stm.modifyTVar versionsVar $ Map.insert
+    packageName
+    versionRange
+
+processPackageDescription
+  :: Stm.TVar (Map.Map PackageName.PackageName (Map.Map Cabal.Version Word))
+  -> Path.Path
+  -> ByteString.ByteString
+  -> Sha256.Sha256
+  -> App.App request ()
+processPackageDescription revisionsVar path strictContents digest = do
+  -- Get the package name and version from the path.
+  (packageName, version) <- case Path.toStrings path of
+    [rawPackageName, rawVersion, _] -> do
+      packageName <- case PackageName.fromString rawPackageName of
+        Nothing -> WithCallStack.throw $ InvalidPackageName rawPackageName
+        Just packageName -> pure packageName
+      version <- case Cabal.simpleParsec rawVersion of
+        Nothing -> WithCallStack.throw $ InvalidVersionNumber rawVersion
+        Just version -> pure version
+      pure (packageName, version)
+    strings -> WithCallStack.throw $ UnexpectedPath strings
+  -- Get the revision number and update the map.
+  revision <- Trans.lift . Stm.atomically $ do
+    allRevisions <- Stm.readTVar revisionsVar
+    case Map.lookup packageName allRevisions of
+      Nothing -> do
+        let revision = 0
+        Stm.modifyTVar revisionsVar . Map.insert packageName $ Map.singleton
+          version
+          revision
+        pure revision
+      Just packageRevisions -> case Map.lookup version packageRevisions of
+        Nothing -> do
+          let revision = 0
+          Stm.modifyTVar revisionsVar
+            $ Map.adjust (Map.insert version revision) packageName
+          pure revision
+        Just versionRevision -> do
+          let revision = versionRevision + 1
+          Stm.modifyTVar revisionsVar
+            $ Map.adjust (Map.insert version revision) packageName
+          pure revision
+  -- Build the new path with revision.
+  let
+    newPath = Path.fromStrings
+      [ PackageName.toString packageName
+      , Cabal.prettyShow version
+      , show revision
+      , PackageName.toString packageName <> ".cabal"
+      ]
+  -- Upsert the package description.
+  rows <- App.sql "select digest from files where name = ?" [newPath]
+  case rows of
+    [] -> pure ()
+    Sql.Only expected : _ ->
+      Monad.when (digest /= expected) . Console.warn $ mconcat
+        [ "Digest of "
+        , show newPath
+        , " changed from "
+        , show expected
+        , " to "
+        , show digest
+        , "!"
+        ]
+  upsertBlob strictContents digest
+  App.sql_
+    "insert into files (digest, name) values (?, ?) \
+    \on conflict (name) do update set digest = excluded.digest"
+    (digest, newPath)
 
 newtype InvalidPackageName
   = InvalidPackageName String
