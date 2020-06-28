@@ -127,21 +127,15 @@ upsertUser token ghUser = do
       , User.login = GHUser.login ghUser
       , User.token = token
       }
-  App.withConnection $ \connection ->
-    Trans.lift . Sql.withTransaction connection $ do
-      Sql.execute
-        connection
-        "insert into users (guid, id, login, token) values (?, ?, ?, ?) \
-        \on conflict (id) do update set \
-        \login = excluded.login, token = excluded.token"
-        user
-      rows <- Sql.query
-        connection
-        "select guid from users where id = ?"
-        [User.id user]
-      case rows of
-        only : _ -> pure $ Sql.fromOnly only
-        _ -> WithCallStack.throw $ UserUpsertFailed user
+  App.sql_
+    "insert into users (guid, id, login, token) values (?, ?, ?, ?) \
+    \on conflict (id) do update set \
+    \login = excluded.login, token = excluded.token"
+    user
+  rows <- App.sql "select guid from users where id = ?" [User.id user]
+  case rows of
+    only : _ -> pure $ Sql.fromOnly only
+    _ -> WithCallStack.throw $ UserUpsertFailed user
 
 newtype UserUpsertFailed
   = UserUpsertFailed User.User

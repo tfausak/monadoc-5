@@ -35,7 +35,6 @@ import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.User as User
 import qualified Monadoc.Utility.Utf8 as Utf8
-import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
@@ -89,12 +88,8 @@ getCookieUser = do
       Nothing -> pure Nothing
       Just text -> case fmap Guid.fromUuid $ Uuid.fromText text of
         Nothing -> pure Nothing
-        Just guid ->
-          fmap Maybe.listToMaybe . App.withConnection $ \connection ->
-            Trans.lift $ Sql.query
-              connection
-              "select * from users where guid = ?"
-              [guid]
+        Just guid -> fmap Maybe.listToMaybe
+          $ App.sql "select * from users where guid = ?" [guid]
 
 htmlResponse :: Http.Status -> Headers -> Html.Html a -> Wai.Response
 htmlResponse status headers =

@@ -55,19 +55,19 @@ run = do
     sleep $ 15 * 60
 
 pruneBlobs :: App.App request ()
-pruneBlobs = App.withConnection $ \connection -> Trans.lift $ do
-  rows <- Sql.query_
-    connection
+pruneBlobs = do
+  rows <- App.sql
     "select blobs.sha256 \
     \from blobs \
     \left join files \
     \on files.digest = blobs.sha256 \
     \where files.digest is null"
+    ()
   let count = length rows
   Monad.when (count > 0) $ do
     Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
     mapM_
-      (Sql.execute connection "delete from blobs where sha256 = ?")
+      (App.sql_ "delete from blobs where sha256 = ?")
       (rows :: [Sql.Only Sha256.Sha256])
 
 pluralize :: String -> Int -> String
@@ -90,8 +90,7 @@ indexUrl = "https://hackage.haskell.org/01-index.tar.gz"
 
 getEtag :: App.App request Etag.Etag
 getEtag = do
-  rows <- App.withConnection $ \connection -> Trans.lift
-    $ Sql.query connection "select etag from cache where url = ?" [indexUrl]
+  rows <- App.sql "select etag from cache where url = ?" [indexUrl]
   pure $ case rows of
     [] -> Etag.fromByteString ByteString.empty
     Sql.Only etag : _ -> etag
@@ -120,23 +119,20 @@ handle200 response = do
         . lookup Http.hETag
         $ Client.responseHeaders response
   Console.info $ mconcat ["Hackage index has changed to ", show etag, "."]
-  App.withConnection $ \connection -> Trans.lift $ do
-    let
-      body = LazyByteString.toStrict $ Client.responseBody response
-      sha256 = Sha256.fromDigest $ Crypto.hash body
-    upsertBlob connection body sha256
-    Sql.execute
-      connection
-      "insert into cache (etag, sha256, url) values (?, 'unused', ?) \
-      \ on conflict (url) do update set \
-      \ etag = excluded.etag, sha256 = excluded.sha256"
-      (etag, indexUrl)
-    Sql.execute
-      connection
-      "insert into files (digest, name) values (?, ?) \
-      \ on conflict (name) do update set \
-      \ digest = excluded.digest"
-      (sha256, indexPath)
+  let
+    body = LazyByteString.toStrict $ Client.responseBody response
+    sha256 = Sha256.fromDigest $ Crypto.hash body
+  upsertBlob body sha256
+  App.sql_
+    "insert into cache (etag, sha256, url) values (?, 'unused', ?) \
+    \ on conflict (url) do update set \
+    \ etag = excluded.etag, sha256 = excluded.sha256"
+    (etag, indexUrl)
+  App.sql_
+    "insert into files (digest, name) values (?, ?) \
+    \ on conflict (name) do update set \
+    \ digest = excluded.digest"
+    (sha256, indexPath)
 
 indexPath :: Path.Path
 indexPath = Path.fromFilePath "hackage/01-index.tar.gz"
@@ -173,24 +169,17 @@ processIndex = do
 
 getSha256 :: App.App request (Maybe Sha256.Sha256)
 getSha256 = do
-  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
-    connection
-    "select digest from files where name = ?"
-    [indexPath]
+  rows <- App.sql "select digest from files where name = ?" [indexPath]
   pure $ case rows of
     [] -> Nothing
     Sql.Only sha256 : _ -> Just sha256
 
 removeCache :: App.App request ()
-removeCache = App.withConnection $ \connection -> Trans.lift
-  $ Sql.execute connection "delete from cache where url = ?" [indexUrl]
+removeCache = App.sql_ "delete from cache where url = ?" [indexUrl]
 
 getBinary :: Sha256.Sha256 -> App.App request (Maybe Binary.Binary)
 getBinary sha256 = do
-  rows <- App.withConnection $ \connection -> Trans.lift $ Sql.query
-    connection
-    "select octets from blobs where sha256 = ?"
-    [sha256]
+  rows <- App.sql "select octets from blobs where sha256 = ?" [sha256]
   pure $ case rows of
     [] -> Nothing
     Sql.Only binary : _ -> Just binary
@@ -209,16 +198,12 @@ processIndexWith binary = do
   versions <- Trans.lift . Stm.atomically $ Stm.readTVar versionsVar
   Console.info $ unwords
     ["Updating", pluralize "preferred version" $ Map.size versions, "..."]
-  App.withConnection $ \connection ->
-    Trans.lift
-      . Monad.forM_ (Map.toList versions)
-      $ \(packageName, versionRange) -> Sql.execute
-          connection
-          "insert into preferred_versions (package_name, version_range) \
-          \values (?, ?) \
-          \on conflict (package_name) \
-          \do update set version_range = excluded.version_range"
-          (packageName, versionRange)
+  Monad.forM_ (Map.toList versions) $ \(packageName, versionRange) -> App.sql_
+    "insert into preferred_versions (package_name, version_range) \
+    \values (?, ?) \
+    \on conflict (package_name) \
+    \do update set version_range = excluded.version_range"
+    (packageName, versionRange)
 
 processEntry
   :: Stm.TVar Word
@@ -306,29 +291,25 @@ processEntry countVar revisionsVar versionsVar entry = do
               , PackageName.toString packageName <> ".cabal"
               ]
           -- Upsert the package description.
-          App.withConnection $ \connection -> Trans.lift $ do
-            rows <- Sql.query
-              connection
-              "select digest from files where name = ?"
-              [newPath]
-            case rows of
-              [] -> pure ()
-              Sql.Only expected : _ ->
-                Monad.when (digest /= expected) . Console.warn $ mconcat
-                  [ "Digest of "
-                  , show newPath
-                  , " changed from "
-                  , show expected
-                  , " to "
-                  , show digest
-                  , "!"
-                  ]
-            upsertBlob connection strictContents digest
-            Sql.execute
-              connection
-              "insert into files (digest, name) values (?, ?) \
-              \on conflict (name) do update set digest = excluded.digest"
-              (digest, newPath)
+          rows <- App.sql "select digest from files where name = ?" [newPath]
+          case rows of
+            [] -> pure ()
+            Sql.Only expected : _ ->
+              Monad.when (digest /= expected) . Console.warn $ mconcat
+                [ "Digest of "
+                , show newPath
+                , " changed from "
+                , show expected
+                , " to "
+                , show digest
+                , "!"
+                ]
+          upsertBlob strictContents digest
+          App.sql_
+            "insert into files (digest, name) values (?, ?) \
+
+            \on conflict (name) do update set digest = excluded.digest"
+            (digest, newPath)
         ".json" -> pure () -- ignore
         _ -> WithCallStack.throw $ UnknownExtension entry
     _ -> WithCallStack.throw $ UnknownEntry entry
@@ -363,12 +344,11 @@ data PackageNameMismatch
 
 instance Exception.Exception PackageNameMismatch
 
-upsertBlob :: Sql.Connection -> ByteString.ByteString -> Sha256.Sha256 -> IO ()
-upsertBlob db contents sha256 = do
-  rows <- Sql.query db "select count(*) from blobs where sha256 = ?" [sha256]
+upsertBlob :: ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
+upsertBlob contents sha256 = do
+  rows <- App.sql "select count(*) from blobs where sha256 = ?" [sha256]
   let count = maybe (0 :: Int) Sql.fromOnly $ Maybe.listToMaybe rows
-  Monad.when (count < 1) $ Sql.execute
-    db
+  Monad.when (count < 1) $ App.sql_
     "insert into blobs (octets, sha256, size) values (?, ?, ?)"
     ( Binary.fromByteString contents
     , sha256
