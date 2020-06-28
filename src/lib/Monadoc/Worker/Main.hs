@@ -230,7 +230,7 @@ processEntry countVar revisionsVar versionsVar entry = do
         "" -> processPreferredVersion versionsVar path strictContents
         ".cabal" ->
           processPackageDescription revisionsVar path strictContents digest
-        ".json" -> pure () -- ignore
+        ".json" -> processPackageSignature path strictContents digest
         _ -> WithCallStack.throw $ UnknownExtension entry
     _ -> WithCallStack.throw $ UnknownEntry entry
 
@@ -306,6 +306,68 @@ processPackageDescription revisionsVar path strictContents digest = do
       , PackageName.toString packageName <> ".cabal"
       ]
   -- Upsert the package description.
+  rows <- App.sql "select digest from files where name = ?" [newPath]
+  case rows of
+    [] -> pure ()
+    Sql.Only expected : _ ->
+      Monad.when (digest /= expected) . Console.warn $ mconcat
+        [ "Digest of "
+        , show newPath
+        , " changed from "
+        , show expected
+        , " to "
+        , show digest
+        , "!"
+        ]
+  upsertBlob strictContents digest
+  App.sql_
+    "insert into files (digest, name) values (?, ?) \
+    \on conflict (name) do update set digest = excluded.digest"
+    (digest, newPath)
+
+-- For now we are essentially ignoring these entries. In the future we may want
+-- to do something with them. That's why we're storing them in the database.
+-- The entries contain a JSON object that describes the expected hash of the
+-- package tarball. For example:
+--
+-- { "signatures": []
+-- , "signed":
+--   { "_type": "Targets"
+--   , "expires": null
+--   , "targets":
+--     { "<repo>/package/transformers-compose-0.1.tar.gz":
+--       { "hashes":
+--         { "md5": "3fab..."
+--         , "sha256": "cddc..."
+--         }
+--       , "length": 3328
+--       }
+--     }
+--   , "version": 0
+--   }
+-- }
+processPackageSignature
+  :: Path.Path
+  -> ByteString.ByteString
+  -> Sha256.Sha256
+  -> App.App request ()
+processPackageSignature path strictContents digest = do
+  (packageName, version) <- case Path.toStrings path of
+    [rawPackageName, rawVersion, "package.json"] -> do
+      packageName <- case PackageName.fromString rawPackageName of
+        Nothing -> WithCallStack.throw $ InvalidPackageName rawPackageName
+        Just packageName -> pure packageName
+      version <- case Cabal.simpleParsec rawVersion of
+        Nothing -> WithCallStack.throw $ InvalidVersionNumber rawVersion
+        Just version -> pure version
+      pure (packageName, version)
+    strings -> WithCallStack.throw $ UnexpectedPath strings
+  let
+    newPath = Path.fromStrings
+      [ PackageName.toString packageName
+      , Cabal.prettyShow (version :: Cabal.Version)
+      , "package.json"
+      ]
   rows <- App.sql "select digest from files where name = ?" [newPath]
   case rows of
     [] -> pure ()
