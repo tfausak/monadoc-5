@@ -18,6 +18,10 @@ import qualified Monadoc.Vendor.Sql as Sql
 -- 'run' to convert this into 'IO'.
 type App request result = Reader.ReaderT (Context.Context request) IO result
 
+-- | Runs an 'App' action.
+run :: Context.Context request -> App request result -> IO result
+run = flip Reader.runReaderT
+
 -- | Runs a SQL query and returns the results.
 sql :: (Sql.FromRow b, Sql.ToRow a) => Sql.Query -> a -> App request [b]
 sql query params = withConnection
@@ -27,10 +31,6 @@ sql query params = withConnection
 sql_ :: Sql.ToRow a => Sql.Query -> a -> App request ()
 sql_ query params =
   Monad.void (sql query params :: App request [[Sql.SQLData]])
-
--- | Runs an 'App' action.
-run :: Context.Context request -> App request result -> IO result
-run = flip Reader.runReaderT
 
 -- | Checks out a SQL connection from the pool and runs the given action with
 -- it.

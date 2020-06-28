@@ -52,6 +52,7 @@ run = do
     pruneBlobs
     updateIndex
     processIndex
+    fetchTarballs
     Console.info "Worker waiting ..."
     sleep $ 15 * 60
 
@@ -463,3 +464,76 @@ addRequestHeader
 addRequestHeader name value request = request
   { Client.requestHeaders = (name, value) : Client.requestHeaders request
   }
+
+-- TODO: Using `Sql.fold_` here forces everything inside of it to re-use the
+-- connection rather than checking out a new one with `App.sql`. This is
+-- tedious and prevents reusing stuff like `upsertBlob`. There's got to be a
+-- better way.
+fetchTarballs :: App.App request ()
+fetchTarballs = App.withConnection $ \ connection -> do
+  context <- Reader.ask
+  Trans.lift
+    . Sql.fold_ connection "select name from files where name like '%/%/0/%.cabal' order by name asc" ()
+    . const
+    $ App.run context
+    . fetchTarball connection
+    . Sql.fromOnly
+
+fetchTarball :: Sql.Connection -> Path.Path -> App.App request ()
+fetchTarball connection path = do
+  (package, version) <- case Path.toStrings path of
+    [rawPackage, rawVersion, _, _] -> do
+      package <- case PackageName.fromString rawPackage of
+        Nothing -> WithCallStack.throw $ InvalidPackageName rawPackage
+        Just package -> pure package
+      version <- case Cabal.simpleParsec rawVersion of
+        Nothing -> WithCallStack.throw $ InvalidVersionNumber rawVersion
+        Just version -> pure (version :: Cabal.Version)
+      pure (PackageName.toString package, Cabal.prettyShow version)
+    strings -> WithCallStack.throw $ UnexpectedPath strings
+  let tarballPath = Path.fromStrings [package, version, package <> ".tar.gz"]
+  fileRows <- Trans.lift $ Sql.query connection "select count(*) from files where name = ?" [tarballPath]
+  case fileRows of
+    Sql.Only count : _ | count > (0 :: Int) -> pure ()
+    _ -> do
+      hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
+      let
+        pkg = mconcat [package, "-", version]
+        url = mconcat [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
+      initialRequest <- Client.parseRequest url
+      cacheRows <- Trans.lift $ Sql.query connection "select etag from cache where url = ?" [url]
+      let
+        etag = case cacheRows of
+          Sql.Only x : _ -> x
+          _ -> Etag.fromByteString ByteString.empty
+        request = addRequestHeader
+          Http.hIfNoneMatch
+          (Etag.toByteString etag)
+          initialRequest
+      response <- getResponse request
+      case Http.statusCode $ Client.responseStatus response of
+        200 -> do
+          let
+            newEtag =
+              Etag.fromByteString
+                . Maybe.fromMaybe ByteString.empty
+                . lookup Http.hETag
+                $ Client.responseHeaders response
+            body = LazyByteString.toStrict $ Client.responseBody response
+            sha256 = Sha256.fromDigest $ Crypto.hash body
+          Trans.lift $ Sql.execute connection
+            "insert into blobs (octets, sha256, size) values (?, ?, ?)"
+            ( Binary.fromByteString body
+            , sha256
+            , Size.fromInt $ ByteString.length body
+            )
+          Trans.lift $ Sql.execute connection
+            "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
+            (newEtag, url)
+          Trans.lift $ Sql.execute connection
+            "insert into files (digest, name) values (?, ?) \
+            \ on conflict (name) do update set \
+            \ digest = excluded.digest"
+            (sha256, tarballPath)
+          Console.info $ unwords ["Downloaded", package, version, "tarball."]
+        _ -> handleOther request response

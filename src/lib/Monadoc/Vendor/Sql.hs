@@ -13,6 +13,8 @@ module Monadoc.Vendor.Sql
   , Sql.execute
   , Sql.execute_
   , Sql.field
+  , Sql.fold
+  , Sql.fold_
   , Sql.fromField
   , Sql.fromQuery
   , Sql.fromRow
