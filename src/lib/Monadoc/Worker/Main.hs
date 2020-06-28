@@ -151,7 +151,7 @@ handleOther
   :: Stack.HasCallStack
   => Client.Request
   -> Client.Response LazyByteString.ByteString
-  -> App.App request ()
+  -> App.App request a
 handleOther request response =
   WithCallStack.throw
     . Client.HttpExceptionRequest request
@@ -511,29 +511,42 @@ fetchTarball connection path = do
           (Etag.toByteString etag)
           initialRequest
       response <- getResponse request
-      case Http.statusCode $ Client.responseStatus response of
+      body <- case Http.statusCode $ Client.responseStatus response of
         200 -> do
-          let
-            newEtag =
-              Etag.fromByteString
-                . Maybe.fromMaybe ByteString.empty
-                . lookup Http.hETag
-                $ Client.responseHeaders response
-            body = LazyByteString.toStrict $ Client.responseBody response
-            sha256 = Sha256.fromDigest $ Crypto.hash body
-          Trans.lift $ Sql.execute connection
-            "insert into blobs (octets, sha256, size) values (?, ?, ?)"
-            ( Binary.fromByteString body
-            , sha256
-            , Size.fromInt $ ByteString.length body
-            )
-          Trans.lift $ Sql.execute connection
-            "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
-            (newEtag, url)
-          Trans.lift $ Sql.execute connection
-            "insert into files (digest, name) values (?, ?) \
-            \ on conflict (name) do update set \
-            \ digest = excluded.digest"
-            (sha256, tarballPath)
-          Console.info $ unwords ["Downloaded", package, version, "tarball."]
+          Console.info $ unwords ["Downloaded", pkg, "tarball."]
+          pure . LazyByteString.toStrict $ Client.responseBody response
+        410 -> do
+          Console.warn $ unwords ["Tarball", pkg, "gone!"]
+          pure emptyTarball
         _ -> handleOther request response
+      let
+        newEtag =
+          Etag.fromByteString
+            . Maybe.fromMaybe ByteString.empty
+            . lookup Http.hETag
+            $ Client.responseHeaders response
+        sha256 = Sha256.fromDigest $ Crypto.hash body
+      Trans.lift $ Sql.execute connection
+        "insert into blobs (octets, sha256, size) values (?, ?, ?) \
+        \on conflict (sha256) do nothing"
+        ( Binary.fromByteString body
+        , sha256
+        , Size.fromInt $ ByteString.length body
+        )
+      Trans.lift $ Sql.execute connection
+        "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
+        (newEtag, url)
+      Trans.lift $ Sql.execute connection
+        "insert into files (digest, name) values (?, ?) \
+        \ on conflict (name) do update set \
+        \ digest = excluded.digest"
+        (sha256, tarballPath)
+
+-- | Some packages exist in the index even though their tarballs aren't
+-- available. For example:
+--
+-- - Trying to get the tarball for package @Clash-Royale-Hack-Cheats@ version
+--   @1.0.1@ returns an HTTP 410 Gone response.
+--   <https://github.com/haskell-infra/hackage-trustees/issues/132>
+emptyTarball :: ByteString.ByteString
+emptyTarball = LazyByteString.toStrict . Gzip.compress $ Tar.write []
