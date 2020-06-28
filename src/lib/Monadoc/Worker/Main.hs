@@ -29,6 +29,7 @@ import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
 import qualified Monadoc.Type.Cabal.VersionRange as VersionRange
+import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Path as Path
@@ -85,11 +86,14 @@ updateIndex = do
     304 -> handle304
     _ -> handleOther request response
 
-indexUrl :: String
-indexUrl = "https://hackage.haskell.org/01-index.tar.gz"
+getIndexUrl :: App.App request String
+getIndexUrl = do
+  hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
+  pure $ hackageUrl <> "/01-index.tar.gz"
 
 getEtag :: App.App request Etag.Etag
 getEtag = do
+  indexUrl <- getIndexUrl
   rows <- App.sql "select etag from cache where url = ?" [indexUrl]
   pure $ case rows of
     [] -> Etag.fromByteString ByteString.empty
@@ -97,6 +101,7 @@ getEtag = do
 
 buildRequest :: Etag.Etag -> App.App request Client.Request
 buildRequest etag = do
+  indexUrl <- getIndexUrl
   initialRequest <- Client.parseRequest indexUrl
   pure $ addRequestHeader
     Http.hIfNoneMatch
@@ -123,6 +128,7 @@ handle200 response = do
     body = LazyByteString.toStrict $ Client.responseBody response
     sha256 = Sha256.fromDigest $ Crypto.hash body
   upsertBlob body sha256
+  indexUrl <- getIndexUrl
   App.sql_
     "insert into cache (etag, sha256, url) values (?, 'unused', ?) \
     \ on conflict (url) do update set \
@@ -157,6 +163,7 @@ processIndex = do
   maybeSha256 <- getSha256
   case maybeSha256 of
     Nothing -> do
+      indexUrl <- getIndexUrl
       Console.info $ mconcat ["Missing SHA256 for ", show indexUrl, "."]
       removeCache
     Just sha256 -> do
@@ -175,7 +182,9 @@ getSha256 = do
     Sql.Only sha256 : _ -> Just sha256
 
 removeCache :: App.App request ()
-removeCache = App.sql_ "delete from cache where url = ?" [indexUrl]
+removeCache = do
+  indexUrl <- getIndexUrl
+  App.sql_ "delete from cache where url = ?" [indexUrl]
 
 getBinary :: Sha256.Sha256 -> App.App request (Maybe Binary.Binary)
 getBinary sha256 = do
