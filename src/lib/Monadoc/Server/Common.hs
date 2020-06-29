@@ -60,11 +60,21 @@ byteStringResponse status headers body =
 defaultHeaders :: Config.Config -> Headers
 defaultHeaders config =
   let
-    contentSecurityPolicy = "base-uri 'none'; default-src 'self'"
+    contentSecurityPolicy = Utf8.fromString $ List.intercalate
+      "; "
+      [ "base-uri 'none'"
+      , "default-src 'none'"
+      , "form-action 'self'"
+      , "frame-ancestors 'none'"
+      , "img-src 'self'"
+      , "style-src 'self'"
+      ]
     strictTransportSecurity =
-      "max-age=" <> if isSecure config then "2592000" else "0"
+      let maxAge = if isSecure config then 6 * 31 * 24 * 60 * 60 else 0 :: Int
+      in Utf8.fromString $ "max-age=" <> show maxAge
   in Map.fromList
     [ ("Content-Security-Policy", contentSecurityPolicy)
+    , ("Feature-Policy", "notifications 'none'")
     , ("Referrer-Policy", "no-referrer")
     , ("Strict-Transport-Security", strictTransportSecurity)
     , ("X-Content-Type-Options", "nosniff")
