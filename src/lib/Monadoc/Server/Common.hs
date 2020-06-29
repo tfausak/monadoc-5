@@ -62,7 +62,7 @@ defaultHeaders config =
   let
     contentSecurityPolicy = "base-uri 'none'; default-src 'self'"
     strictTransportSecurity =
-      "max-age=" <> if isSecure config then "86400" else "0"
+      "max-age=" <> if isSecure config then "2592000" else "0"
   in Map.fromList
     [ ("Content-Security-Policy", contentSecurityPolicy)
     , ("Referrer-Policy", "no-referrer")
