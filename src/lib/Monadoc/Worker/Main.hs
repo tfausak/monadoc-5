@@ -468,25 +468,15 @@ addRequestHeader name value request = request
   { Client.requestHeaders = (name, value) : Client.requestHeaders request
   }
 
--- TODO: Using `Sql.fold_` here forces everything inside of it to re-use the
--- connection rather than checking out a new one with `App.sql`. This is
--- tedious and prevents reusing stuff like `upsertBlob`. There's got to be a
--- better way.
 fetchTarballs :: App.App request ()
-fetchTarballs = App.withConnection $ \connection -> do
-  context <- Reader.ask
-  Trans.lift
-    . Sql.fold_
-        connection
-        "select name from files where name like '%/%/0/%.cabal' order by name asc"
-        ()
-    . const
-    $ App.run context
-    . fetchTarball connection
-    . Sql.fromOnly
+fetchTarballs = do
+  names <- App.sql
+    "select name from files where name like '%/%/0/%.cabal' order by name asc"
+    ()
+  mapM_ (fetchTarball . Sql.fromOnly) names
 
-fetchTarball :: Sql.Connection -> Path.Path -> App.App request ()
-fetchTarball connection path = do
+fetchTarball :: Path.Path -> App.App request ()
+fetchTarball path = do
   (package, version) <- case Path.toStrings path of
     [rawPackage, rawVersion, _, _] -> do
       package <- case PackageName.fromString rawPackage of
@@ -498,10 +488,7 @@ fetchTarball connection path = do
       pure (PackageName.toString package, Cabal.prettyShow version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
   let tarballPath = Path.fromStrings [package, version, package <> ".tar.gz"]
-  fileRows <- Trans.lift $ Sql.query
-    connection
-    "select count(*) from files where name = ?"
-    [tarballPath]
+  fileRows <- App.sql "select count(*) from files where name = ?" [tarballPath]
   case fileRows of
     Sql.Only count : _ | count > (0 :: Int) -> pure ()
     _ -> do
@@ -510,8 +497,7 @@ fetchTarball connection path = do
         pkg = mconcat [package, "-", version]
         url = mconcat [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
       initialRequest <- Client.parseRequest url
-      cacheRows <- Trans.lift
-        $ Sql.query connection "select etag from cache where url = ?" [url]
+      cacheRows <- App.sql "select etag from cache where url = ?" [url]
       let
         etag = case cacheRows of
           Sql.Only x : _ -> x
@@ -539,20 +525,11 @@ fetchTarball connection path = do
             . lookup Http.hETag
             $ Client.responseHeaders response
         sha256 = Sha256.fromDigest $ Crypto.hash body
-      Trans.lift $ Sql.execute
-        connection
-        "insert into blobs (octets, sha256, size) values (?, ?, ?) \
-        \on conflict (sha256) do nothing"
-        ( Binary.fromByteString body
-        , sha256
-        , Size.fromInt $ ByteString.length body
-        )
-      Trans.lift $ Sql.execute
-        connection
+      upsertBlob body sha256
+      App.sql_
         "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
         (newEtag, url)
-      Trans.lift $ Sql.execute
-        connection
+      App.sql_
         "insert into files (digest, name) values (?, ?) \
         \ on conflict (name) do update set \
         \ digest = excluded.digest"
