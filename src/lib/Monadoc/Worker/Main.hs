@@ -518,6 +518,9 @@ fetchTarball connection path = do
         410 -> do
           Console.warn $ unwords ["Tarball", pkg, "gone!"]
           pure emptyTarball
+        451 -> do
+          Console.warn $ unwords ["Tarball", pkg, "unavailable!"]
+          pure emptyTarball
         _ -> handleOther request response
       let
         newEtag =
@@ -548,5 +551,9 @@ fetchTarball connection path = do
 -- - Trying to get the tarball for package @Clash-Royale-Hack-Cheats@ version
 --   @1.0.1@ returns an HTTP 410 Gone response.
 --   <https://github.com/haskell-infra/hackage-trustees/issues/132>
+--
+-- - Similarly the package @hermes@ (nominally version @1.3.4.3@) has been
+--   removed "for legal reasons" and returns an HTTP 451.
+--   <https://github.com/haskell/hackage-server/issues/436>
 emptyTarball :: ByteString.ByteString
 emptyTarball = LazyByteString.toStrict . Gzip.compress $ Tar.write []
