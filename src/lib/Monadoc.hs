@@ -7,6 +7,7 @@ where
 
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Catch as Exception
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
@@ -43,7 +44,9 @@ monadoc = do
     , "..."
     ]
   context <- configToContext config
-  App.run context Main.run
+  Exception.finally (App.run context Main.run)
+    . Pool.destroyAllResources
+    $ Context.pool context
 
 getConfig :: IO Config.Config
 getConfig = do

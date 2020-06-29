@@ -29,6 +29,9 @@ data Config = Config
   -- ^ A URL to execute a Discord webhook. This is currently used for easy
   -- exception reporting. If you don't have a Discord server set up, you can
   -- ignore this. It's not critical.
+  , hackageUrl :: String
+  -- ^ The base Hackage URL. This can be useful to point to a mirror or even a
+  -- local Hackage server.
   , help :: Bool
   -- ^ Whether or not the help should be shown.
   , host :: Warp.HostPreference
@@ -50,6 +53,7 @@ initial = Config
   , clientSecret = "48e202a2b3aa30ad2a4e844f77b7d10807ab1deb"
   , database = "monadoc.sqlite3"
   , discordUrl = "http://invalid/api/webhooks/id/token"
+  , hackageUrl = "https://hackage.haskell.org"
   , help = False
   , host = "127.0.0.1"
   , port = 4444

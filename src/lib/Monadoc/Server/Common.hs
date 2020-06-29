@@ -35,7 +35,6 @@ import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.User as User
 import qualified Monadoc.Utility.Utf8 as Utf8
-import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
@@ -61,11 +60,21 @@ byteStringResponse status headers body =
 defaultHeaders :: Config.Config -> Headers
 defaultHeaders config =
   let
-    contentSecurityPolicy = "base-uri 'none'; default-src 'self'"
+    contentSecurityPolicy = Utf8.fromString $ List.intercalate
+      "; "
+      [ "base-uri 'none'"
+      , "default-src 'none'"
+      , "form-action 'self'"
+      , "frame-ancestors 'none'"
+      , "img-src 'self'"
+      , "style-src 'self'"
+      ]
     strictTransportSecurity =
-      "max-age=" <> if isSecure config then "86400" else "0"
+      let maxAge = if isSecure config then 6 * 31 * 24 * 60 * 60 else 0 :: Int
+      in Utf8.fromString $ "max-age=" <> show maxAge
   in Map.fromList
     [ ("Content-Security-Policy", contentSecurityPolicy)
+    , ("Feature-Policy", "notifications 'none'")
     , ("Referrer-Policy", "no-referrer")
     , ("Strict-Transport-Security", strictTransportSecurity)
     , ("X-Content-Type-Options", "nosniff")
@@ -89,12 +98,8 @@ getCookieUser = do
       Nothing -> pure Nothing
       Just text -> case fmap Guid.fromUuid $ Uuid.fromText text of
         Nothing -> pure Nothing
-        Just guid ->
-          fmap Maybe.listToMaybe . App.withConnection $ \connection ->
-            Trans.lift $ Sql.query
-              connection
-              "select * from users where guid = ?"
-              [guid]
+        Just guid -> fmap Maybe.listToMaybe
+          $ App.sql "select * from users where guid = ?" [guid]
 
 htmlResponse :: Http.Status -> Headers -> Html.Html a -> Wai.Response
 htmlResponse status headers =

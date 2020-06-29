@@ -18,6 +18,9 @@ newtype Path
   = Path [String]
   deriving (Eq, Show)
 
+instance Sql.FromField Path where
+  fromField = fmap fromFilePath . Sql.fromField
+
 instance Sql.ToField Path where
   toField = Sql.toField . toFilePath
 

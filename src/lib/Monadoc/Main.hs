@@ -42,36 +42,31 @@ runService service = case service of
 runMigrations :: Stack.HasCallStack => App.App request ()
 runMigrations = do
   Console.info "Running migrations ..."
-  App.withConnection $ \connection -> Trans.lift $ do
-    Sql.execute_ connection "pragma journal_mode = wal"
-    Sql.execute_
-      connection
-      "create table if not exists migrations \
-      \( iso8601 text not null primary key \
-      \, sha256 text not null )"
+  App.sql_ "pragma journal_mode = wal" ()
+  App.sql_
+    "create table if not exists migrations (\
+    \iso8601 text not null primary key, \
+    \sha256 text not null)"
+    ()
   mapM_ ensureMigration Migrations.migrations
 
 ensureMigration
   :: Stack.HasCallStack => Migration.Migration -> App.App request ()
-ensureMigration migration = App.withConnection $ \connection ->
-  Trans.lift . Sql.withTransaction connection $ do
-    maybeDigest <- getDigest connection $ Migration.timestamp migration
-    case maybeDigest of
-      Nothing -> runMigration connection migration
-      Just digest -> checkDigest migration digest
+ensureMigration migration = do
+  maybeDigest <- getDigest $ Migration.timestamp migration
+  case maybeDigest of
+    Nothing -> runMigration migration
+    Just digest -> checkDigest migration digest
 
-getDigest :: Sql.Connection -> Timestamp.Timestamp -> IO (Maybe Sha256.Sha256)
-getDigest connection timestamp = do
-  rows <- Sql.query
-    connection
-    "select sha256 from migrations where iso8601 = ?"
-    [timestamp]
+getDigest :: Timestamp.Timestamp -> App.App request (Maybe Sha256.Sha256)
+getDigest timestamp = do
+  rows <- App.sql "select sha256 from migrations where iso8601 = ?" [timestamp]
   pure $ case rows of
     [] -> Nothing
     Sql.Only sha256 : _ -> Just sha256
 
-runMigration :: Sql.Connection -> Migration.Migration -> IO ()
-runMigration connection migration = do
+runMigration :: Migration.Migration -> App.App request ()
+runMigration migration = do
   Console.info $ unwords
     [ "Running migration"
     , Time.formatTime "%Y-%m-%dT%H:%M:%S%3QZ"
@@ -79,11 +74,8 @@ runMigration connection migration = do
     $ Migration.timestamp migration
     , "..."
     ]
-  Sql.execute_ connection $ Migration.query migration
-  Sql.execute
-    connection
-    "insert into migrations (iso8601, sha256) values (?, ?)"
-    migration
+  App.sql_ (Migration.query migration) ()
+  App.sql_ "insert into migrations (iso8601, sha256) values (?, ?)" migration
 
 checkDigest
   :: (Stack.HasCallStack, Exception.MonadThrow m)

@@ -24,6 +24,7 @@ options =
   , clientSecretOption
   , databaseOption
   , discordUrlOption
+  , hackageUrlOption
   , helpOption
   , hostOption
   , portOption
@@ -81,6 +82,18 @@ discordUrlOption =
       )
     . argument "URL"
     $ \discordUrl config -> Right config { Config.discordUrl = discordUrl }
+
+hackageUrlOption :: Option
+hackageUrlOption =
+  option
+      []
+      ["hackage-url"]
+      ("Sets the Hackage base URL. Defaults to "
+      <> show (Config.hackageUrl Config.initial)
+      <> "."
+      )
+    . argument "URL"
+    $ \hackageUrl config -> Right config { Config.hackageUrl = hackageUrl }
 
 helpOption :: Option
 helpOption =

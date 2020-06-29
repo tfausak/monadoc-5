@@ -1,10 +1,14 @@
 module Monadoc.Type.App
   ( App
   , run
+  , sql
+  , sql_
   , withConnection
   )
 where
 
+import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Pool as Pool
 import qualified Monadoc.Type.Context as Context
@@ -17,6 +21,16 @@ type App request result = Reader.ReaderT (Context.Context request) IO result
 -- | Runs an 'App' action.
 run :: Context.Context request -> App request result -> IO result
 run = flip Reader.runReaderT
+
+-- | Runs a SQL query and returns the results.
+sql :: (Sql.FromRow b, Sql.ToRow a) => Sql.Query -> a -> App request [b]
+sql query params = withConnection
+  $ \connection -> Trans.lift $ Sql.query connection query params
+
+-- | Runs a SQL query and discards the results.
+sql_ :: Sql.ToRow a => Sql.Query -> a -> App request ()
+sql_ query params =
+  Monad.void (sql query params :: App request [[Sql.SQLData]])
 
 -- | Checks out a SQL connection from the pool and runs the given action with
 -- it.
