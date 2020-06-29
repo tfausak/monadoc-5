@@ -25,6 +25,7 @@ import qualified Distribution.Types.Version as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
 import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
+import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
@@ -47,7 +48,7 @@ import qualified System.IO.Unsafe as Unsafe
 run :: Stack.HasCallStack => App.App request ()
 run = do
   Console.info "Starting worker ..."
-  Monad.forever $ do
+  Exception.handle sendExceptionToDiscord . Monad.forever $ do
     Console.info "Worker running ..."
     pruneBlobs
     updateIndex
@@ -55,6 +56,11 @@ run = do
     fetchTarballs
     Console.info "Worker waiting ..."
     sleep $ 15 * 60
+
+sendExceptionToDiscord :: Exception.SomeException -> App.App request ()
+sendExceptionToDiscord exception = do
+  context <- Reader.ask
+  Trans.lift $ Settings.sendExceptionToDiscord context exception
 
 pruneBlobs :: App.App request ()
 pruneBlobs = do
@@ -357,10 +363,7 @@ processPackageDescription revisionsVar path strictContents digest = do
 --   }
 -- }
 processPackageSignature
-  :: Path.Path
-  -> ByteString.ByteString
-  -> Sha256.Sha256
-  -> App.App request ()
+  :: Path.Path -> ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
 processPackageSignature path strictContents digest = do
   (packageName, version) <- case Path.toStrings path of
     [rawPackageName, rawVersion, "package.json"] -> do
@@ -470,10 +473,13 @@ addRequestHeader name value request = request
 -- tedious and prevents reusing stuff like `upsertBlob`. There's got to be a
 -- better way.
 fetchTarballs :: App.App request ()
-fetchTarballs = App.withConnection $ \ connection -> do
+fetchTarballs = App.withConnection $ \connection -> do
   context <- Reader.ask
   Trans.lift
-    . Sql.fold_ connection "select name from files where name like '%/%/0/%.cabal' order by name asc" ()
+    . Sql.fold_
+        connection
+        "select name from files where name like '%/%/0/%.cabal' order by name asc"
+        ()
     . const
     $ App.run context
     . fetchTarball connection
@@ -492,7 +498,10 @@ fetchTarball connection path = do
       pure (PackageName.toString package, Cabal.prettyShow version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
   let tarballPath = Path.fromStrings [package, version, package <> ".tar.gz"]
-  fileRows <- Trans.lift $ Sql.query connection "select count(*) from files where name = ?" [tarballPath]
+  fileRows <- Trans.lift $ Sql.query
+    connection
+    "select count(*) from files where name = ?"
+    [tarballPath]
   case fileRows of
     Sql.Only count : _ | count > (0 :: Int) -> pure ()
     _ -> do
@@ -501,7 +510,8 @@ fetchTarball connection path = do
         pkg = mconcat [package, "-", version]
         url = mconcat [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
       initialRequest <- Client.parseRequest url
-      cacheRows <- Trans.lift $ Sql.query connection "select etag from cache where url = ?" [url]
+      cacheRows <- Trans.lift
+        $ Sql.query connection "select etag from cache where url = ?" [url]
       let
         etag = case cacheRows of
           Sql.Only x : _ -> x
@@ -529,17 +539,20 @@ fetchTarball connection path = do
             . lookup Http.hETag
             $ Client.responseHeaders response
         sha256 = Sha256.fromDigest $ Crypto.hash body
-      Trans.lift $ Sql.execute connection
+      Trans.lift $ Sql.execute
+        connection
         "insert into blobs (octets, sha256, size) values (?, ?, ?) \
         \on conflict (sha256) do nothing"
         ( Binary.fromByteString body
         , sha256
         , Size.fromInt $ ByteString.length body
         )
-      Trans.lift $ Sql.execute connection
+      Trans.lift $ Sql.execute
+        connection
         "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
         (newEtag, url)
-      Trans.lift $ Sql.execute connection
+      Trans.lift $ Sql.execute
+        connection
         "insert into files (digest, name) values (?, ?) \
         \ on conflict (name) do update set \
         \ digest = excluded.digest"
