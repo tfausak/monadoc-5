@@ -138,7 +138,7 @@ Resources:
         - Fn::GetAZs: !Ref AWS::Region
       IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref AmiId
-      InstanceType: t3a.micro
+      InstanceType: t3a.small
       SecurityGroupIds:
         - !Ref SecurityGroup
       SubnetId: !Ref Subnet1
@@ -343,7 +343,7 @@ Resources:
       Cpu: 1024
       ExecutionRoleArn: !Ref TaskRole
       Family: !Sub ${AWS::StackName}-task-definition
-      Memory: 480
+      Memory: 980
       NetworkMode: bridge
       Volumes:
         - Host:
