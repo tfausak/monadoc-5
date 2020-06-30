@@ -61,6 +61,7 @@ sendExceptionToDiscord :: Exception.SomeException -> App.App request ()
 sendExceptionToDiscord exception = do
   context <- Reader.ask
   Trans.lift $ Settings.sendExceptionToDiscord context exception
+  Exception.throwM exception
 
 pruneBlobs :: App.App request ()
 pruneBlobs = do
