@@ -6,7 +6,7 @@ where
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.Text as Text
-import qualified Lucid as Html
+import qualified Lucid as H
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Server.Template as Template
@@ -30,25 +30,24 @@ handle = do
     Just _ ->
       Common.htmlResponse Http.ok200 headers
         . Template.makeHtmlWith config maybeUser loginUrl
-        . Html.form_
-            [ Html.method_ "post"
-            , Html.action_ $ Router.renderAbsoluteRoute config Route.LogOut
+        . H.form_
+            [ H.method_ "post"
+            , H.action_ $ Router.renderAbsoluteRoute config Route.LogOut
             ]
-        . Html.p_
+        . H.p_
         $ do
             "You are logged in. You can manage your "
-            Html.a_
-              [ Html.href_
+            H.a_
+              [ H.href_
                 . Text.pack
                 $ "https://github.com/settings/connections/applications/"
                 <> Config.clientId config
               ]
               "OAuth application"
             " access on GitHub. Or you can "
-            Html.input_
-              [ Html.type_ "submit"
-              , Html.value_ "log out"
-              , Html.class_
-                "bg-inherit bn input-reset pa0 pointer red underline"
+            H.input_
+              [ H.type_ "submit"
+              , H.value_ "log out"
+              , H.class_ "bg-inherit bn input-reset pa0 pointer red underline"
               ]
             " of Monadoc."

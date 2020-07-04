@@ -4,7 +4,7 @@ module Monadoc.Handler.Index
 where
 
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Lucid as Html
+import qualified Lucid as H
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Template as Template
 import qualified Monadoc.Type.App as App
@@ -22,4 +22,4 @@ handle = do
   pure
     . Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
     . Template.makeHtmlWith config maybeUser loginUrl
-    $ Html.p_ "\x1f516 Better Haskell documentation."
+    $ H.p_ "\x1f516 Better Haskell documentation."

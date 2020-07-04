@@ -26,7 +26,7 @@ import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.UUID as Uuid
-import qualified Lucid as Html
+import qualified Lucid as H
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
@@ -101,13 +101,13 @@ getCookieUser = do
         Just guid -> fmap Maybe.listToMaybe
           $ App.sql "select * from users where guid = ?" [guid]
 
-htmlResponse :: Http.Status -> Headers -> Html.Html a -> Wai.Response
+htmlResponse :: Http.Status -> Headers -> H.Html a -> Wai.Response
 htmlResponse status headers =
   byteStringResponse
       status
       (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
     . LazyByteString.toStrict
-    . Html.renderBS
+    . H.renderBS
 
 isSecure :: Config.Config -> Bool
 isSecure = List.isPrefixOf "https:" . Config.url
