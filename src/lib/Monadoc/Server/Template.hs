@@ -17,6 +17,7 @@ import qualified Monadoc.Type.User as User
 -- - [ ] Vary title.
 -- - [ ] Vary description.
 -- - [ ] Vary canonical URL.
+-- - [ ] Implement search route and handler.
 makeHtmlWith
   :: Config.Config -> Maybe User.User -> Text.Text -> H.Html () -> H.Html ()
 makeHtmlWith config maybeUser loginUrl content = do
@@ -44,26 +45,40 @@ makeHtmlWith config maybeUser loginUrl content = do
       H.title_ "Monadoc"
     H.body_ $ do
       H.header_ [H.class_ "bg-purple white"]
-        . H.div_ [H.class_ "center flex items-center justify-between mw8 pa3"]
+        . H.div_ [H.class_ "center mw8 pa3"]
         $ do
-            H.h1_ [H.class_ "f2 lh-solid ma0 tracked-tight"] $ H.a_
-              [ H.class_ "color-inherit no-underline"
-              , H.href_ $ route Route.Index
+            H.div_ [H.class_ "flex items-center justify-between"] $ do
+              H.h1_ [H.class_ "f2 lh-solid ma0 tracked-tight"] $ H.a_
+                [ H.class_ "color-inherit no-underline"
+                , H.href_ $ route Route.Index
+                ]
+                "Monadoc"
+              case maybeUser of
+                Nothing -> H.a_
+                  [H.class_ "color-inherit no-underline", H.href_ loginUrl]
+                  "Log in with GitHub"
+                Just user ->
+                  H.a_
+                      [ H.class_ "color-inherit no-underline"
+                      , H.href_ $ route Route.Account
+                      ]
+                    . H.toHtml
+                    . Text.cons '@'
+                    . Login.toText
+                    $ User.login user
+      H.div_ [H.class_ "center mw8 pa3"]
+        . H.form_ [H.class_ "b--inherit ba bg-white flex items-center"]
+        $ do
+            H.input_
+              [ H.class_ "bn pa2 w-100"
+              , H.name_ "query"
+              , H.placeholder_ "Search for something ..."
               ]
-              "Monadoc"
-            case maybeUser of
-              Nothing -> H.a_
-                [H.class_ "color-inherit no-underline", H.href_ loginUrl]
-                "Log in with GitHub"
-              Just user ->
-                H.a_
-                    [ H.class_ "color-inherit no-underline"
-                    , H.href_ $ route Route.Account
-                    ]
-                  . H.toHtml
-                  . Text.cons '@'
-                  . Login.toText
-                  $ User.login user
+            H.input_
+              [ H.class_ "b bg-inherit bn pa2 pointer"
+              , H.type_ "submit"
+              , H.value_ "Search"
+              ]
       H.main_ [H.class_ "bg-white"]
         $ H.div_ [H.class_ "center mw8 pa3"] content
       H.footer_ [H.class_ "center mid-gray mw8 pa3 tc"] $ do
