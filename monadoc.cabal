@@ -1,7 +1,7 @@
 cabal-version: 2.2
 
 name: monadoc
-version: 0.2020.6.29
+version: 0.2020.7.5
 synopsis: Better Haskell documentation.
 description: Monadoc provides better Haskell documentation.
 
@@ -92,6 +92,7 @@ library
     Monadoc.Handler.LogOut
     Monadoc.Handler.Ping
     Monadoc.Handler.Robots
+    Monadoc.Handler.Search
     Monadoc.Handler.Tachyons
     Monadoc.Handler.Throw
     Monadoc.Main
@@ -162,6 +163,7 @@ test-suite test
     Monadoc.Handler.LogOutSpec
     Monadoc.Handler.PingSpec
     Monadoc.Handler.RobotsSpec
+    Monadoc.Handler.SearchSpec
     Monadoc.Handler.TachyonsSpec
     Monadoc.Handler.ThrowSpec
     Monadoc.MainSpec

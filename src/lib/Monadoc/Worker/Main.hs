@@ -57,7 +57,7 @@ run = do
     Console.info "Worker waiting ..."
     sleep $ 15 * 60
 
-sendExceptionToDiscord :: Exception.SomeException -> App.App request ()
+sendExceptionToDiscord :: Exception.SomeException -> App.App request a
 sendExceptionToDiscord exception = do
   context <- Reader.ask
   Trans.lift $ Settings.sendExceptionToDiscord context exception
@@ -258,10 +258,7 @@ processPreferredVersion
   -> App.App request ()
 processPreferredVersion versionsVar path strictContents = do
   packageName <- case Path.toStrings path of
-    [rawPackageName, "preferred-versions"] ->
-      case PackageName.fromString rawPackageName of
-        Nothing -> WithCallStack.throw $ InvalidPackageName rawPackageName
-        Just packageName -> pure packageName
+    [rawPackageName, "preferred-versions"] -> parsePackageName rawPackageName
     strings -> WithCallStack.throw $ UnexpectedPath strings
   versionRange <- case Utf8.toString strictContents of
     "" -> pure $ VersionRange.fromCabal Cabal.anyVersion
@@ -275,6 +272,14 @@ processPreferredVersion versionsVar path strictContents = do
     packageName
     versionRange
 
+parsePackageName
+  :: (Stack.HasCallStack, Exception.MonadThrow m)
+  => String
+  -> m PackageName.PackageName
+parsePackageName string = case PackageName.fromString string of
+  Nothing -> WithCallStack.throw $ InvalidPackageName string
+  Just packageName -> pure packageName
+
 processPackageDescription
   :: Stm.TVar (Map.Map PackageName.PackageName (Map.Map Cabal.Version Word))
   -> Path.Path
@@ -285,12 +290,8 @@ processPackageDescription revisionsVar path strictContents digest = do
   -- Get the package name and version from the path.
   (packageName, version) <- case Path.toStrings path of
     [rawPackageName, rawVersion, _] -> do
-      packageName <- case PackageName.fromString rawPackageName of
-        Nothing -> WithCallStack.throw $ InvalidPackageName rawPackageName
-        Just packageName -> pure packageName
-      version <- case Cabal.simpleParsec rawVersion of
-        Nothing -> WithCallStack.throw $ InvalidVersionNumber rawVersion
-        Just version -> pure version
+      packageName <- parsePackageName rawPackageName
+      version <- parseVersion rawVersion
       pure (packageName, version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
   -- Get the revision number and update the map.
@@ -342,6 +343,12 @@ processPackageDescription revisionsVar path strictContents digest = do
     \on conflict (name) do update set digest = excluded.digest"
     (digest, newPath)
 
+parseVersion
+  :: (Stack.HasCallStack, Exception.MonadThrow m) => String -> m Cabal.Version
+parseVersion string = case Cabal.simpleParsec string of
+  Nothing -> WithCallStack.throw $ InvalidVersionNumber string
+  Just version -> pure version
+
 -- For now we are essentially ignoring these entries. In the future we may want
 -- to do something with them. That's why we're storing them in the database.
 -- The entries contain a JSON object that describes the expected hash of the
@@ -368,18 +375,14 @@ processPackageSignature
 processPackageSignature path strictContents digest = do
   (packageName, version) <- case Path.toStrings path of
     [rawPackageName, rawVersion, "package.json"] -> do
-      packageName <- case PackageName.fromString rawPackageName of
-        Nothing -> WithCallStack.throw $ InvalidPackageName rawPackageName
-        Just packageName -> pure packageName
-      version <- case Cabal.simpleParsec rawVersion of
-        Nothing -> WithCallStack.throw $ InvalidVersionNumber rawVersion
-        Just version -> pure version
+      packageName <- parsePackageName rawPackageName
+      version <- parseVersion rawVersion
       pure (packageName, version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
   let
     newPath = Path.fromStrings
       [ PackageName.toString packageName
-      , Cabal.prettyShow (version :: Cabal.Version)
+      , Cabal.prettyShow version
       , "package.json"
       ]
   rows <- App.sql "select digest from files where name = ?" [newPath]
@@ -480,12 +483,8 @@ fetchTarball :: Path.Path -> App.App request ()
 fetchTarball path = do
   (package, version) <- case Path.toStrings path of
     [rawPackage, rawVersion, _, _] -> do
-      package <- case PackageName.fromString rawPackage of
-        Nothing -> WithCallStack.throw $ InvalidPackageName rawPackage
-        Just package -> pure package
-      version <- case Cabal.simpleParsec rawVersion of
-        Nothing -> WithCallStack.throw $ InvalidVersionNumber rawVersion
-        Just version -> pure (version :: Cabal.Version)
+      package <- parsePackageName rawPackage
+      version <- parseVersion rawVersion
       pure (PackageName.toString package, Cabal.prettyShow version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
   let tarballPath = Path.fromStrings [package, version, package <> ".tar.gz"]

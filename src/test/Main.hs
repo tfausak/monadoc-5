@@ -18,6 +18,7 @@ import qualified Monadoc.Handler.LogoSpec
 import qualified Monadoc.Handler.LogOutSpec
 import qualified Monadoc.Handler.PingSpec
 import qualified Monadoc.Handler.RobotsSpec
+import qualified Monadoc.Handler.SearchSpec
 import qualified Monadoc.Handler.TachyonsSpec
 import qualified Monadoc.Handler.ThrowSpec
 import qualified Monadoc.MainSpec
@@ -77,6 +78,7 @@ main = Test.hspec $ do
   Monadoc.Handler.LogOutSpec.spec
   Monadoc.Handler.PingSpec.spec
   Monadoc.Handler.RobotsSpec.spec
+  Monadoc.Handler.SearchSpec.spec
   Monadoc.Handler.TachyonsSpec.spec
   Monadoc.Handler.ThrowSpec.spec
   Monadoc.MainSpec.spec
