@@ -17,7 +17,6 @@ import qualified Monadoc.Type.User as User
 -- - [ ] Vary title.
 -- - [ ] Vary description.
 -- - [ ] Vary canonical URL.
--- - [ ] Implement search route and handler.
 makeHtmlWith
   :: Config.Config -> Maybe User.User -> Text.Text -> H.Html () -> H.Html ()
 makeHtmlWith config maybeUser loginUrl content = do
@@ -67,7 +66,10 @@ makeHtmlWith config maybeUser loginUrl content = do
                     . Login.toText
                     $ User.login user
       H.div_ [H.class_ "center mw8 pa3"]
-        . H.form_ [H.class_ "b--inherit ba bg-white flex items-center"]
+        . H.form_
+            [ H.action_ $ route Route.Search
+            , H.class_ "b--inherit ba bg-white flex items-center"
+            ]
         $ do
             H.input_
               [ H.class_ "bn pa2 w-100"

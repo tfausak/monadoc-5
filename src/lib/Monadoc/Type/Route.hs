@@ -12,9 +12,10 @@ data Route
   | GitHubCallback
   | Index
   | Logo
-  | LogOut
+  | LogOut -- ^ POST
   | Ping
   | Robots
+  | Search
   | Tachyons
   | Throw
   deriving (Eq, Show)

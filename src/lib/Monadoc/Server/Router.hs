@@ -20,6 +20,7 @@ parseRoute method path = case (method, path) of
   ("GET", ["api", "throw"]) -> Just Route.Throw
   ("GET", ["favicon.ico"]) -> Just Route.Favicon
   ("GET", ["robots.txt"]) -> Just Route.Robots
+  ("GET", ["search"]) -> Just Route.Search
   ("GET", ["static", "logo.png"]) -> Just Route.Logo
   ("GET", ["static", "tachyons-4-12-0.css"]) -> Just Route.Tachyons
   _ -> Nothing
@@ -34,6 +35,7 @@ renderRelativeRoute route = case route of
   Route.LogOut -> "/api/log-out"
   Route.Ping -> "/api/ping"
   Route.Robots -> "/robots.txt"
+  Route.Search -> "/search"
   Route.Tachyons -> "/static/tachyons-4-12-0.css"
   Route.Throw -> "/api/throw"
 
