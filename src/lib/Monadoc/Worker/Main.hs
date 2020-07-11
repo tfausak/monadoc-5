@@ -34,6 +34,7 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Type.Path as Path
+import qualified Monadoc.Type.Revision as Revision
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.WithCallStack as WithCallStack
@@ -224,7 +225,11 @@ processIndexWith binary = do
 
 processEntry
   :: Stm.TVar Word
-  -> Stm.TVar (Map.Map PackageName.PackageName (Map.Map Cabal.Version Word))
+  -> Stm.TVar
+       ( Map.Map
+           PackageName.PackageName
+           (Map.Map Cabal.Version Revision.Revision)
+       )
   -> Stm.TVar (Map.Map PackageName.PackageName VersionRange.VersionRange)
   -> Tar.Entry
   -> App.App request ()
@@ -281,7 +286,11 @@ parsePackageName string = case PackageName.fromString string of
   Just packageName -> pure packageName
 
 processPackageDescription
-  :: Stm.TVar (Map.Map PackageName.PackageName (Map.Map Cabal.Version Word))
+  :: Stm.TVar
+       ( Map.Map
+           PackageName.PackageName
+           (Map.Map Cabal.Version Revision.Revision)
+       )
   -> Path.Path
   -> ByteString.ByteString
   -> Sha256.Sha256
@@ -299,19 +308,19 @@ processPackageDescription revisionsVar path strictContents digest = do
     allRevisions <- Stm.readTVar revisionsVar
     case Map.lookup packageName allRevisions of
       Nothing -> do
-        let revision = 0
+        let revision = Revision.zero
         Stm.modifyTVar revisionsVar . Map.insert packageName $ Map.singleton
           version
           revision
         pure revision
       Just packageRevisions -> case Map.lookup version packageRevisions of
         Nothing -> do
-          let revision = 0
+          let revision = Revision.zero
           Stm.modifyTVar revisionsVar
             $ Map.adjust (Map.insert version revision) packageName
           pure revision
         Just versionRevision -> do
-          let revision = versionRevision + 1
+          let revision = Revision.increment versionRevision
           Stm.modifyTVar revisionsVar
             $ Map.adjust (Map.insert version revision) packageName
           pure revision
@@ -320,7 +329,7 @@ processPackageDescription revisionsVar path strictContents digest = do
     newPath = Path.fromStrings
       [ PackageName.toString packageName
       , Cabal.prettyShow version
-      , show revision
+      , Revision.toString revision
       , PackageName.toString packageName <> ".cabal"
       ]
   -- Upsert the package description.
