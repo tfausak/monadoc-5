@@ -6,19 +6,21 @@ import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
 
 parseRoute :: Http.Method -> [Text.Text] -> Maybe Route.Route
-parseRoute method path = case (method, path) of
-  ("GET", []) -> Just Route.Index
-  ("GET", ["account"]) -> Just Route.Account
-  ("GET", ["api", "github-callback"]) -> Just Route.GitHubCallback
-  ("POST", ["api", "log-out"]) -> Just Route.LogOut
-  ("GET", ["api", "ping"]) -> Just Route.Ping
-  ("GET", ["api", "throw"]) -> Just Route.Throw
-  ("GET", ["favicon.ico"]) -> Just Route.Favicon
-  ("GET", ["robots.txt"]) -> Just Route.Robots
-  ("GET", ["search"]) -> Just Route.Search
-  ("GET", ["static", "logo.png"]) -> Just Route.Logo
-  ("GET", ["static", "tachyons-4-12-0.css"]) -> Just Route.Tachyons
-  _ -> Nothing
+parseRoute method path = do
+  stdMethod <- either (const Nothing) Just $ Http.parseMethod method
+  case (stdMethod, path) of
+    (Http.GET, []) -> Just Route.Index
+    (Http.GET, ["account"]) -> Just Route.Account
+    (Http.GET, ["api", "github-callback"]) -> Just Route.GitHubCallback
+    (Http.POST, ["api", "log-out"]) -> Just Route.LogOut
+    (Http.GET, ["api", "ping"]) -> Just Route.Ping
+    (Http.GET, ["api", "throw"]) -> Just Route.Throw
+    (Http.GET, ["favicon.ico"]) -> Just Route.Favicon
+    (Http.GET, ["robots.txt"]) -> Just Route.Robots
+    (Http.GET, ["search"]) -> Just Route.Search
+    (Http.GET, ["static", "logo.png"]) -> Just Route.Logo
+    (Http.GET, ["static", "tachyons-4-12-0.css"]) -> Just Route.Tachyons
+    _ -> Nothing
 
 renderRelativeRoute :: Route.Route -> Text.Text
 renderRelativeRoute route = case route of
