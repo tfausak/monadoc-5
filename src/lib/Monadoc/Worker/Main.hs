@@ -56,6 +56,7 @@ run = do
 
 sendExceptionToDiscord :: Exception.SomeException -> App.App request a
 sendExceptionToDiscord exception = do
+  Console.warn $ Exception.displayException exception
   context <- Reader.ask
   Trans.lift $ Settings.sendExceptionToDiscord context exception
   Exception.throwM exception

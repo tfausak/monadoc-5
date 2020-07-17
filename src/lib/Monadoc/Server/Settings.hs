@@ -1,6 +1,5 @@
 module Monadoc.Server.Settings where
 
-import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Data.ByteString as ByteString
@@ -52,7 +51,7 @@ onException context _ exception
   | isType testException exception = pure ()
   | otherwise = do
     Console.warn $ Exception.displayException exception
-    Monad.void . Concurrent.forkIO $ sendExceptionToDiscord context exception
+    sendExceptionToDiscord context exception
 
 sendExceptionToDiscord
   :: Context.Context request -> Exception.SomeException -> IO ()
