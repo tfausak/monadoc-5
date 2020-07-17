@@ -1,12 +1,5 @@
 module Monadoc.Worker.Main where
 
--- TODO: Normalize paths and give them unique prefixes. For example:
--- - Hackage index: index.tar.gz
--- - package description: d/NAME/VERSION/REVISION/.cabal
--- - package signature: s/NAME/VERSION/.json
--- - package tarball: t/NAME/VERSION/.tar.gz
--- - package contents: c/NAME/VERSION/FILE
-
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
@@ -19,6 +12,7 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Distribution.Parsec as Cabal
@@ -155,7 +149,7 @@ handle200 response = do
     (sha256, indexPath)
 
 indexPath :: Path.Path
-indexPath = Path.fromFilePath "hackage/01-index.tar.gz"
+indexPath = Path.fromFilePath "index.tar.gz"
 
 handle304 :: App.App request ()
 handle304 = Console.info "Hackage index has not changed."
@@ -173,6 +167,7 @@ handleOther request response =
 
 processIndex :: App.App request ()
 processIndex = do
+  Console.info "Processing Hackage index ..."
   maybeSha256 <- getSha256
   case maybeSha256 of
     Nothing -> do
@@ -329,10 +324,11 @@ processPackageDescription revisionsVar path strictContents digest = do
   -- Build the new path with revision.
   let
     newPath = Path.fromStrings
-      [ PackageName.toString packageName
+      [ "d"
+      , PackageName.toString packageName
       , Cabal.prettyShow version
       , Revision.toString revision
-      , PackageName.toString packageName <> ".cabal"
+      , ".cabal"
       ]
   -- Upsert the package description.
   rows <- App.sql "select digest from files where name = ?" [newPath]
@@ -391,9 +387,10 @@ processPackageSignature path strictContents digest = do
     strings -> WithCallStack.throw $ UnexpectedPath strings
   let
     newPath = Path.fromStrings
-      [ PackageName.toString packageName
+      [ "s"
+      , PackageName.toString packageName
       , Cabal.prettyShow version
-      , "package.json"
+      , ".json"
       ]
   rows <- App.sql "select digest from files where name = ?" [newPath]
   case rows of
@@ -484,61 +481,72 @@ addRequestHeader name value request = request
 
 fetchTarballs :: App.App request ()
 fetchTarballs = do
+  Console.info "Fetching package tarballs ..."
   names <- App.sql
-    "select name from files where name like '%/%/0/%.cabal' order by name asc"
+    "select name from files where name like 'd/%/%/0/.cabal' order by name asc"
     ()
   mapM_ (fetchTarball . Sql.fromOnly) names
 
 fetchTarball :: Path.Path -> App.App request ()
 fetchTarball path = do
   (package, version) <- case Path.toStrings path of
-    [rawPackage, rawVersion, _, _] -> do
+    ["d", rawPackage, rawVersion, "0", ".cabal"] -> do
       package <- parsePackageName rawPackage
       version <- parseVersion rawVersion
       pure (PackageName.toString package, Cabal.prettyShow version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
-  let tarballPath = Path.fromStrings [package, version, package <> ".tar.gz"]
+  let tarballPath = Path.fromStrings ["t", package, version, ".tar.gz"]
   fileRows <- App.sql "select count(*) from files where name = ?" [tarballPath]
   case fileRows of
     Sql.Only count : _ | count > (0 :: Int) -> pure ()
     _ -> do
-      hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
-      let
-        pkg = mconcat [package, "-", version]
-        url = mconcat [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
-      initialRequest <- Client.parseRequest url
-      cacheRows <- App.sql "select etag from cache where url = ?" [url]
-      let
-        etag = case cacheRows of
-          Sql.Only x : _ -> x
-          _ -> Etag.fromByteString ByteString.empty
-        request = addRequestHeader
-          Http.hIfNoneMatch
-          (Etag.toByteString etag)
-          initialRequest
-      response <- getResponse request
-      body <- case Http.statusCode $ Client.responseStatus response of
-        200 -> do
-          Console.info $ unwords ["Downloaded", pkg, "tarball."]
-          pure . LazyByteString.toStrict $ Client.responseBody response
-        410 -> do
-          Console.warn $ unwords ["Tarball", pkg, "gone!"]
-          pure emptyTarball
-        451 -> do
-          Console.warn $ unwords ["Tarball", pkg, "unavailable!"]
-          pure emptyTarball
-        _ -> handleOther request response
-      let
-        newEtag =
-          Etag.fromByteString
-            . Maybe.fromMaybe ByteString.empty
-            . lookup Http.hETag
-            $ Client.responseHeaders response
-        sha256 = Sha256.fromDigest $ Crypto.hash body
-      upsertBlob body sha256
-      App.sql_
-        "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
-        (newEtag, url)
+      sha256 <- do
+        -- TODO
+        oldFileRows <- App.sql
+          "select digest from files where name = ?"
+          [Path.fromStrings [package, version, package <> ".tar.gz"]]
+        case oldFileRows of
+          Sql.Only sha256 : _ -> pure sha256
+          _ -> do
+            hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
+            let
+              pkg = mconcat [package, "-", version]
+              url =
+                mconcat [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
+            initialRequest <- Client.parseRequest url
+            cacheRows <- App.sql "select etag from cache where url = ?" [url]
+            let
+              etag = case cacheRows of
+                Sql.Only x : _ -> x
+                _ -> Etag.fromByteString ByteString.empty
+              request = addRequestHeader
+                Http.hIfNoneMatch
+                (Etag.toByteString etag)
+                initialRequest
+            response <- getResponse request
+            body <- case Http.statusCode $ Client.responseStatus response of
+              200 -> do
+                Console.info $ unwords ["Downloaded", pkg, "tarball."]
+                pure . LazyByteString.toStrict $ Client.responseBody response
+              410 -> do
+                Console.warn $ unwords ["Tarball", pkg, "gone!"]
+                pure emptyTarball
+              451 -> do
+                Console.warn $ unwords ["Tarball", pkg, "unavailable!"]
+                pure emptyTarball
+              _ -> handleOther request response
+            let
+              newEtag =
+                Etag.fromByteString
+                  . Maybe.fromMaybe ByteString.empty
+                  . lookup Http.hETag
+                  $ Client.responseHeaders response
+              sha256 = Sha256.fromDigest $ Crypto.hash body
+            upsertBlob body sha256
+            App.sql_
+              "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
+              (newEtag, url)
+            pure sha256
       App.sql_
         "insert into files (digest, name) values (?, ?) \
         \ on conflict (name) do update set \
@@ -560,9 +568,13 @@ emptyTarball = LazyByteString.toStrict . Gzip.compress $ Tar.write []
 
 processTarballs :: App.App request ()
 processTarballs = do
+  Console.info "Processing package tarballs ..."
   countVar <- Trans.lift $ Stm.newTVarIO 1
   rows <- App.sql
-    "select name, digest from files where name like '%/%/%.tar.gz' order by name asc"
+    "select name, digest \
+    \from files \
+    \where name like 't/%/%/.tar.gz' \
+    \order by name asc"
     ()
   mapM_ (uncurry $ processTarball countVar) rows
 
@@ -578,7 +590,7 @@ processTarball countVar path sha256 = do
     . unwords
     $ ["Processing tarball number", show count, "..."]
   (package, version) <- case Path.toStrings path of
-    [rawPackage, rawVersion, _] -> do
+    ["t", rawPackage, rawVersion, ".tar.gz"] -> do
       package <- parsePackageName rawPackage
       version <- parseVersion rawVersion
       pure (package, version)
@@ -588,7 +600,8 @@ processTarball countVar path sha256 = do
     case maybeBinary of
       Nothing -> WithCallStack.throw $ MissingBinary sha256
       Just binary -> pure binary
-  mapM_ (processTarballEntry package version)
+  linkVar <- Trans.lift Stm.newEmptyTMVarIO
+  mapM_ (processTarballEntry package version linkVar)
     . Tar.foldEntries (:) [] handleFormatError
     . Tar.read
     . Gzip.decompress
@@ -601,24 +614,100 @@ handleFormatError formatError = case formatError of
   Tar.ShortTrailer -> []
   _ -> unsafeThrow formatError
 
--- TODO
 processTarballEntry
   :: PackageName.PackageName
   -> Cabal.Version
+  -> Stm.TMVar Path.Path
   -> Tar.Entry
   -> App.App request ()
-processTarballEntry _ _ entry = case Tar.entryContent entry of
-  Tar.BlockDevice{} -> pure ()
-  Tar.CharacterDevice{} -> pure ()
-  Tar.Directory{} -> pure ()
-  Tar.HardLink{} -> pure ()
-  Tar.NamedPipe{} -> pure ()
-  Tar.NormalFile{} -> pure ()
-  Tar.OtherEntryType{} -> pure ()
-  Tar.SymbolicLink{} -> pure ()
+processTarballEntry package version linkVar entry =
+  case Tar.entryContent entry of
+
+    Tar.OtherEntryType 'L' byteString _ -> do
+      let
+        expected = Path.fromStrings [".", ".", "@LongLink"]
+        actual = Path.fromFilePath $ Tar.entryPath entry
+        link =
+          Path.fromFilePath
+            . Utf8.toString
+            . stripTrailingNullBytes
+            $ LazyByteString.toStrict byteString
+      Monad.when (actual /= expected) . WithCallStack.throw $ InvalidLongLink
+        entry
+      Trans.lift . Stm.atomically $ do
+        maybeLink <- Stm.tryTakeTMVar linkVar
+        case maybeLink of
+          Just oldLink -> WithCallStack.throw $ LongLinkOverwrite oldLink link
+          Nothing -> Stm.putTMVar linkVar link
+
+    Tar.NormalFile byteString _ -> do
+      maybeLink <- Trans.lift . Stm.atomically $ Stm.tryTakeTMVar linkVar
+      partialPath <- case maybeLink of
+        Nothing -> pure . Path.fromFilePath $ Tar.entryPath entry
+        Just link -> do
+          let
+            prefix = Path.toFilePath . Path.fromFilePath $ Tar.entryPath entry
+            string = Path.toFilePath link
+          Monad.unless (prefix `List.isPrefixOf` string)
+            . WithCallStack.throw
+            $ InvalidPrefix prefix string
+          pure link
+      let
+        contents = LazyByteString.toStrict byteString
+        sha256 = Sha256.fromDigest $ Crypto.hash contents
+        prefix = mconcat
+          [PackageName.toString package, "-", Cabal.prettyShow version, "/"]
+        string = Path.toFilePath partialPath
+      if prefix `List.isPrefixOf` string
+        then do
+          upsertBlob contents sha256
+          let
+            fullPath =
+              Path.fromStrings
+                . ("c" :)
+                . (PackageName.toString package :)
+                . (Cabal.prettyShow version :)
+                . drop 1
+                $ Path.toStrings partialPath
+          App.sql_
+            "insert into files (digest, name) values (?, ?) \
+            \on conflict (name) do update set digest = excluded.digest"
+            (sha256, fullPath)
+        else Console.warn $ "IGNORING " <> show
+          (package, version, Tar.entryPath entry)
+
+    Tar.Directory -> pure ()
+    Tar.HardLink _ -> pure () -- https://github.com/haskell/hackage-server/issues/858
+    Tar.OtherEntryType '5' _ _ -> pure () -- directory
+    Tar.OtherEntryType 'g' _ _ -> pure () -- pax_global_header
+    Tar.OtherEntryType 'x' _ _ -> pure () -- metadata
+    Tar.SymbolicLink _ -> pure ()
+
+    _ -> WithCallStack.throw $ UnknownEntry entry
+
+stripTrailingNullBytes :: ByteString.ByteString -> ByteString.ByteString
+stripTrailingNullBytes = fst . ByteString.spanEnd (== 0x00)
 
 newtype MissingBinary
   = MissingBinary Sha256.Sha256
   deriving (Eq, Show)
 
 instance Exception.Exception MissingBinary
+
+newtype InvalidLongLink
+  = InvalidLongLink Tar.Entry
+  deriving (Eq, Show)
+
+instance Exception.Exception InvalidLongLink
+
+data LongLinkOverwrite
+  = LongLinkOverwrite Path.Path Path.Path
+  deriving (Eq, Show)
+
+instance Exception.Exception LongLinkOverwrite
+
+data InvalidPrefix
+  = InvalidPrefix FilePath FilePath
+  deriving (Eq, Show)
+
+instance Exception.Exception InvalidPrefix
