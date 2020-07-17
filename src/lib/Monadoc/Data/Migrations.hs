@@ -18,19 +18,21 @@ migrations = Set.fromList
   [ makeMigration (2020, 5, 31, 13, 38, 0) "select 1"
   , makeMigration
     (2020, 6, 2, 13, 43, 0)
-    " create table blobs \
-    \( octets blob not null \
-    \, sha256 text not null primary key \
-    \, size integer not null )"
+    " create table blobs ( \
+    \octets blob not null , \
+    \sha256 text not null primary key , \
+    \size integer not null )"
   , makeMigration
     (2020, 6, 2, 13, 50, 0)
-    " create table cache \
-    \( etag text not null \
-    \, sha256 text not null \
-    \, url text not null primary key )"
+    " create table cache ( \
+    \etag text not null , \
+    \sha256 text not null , \
+    \url text not null primary key )"
   , makeMigration
     (2020, 6, 10, 19, 46, 0)
-    "create table files (digest text not null, name text primary key)"
+    "create table files (\
+    \digest text not null, \
+    \name text primary key)"
   , makeMigration
     (2020, 6, 14, 12, 31, 0)
     "create table users (\
