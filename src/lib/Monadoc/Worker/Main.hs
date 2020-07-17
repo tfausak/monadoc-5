@@ -1,5 +1,12 @@
 module Monadoc.Worker.Main where
 
+-- TODO: Normalize paths and give them unique prefixes. For example:
+-- - Hackage index: index.tar.gz
+-- - package description: d/NAME/VERSION/REVISION/.cabal
+-- - package signature: s/NAME/VERSION/.json
+-- - package tarball: t/NAME/VERSION/.tar.gz
+-- - package contents: c/NAME/VERSION/FILE
+
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
@@ -51,6 +58,7 @@ run = do
     updateIndex
     processIndex
     fetchTarballs
+    processTarballs
     Console.info "Worker waiting ..."
     sleep $ 15 * 60
 
@@ -203,8 +211,8 @@ processIndexWith binary = do
   countVar <- Trans.lift $ Stm.newTVarIO 1
   revisionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
   versionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
-  mapM_ (processEntry countVar revisionsVar versionsVar)
-    . Tar.foldEntries (:) [] unsafeThrow
+  mapM_ (processIndexEntry countVar revisionsVar versionsVar)
+    . Tar.foldEntries (:) [] handleFormatError
     . Tar.read
     . Gzip.decompress
     . LazyByteString.fromStrict
@@ -219,7 +227,7 @@ processIndexWith binary = do
     \do update set version_range = excluded.version_range"
     (packageName, versionRange)
 
-processEntry
+processIndexEntry
   :: Stm.TVar Word
   -> Stm.TVar
        ( Map.Map
@@ -229,7 +237,7 @@ processEntry
   -> Stm.TVar (Map.Map PackageName.PackageName VersionRange.VersionRange)
   -> Tar.Entry
   -> App.App request ()
-processEntry countVar revisionsVar versionsVar entry = do
+processIndexEntry countVar revisionsVar versionsVar entry = do
   count <- Trans.lift . Stm.atomically $ do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
@@ -549,3 +557,68 @@ fetchTarball path = do
 --   <https://github.com/haskell/hackage-server/issues/436>
 emptyTarball :: ByteString.ByteString
 emptyTarball = LazyByteString.toStrict . Gzip.compress $ Tar.write []
+
+processTarballs :: App.App request ()
+processTarballs = do
+  countVar <- Trans.lift $ Stm.newTVarIO 1
+  rows <- App.sql
+    "select name, digest from files where name like '%/%/%.tar.gz' order by name asc"
+    ()
+  mapM_ (uncurry $ processTarball countVar) rows
+
+processTarball
+  :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
+processTarball countVar path sha256 = do
+  count <- Trans.lift . Stm.atomically $ do
+    count <- Stm.readTVar countVar
+    Stm.modifyTVar countVar (+ 1)
+    pure count
+  Monad.when (rem count 1000 == 0)
+    . Console.info
+    . unwords
+    $ ["Processing tarball number", show count, "..."]
+  (package, version) <- case Path.toStrings path of
+    [rawPackage, rawVersion, _] -> do
+      package <- parsePackageName rawPackage
+      version <- parseVersion rawVersion
+      pure (package, version)
+    strings -> WithCallStack.throw $ UnexpectedPath strings
+  binary <- do
+    maybeBinary <- getBinary sha256
+    case maybeBinary of
+      Nothing -> WithCallStack.throw $ MissingBinary sha256
+      Just binary -> pure binary
+  mapM_ (processTarballEntry package version)
+    . Tar.foldEntries (:) [] handleFormatError
+    . Tar.read
+    . Gzip.decompress
+    . LazyByteString.fromStrict
+    $ Binary.toByteString binary
+
+-- https://github.com/haskell/hackage-server/issues/851
+handleFormatError :: Tar.FormatError -> [a]
+handleFormatError formatError = case formatError of
+  Tar.ShortTrailer -> []
+  _ -> unsafeThrow formatError
+
+-- TODO
+processTarballEntry
+  :: PackageName.PackageName
+  -> Cabal.Version
+  -> Tar.Entry
+  -> App.App request ()
+processTarballEntry _ _ entry = case Tar.entryContent entry of
+  Tar.BlockDevice{} -> pure ()
+  Tar.CharacterDevice{} -> pure ()
+  Tar.Directory{} -> pure ()
+  Tar.HardLink{} -> pure ()
+  Tar.NamedPipe{} -> pure ()
+  Tar.NormalFile{} -> pure ()
+  Tar.OtherEntryType{} -> pure ()
+  Tar.SymbolicLink{} -> pure ()
+
+newtype MissingBinary
+  = MissingBinary Sha256.Sha256
+  deriving (Eq, Show)
+
+instance Exception.Exception MissingBinary
