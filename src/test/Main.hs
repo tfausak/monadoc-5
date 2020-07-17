@@ -6,6 +6,7 @@ import qualified Monadoc.Data.CommitSpec
 import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
+import qualified Monadoc.Extra.SqlSpec
 import qualified Monadoc.GhcSpec
 import qualified Monadoc.Handler.AccountSpec
 import qualified Monadoc.Handler.FaviconSpec
@@ -67,6 +68,7 @@ main = hspec $ do
   Monadoc.Data.MigrationsSpec.spec
   Monadoc.Data.OptionsSpec.spec
   Monadoc.Data.VersionSpec.spec
+  Monadoc.Extra.SqlSpec.spec
   Monadoc.GhcSpec.spec
   Monadoc.Handler.AccountSpec.spec
   Monadoc.Handler.FaviconSpec.spec

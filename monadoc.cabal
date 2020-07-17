@@ -85,6 +85,7 @@ library
     Monadoc.Data.Migrations
     Monadoc.Data.Options
     Monadoc.Data.Version
+    Monadoc.Extra.Sql
     Monadoc.Ghc
     Monadoc.Handler.Account
     Monadoc.Handler.Favicon
@@ -157,6 +158,7 @@ test-suite test
     Monadoc.Data.MigrationsSpec
     Monadoc.Data.OptionsSpec
     Monadoc.Data.VersionSpec
+    Monadoc.Extra.SqlSpec
     Monadoc.GhcSpec
     Monadoc.Handler.AccountSpec
     Monadoc.Handler.FaviconSpec
