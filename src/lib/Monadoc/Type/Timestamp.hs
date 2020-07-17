@@ -12,10 +12,10 @@ newtype Timestamp
 
 instance Sql.FromField Timestamp where
   fromField =
-    Sql.fromFieldVia $ fmap fromUtcTime . Time.parseTime "%Y-%m-%dT%H:%M:%S%QZ"
+    Sql.fromFieldVia $ fmap fromUtcTime . Time.parse "%Y-%m-%dT%H:%M:%S%QZ"
 
 instance Sql.ToField Timestamp where
-  toField = Sql.toField . Time.formatTime "%Y-%m-%dT%H:%M:%S%3QZ" . toUtcTime
+  toField = Sql.toField . Time.format "%Y-%m-%dT%H:%M:%S%3QZ" . toUtcTime
 
 fromUtcTime :: Time.UTCTime -> Timestamp
 fromUtcTime = Timestamp

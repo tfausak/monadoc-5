@@ -64,7 +64,7 @@ runMigration :: Migration.Migration -> App.App request ()
 runMigration migration = do
   Console.info $ unwords
     [ "Running migration"
-    , Time.formatTime "%Y-%m-%dT%H:%M:%S%3QZ"
+    , Time.format "%Y-%m-%dT%H:%M:%S%3QZ"
     . Timestamp.toUtcTime
     $ Migration.timestamp migration
     , "..."
