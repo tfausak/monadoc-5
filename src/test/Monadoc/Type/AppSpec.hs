@@ -3,21 +3,21 @@ module Monadoc.Type.AppSpec where
 import qualified Control.Monad.IO.Class as IO
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Vendor.Sql as Sql
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.App" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.App" $ do
 
-  Test.describe "run" $ do
+  describe "run" $ do
 
-    Test.it "works" $ do
-      context <- Test.makeContext
-      App.run context (pure ()) `Test.shouldReturn` ()
+    it "works" $ do
+      context <- makeContext
+      App.run context (pure ()) `shouldReturn` ()
 
-  Test.describe "withConnection" $ do
+  describe "withConnection" $ do
 
-    Test.it "works" $ do
-      context <- Test.makeContext
+    it "works" $ do
+      context <- makeContext
       result <- App.run context . App.withConnection $ \connection ->
         IO.liftIO $ Sql.query_ connection "select 1"
-      result `Test.shouldBe` [Sql.Only (1 :: Int)]
+      result `shouldBe` [Sql.Only (1 :: Int)]

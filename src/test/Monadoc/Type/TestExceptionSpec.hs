@@ -1,8 +1,8 @@
 module Monadoc.Type.TestExceptionSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.TestException" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.TestException" $ do
 
   pure ()

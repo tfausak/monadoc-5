@@ -1,8 +1,8 @@
 module Monadoc.Type.ConfigResultSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.ConfigResult" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.ConfigResult" $ do
 
   pure ()

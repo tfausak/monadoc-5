@@ -1,8 +1,8 @@
 module Monadoc.Type.GitHub.UserSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.GitHub.User" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.GitHub.User" $ do
 
-  Test.it "needs tests" Test.pending
+  it "needs tests" pending

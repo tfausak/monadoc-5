@@ -1,8 +1,8 @@
 module Monadoc.Type.RouteSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.Route" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.Route" $ do
 
   pure ()

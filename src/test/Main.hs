@@ -57,10 +57,10 @@ import qualified Monadoc.Vendor.SqlSpec
 import qualified Monadoc.Vendor.TimeSpec
 import qualified Monadoc.Worker.MainSpec
 import qualified MonadocSpec
-import qualified Test
+import Test
 
 main :: IO ()
-main = Test.hspec $ do
+main = hspec $ do
   Monadoc.CabalSpec.spec
   Monadoc.ConsoleSpec.spec
   Monadoc.Data.CommitSpec.spec

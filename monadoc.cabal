@@ -59,6 +59,7 @@ common library
     -Wno-missing-deriving-strategies
     -Wno-missing-export-lists
     -Wno-missing-exported-signatures
+    -Wno-missing-import-lists
     -Wno-missing-local-signatures
     -Wno-missing-safe-haskell-mode
     -Wno-monomorphism-restriction

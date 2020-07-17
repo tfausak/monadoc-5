@@ -1,17 +1,17 @@
 module Monadoc.Type.RevisionSpec where
 
 import qualified Monadoc.Type.Revision as Revision
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.Revision" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.Revision" $ do
 
-  Test.describe "increment" $ do
+  describe "increment" $ do
 
-    Test.it "increases by one" $ do
-      Revision.increment Revision.zero `Test.shouldBe` Revision.fromWord 1
+    it "increases by one" $ do
+      Revision.increment Revision.zero `shouldBe` Revision.fromWord 1
 
-  Test.describe "toString" $ do
+  describe "toString" $ do
 
-    Test.it "renders just the number" $ do
-      Revision.toString Revision.zero `Test.shouldBe` "0"
+    it "renders just the number" $ do
+      Revision.toString Revision.zero `shouldBe` "0"
