@@ -4,7 +4,6 @@ import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
@@ -30,12 +29,13 @@ monadoc = do
     IO.hSetBuffering handle IO.LineBuffering
     IO.hSetEncoding handle IO.utf8
   config <- getConfig
-  Console.info $ unwords
-    [ "\x1f516 Starting Monadoc version"
+  Console.info $ mconcat
+    [ "\x1f516 Starting Monadoc version "
     , Version.string
-    , "commit"
-    , Maybe.fromMaybe "unknown" Commit.hash
-    , "..."
+    , case Commit.hash of
+      Nothing -> ""
+      Just hash -> " commit " <> hash
+    , " ..."
     ]
   context <- configToContext config
   Exception.finally (App.run context Main.run)
