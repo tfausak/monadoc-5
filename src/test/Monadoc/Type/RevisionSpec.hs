@@ -1,7 +1,4 @@
-module Monadoc.Type.RevisionSpec
-  ( spec
-  )
-where
+module Monadoc.Type.RevisionSpec where
 
 import qualified Monadoc.Type.Revision as Revision
 import qualified Test

@@ -1,9 +1,4 @@
-module Monadoc.Cabal
-  ( Errors(..)
-  , Package(..)
-  , parse
-  )
-where
+module Monadoc.Cabal where
 
 import qualified Data.ByteString
 import qualified Data.Function

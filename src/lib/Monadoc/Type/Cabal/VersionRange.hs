@@ -1,11 +1,4 @@
-module Monadoc.Type.Cabal.VersionRange
-  ( VersionRange
-  , fromCabal
-  , fromString
-  , toCabal
-  , toString
-  )
-where
+module Monadoc.Type.Cabal.VersionRange where
 
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal

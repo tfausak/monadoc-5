@@ -1,7 +1,4 @@
-module Monadoc.Data.Migrations
-  ( migrations
-  )
-where
+module Monadoc.Data.Migrations where
 
 import qualified Data.Fixed as Fixed
 import qualified Data.Set as Set

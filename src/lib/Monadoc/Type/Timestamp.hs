@@ -1,9 +1,4 @@
-module Monadoc.Type.Timestamp
-  ( Timestamp
-  , fromUtcTime
-  , toUtcTime
-  )
-where
+module Monadoc.Type.Timestamp where
 
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time

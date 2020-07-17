@@ -1,7 +1,4 @@
-module Monadoc.Type.TestException
-  ( TestException(..)
-  )
-where
+module Monadoc.Type.TestException where
 
 import qualified Control.Monad.Catch as Exception
 

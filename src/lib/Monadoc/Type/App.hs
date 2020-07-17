@@ -1,11 +1,4 @@
-module Monadoc.Type.App
-  ( App
-  , run
-  , sql
-  , sql_
-  , withConnection
-  )
-where
+module Monadoc.Type.App where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans

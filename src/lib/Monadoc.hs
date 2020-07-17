@@ -1,9 +1,4 @@
-module Monadoc
-  ( argumentsToConfigResult
-  , configToContext
-  , monadoc
-  )
-where
+module Monadoc where
 
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad

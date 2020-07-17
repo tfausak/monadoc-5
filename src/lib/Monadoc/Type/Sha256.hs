@@ -1,9 +1,4 @@
-module Monadoc.Type.Sha256
-  ( Sha256
-  , fromDigest
-  , toDigest
-  )
-where
+module Monadoc.Type.Sha256 where
 
 import qualified Crypto.Hash as Crypto
 import qualified Monadoc.Vendor.Sql as Sql

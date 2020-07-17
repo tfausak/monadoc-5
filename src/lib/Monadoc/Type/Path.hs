@@ -1,11 +1,4 @@
-module Monadoc.Type.Path
-  ( Path
-  , fromFilePath
-  , fromStrings
-  , toFilePath
-  , toStrings
-  )
-where
+module Monadoc.Type.Path where
 
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified System.FilePath.Posix as Posix

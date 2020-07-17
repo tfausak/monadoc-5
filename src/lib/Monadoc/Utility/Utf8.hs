@@ -1,10 +1,4 @@
-module Monadoc.Utility.Utf8
-  ( fromString
-  , fromText
-  , toString
-  , toText
-  )
-where
+module Monadoc.Utility.Utf8 where
 
 import qualified Data.ByteString as ByteString
 import qualified Data.Text as Text

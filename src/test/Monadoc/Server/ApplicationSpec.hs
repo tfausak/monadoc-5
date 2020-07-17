@@ -1,7 +1,4 @@
-module Monadoc.Server.ApplicationSpec
-  ( spec
-  )
-where
+module Monadoc.Server.ApplicationSpec where
 
 import qualified Test
 

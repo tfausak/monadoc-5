@@ -1,7 +1,4 @@
-module Monadoc.Handler.ThrowSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.ThrowSpec where
 
 import qualified Control.Monad.Catch as Exception
 import qualified Monadoc.Handler.Throw as Throw

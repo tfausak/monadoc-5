@@ -1,7 +1,4 @@
-module Monadoc.Data.OptionsSpec
-  ( spec
-  )
-where
+module Monadoc.Data.OptionsSpec where
 
 import qualified Monadoc.Data.Options as Options
 import qualified System.Console.GetOpt as GetOpt

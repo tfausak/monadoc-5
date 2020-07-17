@@ -1,7 +1,4 @@
-module Monadoc.Server.Template
-  ( makeHtmlWith
-  )
-where
+module Monadoc.Server.Template where
 
 import qualified Data.Text as Text
 import qualified Lucid as H

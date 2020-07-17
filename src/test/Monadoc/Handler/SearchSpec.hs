@@ -1,7 +1,4 @@
-module Monadoc.Handler.SearchSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.SearchSpec where
 
 import qualified Monadoc.Handler.Search as Search
 import qualified Monadoc.Type.App as App

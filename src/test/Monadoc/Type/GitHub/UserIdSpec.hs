@@ -1,7 +1,4 @@
-module Monadoc.Type.GitHub.UserIdSpec
-  ( spec
-  )
-where
+module Monadoc.Type.GitHub.UserIdSpec where
 
 import qualified Test
 

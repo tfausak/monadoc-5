@@ -1,11 +1,4 @@
-module Monadoc.Type.Cabal.PackageName
-  ( PackageName
-  , fromCabal
-  , fromString
-  , toCabal
-  , toString
-  )
-where
+module Monadoc.Type.Cabal.PackageName where
 
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal

@@ -1,7 +1,4 @@
-module MonadocSpec
-  ( spec
-  )
-where
+module MonadocSpec where
 
 import qualified Monadoc
 import qualified Monadoc.Type.Config as Config

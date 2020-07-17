@@ -1,7 +1,4 @@
-module Monadoc.Handler.PingSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.PingSpec where
 
 import qualified Monadoc.Handler.Ping as Ping
 import qualified Monadoc.Type.App as App

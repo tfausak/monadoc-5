@@ -1,7 +1,4 @@
-module Monadoc.Type.TimestampSpec
-  ( spec
-  )
-where
+module Monadoc.Type.TimestampSpec where
 
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sql as Sql

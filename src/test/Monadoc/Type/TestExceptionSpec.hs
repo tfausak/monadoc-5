@@ -1,7 +1,4 @@
-module Monadoc.Type.TestExceptionSpec
-  ( spec
-  )
-where
+module Monadoc.Type.TestExceptionSpec where
 
 import qualified Test
 

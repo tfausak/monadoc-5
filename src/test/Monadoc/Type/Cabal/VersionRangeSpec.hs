@@ -1,7 +1,4 @@
-module Monadoc.Type.Cabal.VersionRangeSpec
-  ( spec
-  )
-where
+module Monadoc.Type.Cabal.VersionRangeSpec where
 
 import qualified Data.Maybe as Maybe
 import qualified Monadoc.Type.Cabal.VersionRange as VersionRange

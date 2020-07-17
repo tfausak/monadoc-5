@@ -1,7 +1,4 @@
-module Monadoc.CabalSpec
-  ( spec
-  )
-where
+module Monadoc.CabalSpec where
 
 import qualified Data.Either as Either
 import qualified Monadoc.Cabal as Cabal

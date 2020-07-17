@@ -1,7 +1,4 @@
-module Monadoc.Type.MigrationSpec
-  ( spec
-  )
-where
+module Monadoc.Type.MigrationSpec where
 
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Sha256 as Sha256

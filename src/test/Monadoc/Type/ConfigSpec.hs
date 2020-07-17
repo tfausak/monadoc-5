@@ -1,7 +1,4 @@
-module Monadoc.Type.ConfigSpec
-  ( spec
-  )
-where
+module Monadoc.Type.ConfigSpec where
 
 import qualified Monadoc.Type.Config as Config
 import qualified Test

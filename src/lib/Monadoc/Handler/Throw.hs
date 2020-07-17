@@ -1,7 +1,4 @@
-module Monadoc.Handler.Throw
-  ( handle
-  )
-where
+module Monadoc.Handler.Throw where
 
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.TestException as TestException

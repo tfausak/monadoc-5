@@ -1,7 +1,4 @@
-module Monadoc.Server.Application
-  ( application
-  )
-where
+module Monadoc.Server.Application where
 
 import qualified Monadoc.Handler.Account as Handler.Account
 import qualified Monadoc.Handler.Favicon as Handler.Favicon

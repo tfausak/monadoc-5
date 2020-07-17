@@ -1,7 +1,4 @@
-module Monadoc.Vendor.TimeSpec
-  ( spec
-  )
-where
+module Monadoc.Vendor.TimeSpec where
 
 import qualified Monadoc.Vendor.Time as Time
 import qualified Test

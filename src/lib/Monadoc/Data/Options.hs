@@ -1,7 +1,4 @@
-module Monadoc.Data.Options
-  ( options
-  )
-where
+module Monadoc.Data.Options where
 
 import qualified Control.Monad as Monad
 import qualified Data.List as List

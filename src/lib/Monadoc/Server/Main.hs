@@ -1,7 +1,4 @@
-module Monadoc.Server.Main
-  ( run
-  )
-where
+module Monadoc.Server.Main where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader

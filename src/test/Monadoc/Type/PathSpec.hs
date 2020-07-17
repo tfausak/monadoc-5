@@ -1,7 +1,4 @@
-module Monadoc.Type.PathSpec
-  ( spec
-  )
-where
+module Monadoc.Type.PathSpec where
 
 import qualified Monadoc.Type.Path as Path
 import qualified Test

@@ -1,7 +1,4 @@
-module Monadoc.Type.AppSpec
-  ( spec
-  )
-where
+module Monadoc.Type.AppSpec where
 
 import qualified Control.Monad.IO.Class as IO
 import qualified Monadoc.Type.App as App

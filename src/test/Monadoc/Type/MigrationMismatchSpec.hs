@@ -1,7 +1,4 @@
-module Monadoc.Type.MigrationMismatchSpec
-  ( spec
-  )
-where
+module Monadoc.Type.MigrationMismatchSpec where
 
 import qualified Control.Monad.Catch as Exception
 import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch

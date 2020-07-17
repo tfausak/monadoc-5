@@ -1,9 +1,4 @@
-module Monadoc.Type.Binary
-  ( Binary
-  , fromByteString
-  , toByteString
-  )
-where
+module Monadoc.Type.Binary where
 
 import qualified Data.ByteString as ByteString
 import qualified Monadoc.Vendor.Sql as Sql

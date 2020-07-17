@@ -1,7 +1,4 @@
-module Monadoc.Type.BinarySpec
-  ( spec
-  )
-where
+module Monadoc.Type.BinarySpec where
 
 import qualified Data.ByteString as ByteString
 import qualified Monadoc.Type.Binary as Monadoc

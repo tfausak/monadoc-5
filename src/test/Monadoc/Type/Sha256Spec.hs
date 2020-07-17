@@ -1,7 +1,4 @@
-module Monadoc.Type.Sha256Spec
-  ( spec
-  )
-where
+module Monadoc.Type.Sha256Spec where
 
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString

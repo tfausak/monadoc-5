@@ -1,11 +1,4 @@
-module Monadoc.Server.Settings
-  ( fromContext
-  , onException
-  , onExceptionResponse
-  , sendExceptionToDiscord
-  , serverName
-  )
-where
+module Monadoc.Server.Settings where
 
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad

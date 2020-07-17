@@ -1,7 +1,4 @@
-module Monadoc.Handler.GitHubCallback
-  ( handle
-  )
-where
+module Monadoc.Handler.GitHubCallback where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception

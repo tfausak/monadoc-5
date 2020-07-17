@@ -1,7 +1,4 @@
-module Monadoc.Type.ContextSpec
-  ( spec
-  )
-where
+module Monadoc.Type.ContextSpec where
 
 import qualified Test
 

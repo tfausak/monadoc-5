@@ -1,7 +1,4 @@
-module Monadoc.Type.ServiceSpec
-  ( spec
-  )
-where
+module Monadoc.Type.ServiceSpec where
 
 import qualified Test
 

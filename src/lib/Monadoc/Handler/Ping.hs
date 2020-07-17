@@ -1,7 +1,4 @@
-module Monadoc.Handler.Ping
-  ( handle
-  )
-where
+module Monadoc.Handler.Ping where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Reader as Reader

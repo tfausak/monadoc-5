@@ -1,7 +1,4 @@
-module Monadoc.Type.UserSpec
-  ( spec
-  )
-where
+module Monadoc.Type.UserSpec where
 
 import qualified Test
 

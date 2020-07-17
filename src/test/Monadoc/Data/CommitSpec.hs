@@ -1,7 +1,4 @@
-module Monadoc.Data.CommitSpec
-  ( spec
-  )
-where
+module Monadoc.Data.CommitSpec where
 
 import qualified Monadoc.Data.Commit as Commit
 import qualified Test

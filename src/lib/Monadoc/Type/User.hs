@@ -1,7 +1,4 @@
-module Monadoc.Type.User
-  ( User(..)
-  )
-where
+module Monadoc.Type.User where
 
 import qualified Data.Text as Text
 import qualified Monadoc.Type.GitHub.Login as Login

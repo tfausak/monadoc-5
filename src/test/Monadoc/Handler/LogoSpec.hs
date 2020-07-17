@@ -1,7 +1,4 @@
-module Monadoc.Handler.LogoSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.LogoSpec where
 
 import qualified Monadoc.Handler.Logo as Logo
 import qualified Monadoc.Type.App as App

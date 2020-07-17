@@ -1,9 +1,4 @@
-module Monadoc.Type.GitHub.UserId
-  ( UserId
-  , fromInt
-  , toInt
-  )
-where
+module Monadoc.Type.GitHub.UserId where
 
 import qualified Data.Aeson as Aeson
 import qualified Monadoc.Vendor.Sql as Sql

@@ -1,7 +1,4 @@
-module Monadoc.Vendor.SqlSpec
-  ( spec
-  )
-where
+module Monadoc.Vendor.SqlSpec where
 
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test

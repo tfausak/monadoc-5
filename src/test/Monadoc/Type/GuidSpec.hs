@@ -1,7 +1,4 @@
-module Monadoc.Type.GuidSpec
-  ( spec
-  )
-where
+module Monadoc.Type.GuidSpec where
 
 import qualified Data.UUID as Uuid
 import qualified Monadoc.Type.Guid as Guid

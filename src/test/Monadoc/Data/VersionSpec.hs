@@ -1,7 +1,4 @@
-module Monadoc.Data.VersionSpec
-  ( spec
-  )
-where
+module Monadoc.Data.VersionSpec where
 
 import qualified Data.Version as Version
 import qualified Monadoc.Data.Version as Monadoc.Version

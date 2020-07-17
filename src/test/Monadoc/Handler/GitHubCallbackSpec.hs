@@ -1,7 +1,4 @@
-module Monadoc.Handler.GitHubCallbackSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.GitHubCallbackSpec where
 
 import qualified Test
 

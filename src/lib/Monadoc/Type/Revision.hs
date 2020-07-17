@@ -1,12 +1,4 @@
-module Monadoc.Type.Revision
-  ( Revision
-  , fromWord
-  , increment
-  , toString
-  , toWord
-  , zero
-  )
-where
+module Monadoc.Type.Revision where
 
 newtype Revision
   = Revision Word

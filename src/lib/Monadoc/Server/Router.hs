@@ -1,9 +1,4 @@
-module Monadoc.Server.Router
-  ( parseRoute
-  , renderAbsoluteRoute
-  , renderRelativeRoute
-  )
-where
+module Monadoc.Server.Router where
 
 import qualified Data.Text as Text
 import qualified Monadoc.Type.Config as Config

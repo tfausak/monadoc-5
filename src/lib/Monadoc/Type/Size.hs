@@ -1,9 +1,4 @@
-module Monadoc.Type.Size
-  ( Size
-  , fromInt
-  , toInt
-  )
-where
+module Monadoc.Type.Size where
 
 import qualified Monadoc.Vendor.Sql as Sql
 

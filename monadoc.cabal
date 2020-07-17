@@ -57,6 +57,7 @@ common library
     -Wno-all-missed-specialisations
     -Wno-implicit-prelude
     -Wno-missing-deriving-strategies
+    -Wno-missing-export-lists
     -Wno-missing-exported-signatures
     -Wno-missing-local-signatures
     -Wno-missing-safe-haskell-mode

@@ -1,7 +1,4 @@
-module Monadoc.Handler.LogOutSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.LogOutSpec where
 
 import qualified Test
 

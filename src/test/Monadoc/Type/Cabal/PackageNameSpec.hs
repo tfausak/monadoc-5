@@ -1,7 +1,4 @@
-module Monadoc.Type.Cabal.PackageNameSpec
-  ( spec
-  )
-where
+module Monadoc.Type.Cabal.PackageNameSpec where
 
 import qualified Data.Maybe as Maybe
 import qualified Monadoc.Type.Cabal.PackageName as PackageName

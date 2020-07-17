@@ -1,7 +1,4 @@
-module Monadoc.Type.EtagSpec
-  ( spec
-  )
-where
+module Monadoc.Type.EtagSpec where
 
 import qualified Data.Text as Text
 import qualified Monadoc.Type.Etag as Etag

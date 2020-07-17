@@ -1,7 +1,4 @@
-module Monadoc.Type.RouteSpec
-  ( spec
-  )
-where
+module Monadoc.Type.RouteSpec where
 
 import qualified Test
 

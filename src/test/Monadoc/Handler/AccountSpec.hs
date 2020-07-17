@@ -1,7 +1,4 @@
-module Monadoc.Handler.AccountSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.AccountSpec where
 
 import qualified Monadoc.Handler.Account as Account
 import qualified Monadoc.Type.App as App

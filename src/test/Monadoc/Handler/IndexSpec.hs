@@ -1,7 +1,4 @@
-module Monadoc.Handler.IndexSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.IndexSpec where
 
 import qualified Monadoc.Handler.Index as Index
 import qualified Monadoc.Type.App as App

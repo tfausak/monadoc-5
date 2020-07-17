@@ -1,7 +1,4 @@
-module Monadoc.Main
-  ( run
-  )
-where
+module Monadoc.Main where
 
 import qualified Control.Concurrent.Async as Async
 import qualified Control.Monad as Monad

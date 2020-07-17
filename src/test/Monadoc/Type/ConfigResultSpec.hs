@@ -1,7 +1,4 @@
-module Monadoc.Type.ConfigResultSpec
-  ( spec
-  )
-where
+module Monadoc.Type.ConfigResultSpec where
 
 import qualified Test
 

@@ -1,7 +1,4 @@
-module Monadoc.Type.WithCallStackSpec
-  ( spec
-  )
-where
+module Monadoc.Type.WithCallStackSpec where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception

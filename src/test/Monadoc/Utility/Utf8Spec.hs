@@ -1,7 +1,4 @@
-module Monadoc.Utility.Utf8Spec
-  ( spec
-  )
-where
+module Monadoc.Utility.Utf8Spec where
 
 import qualified Data.ByteString as ByteString
 import qualified Monadoc.Utility.Utf8 as Utf8

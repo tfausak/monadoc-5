@@ -1,10 +1,4 @@
-module Monadoc.Type.Guid
-  ( Guid
-  , fromUuid
-  , random
-  , toUuid
-  )
-where
+module Monadoc.Type.Guid where
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.UUID as Uuid

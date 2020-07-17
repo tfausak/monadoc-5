@@ -1,7 +1,4 @@
-module Monadoc.Type.Service
-  ( Service(..)
-  )
-where
+module Monadoc.Type.Service where
 
 data Service
   = Server

@@ -1,7 +1,4 @@
-module Monadoc.Handler.FaviconSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.FaviconSpec where
 
 import qualified Monadoc.Handler.Favicon as Favicon
 import qualified Monadoc.Type.App as App

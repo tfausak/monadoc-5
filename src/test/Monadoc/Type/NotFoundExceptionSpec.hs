@@ -1,7 +1,4 @@
-module Monadoc.Type.NotFoundExceptionSpec
-  ( spec
-  )
-where
+module Monadoc.Type.NotFoundExceptionSpec where
 
 import qualified Test
 

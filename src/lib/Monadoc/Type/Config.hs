@@ -1,8 +1,4 @@
-module Monadoc.Type.Config
-  ( Config(..)
-  , initial
-  )
-where
+module Monadoc.Type.Config where
 
 import qualified Data.Set as Set
 import qualified Monadoc.Type.Service as Service

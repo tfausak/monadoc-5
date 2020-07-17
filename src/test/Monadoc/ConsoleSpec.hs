@@ -1,7 +1,4 @@
-module Monadoc.ConsoleSpec
-  ( spec
-  )
-where
+module Monadoc.ConsoleSpec where
 
 import qualified Test
 

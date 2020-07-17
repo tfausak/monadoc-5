@@ -1,7 +1,4 @@
-module Monadoc.Type.UrlSpec
-  ( spec
-  )
-where
+module Monadoc.Type.UrlSpec where
 
 import qualified Monadoc.Type.Url as Url
 import qualified Monadoc.Vendor.Sql as Sql

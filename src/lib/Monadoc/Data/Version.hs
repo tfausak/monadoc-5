@@ -1,8 +1,4 @@
-module Monadoc.Data.Version
-  ( string
-  , version
-  )
-where
+module Monadoc.Data.Version where
 
 import qualified Data.Version as Version
 import qualified Paths_monadoc as Package

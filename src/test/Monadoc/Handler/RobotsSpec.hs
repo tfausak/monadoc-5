@@ -1,7 +1,4 @@
-module Monadoc.Handler.RobotsSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.RobotsSpec where
 
 import qualified Monadoc.Handler.Robots as Robots
 import qualified Monadoc.Type.App as App

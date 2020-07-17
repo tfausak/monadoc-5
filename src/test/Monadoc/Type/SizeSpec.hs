@@ -1,7 +1,4 @@
-module Monadoc.Type.SizeSpec
-  ( spec
-  )
-where
+module Monadoc.Type.SizeSpec where
 
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Vendor.Sql as Sql

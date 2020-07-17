@@ -1,7 +1,4 @@
-module Monadoc.Worker.Main
-  ( run
-  )
-where
+module Monadoc.Worker.Main where
 
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip

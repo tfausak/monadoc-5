@@ -1,7 +1,4 @@
-module Main
-  ( main
-  )
-where
+module Main where
 
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text

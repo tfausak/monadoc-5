@@ -1,7 +1,4 @@
-module Monadoc.Data.MigrationsSpec
-  ( spec
-  )
-where
+module Monadoc.Data.MigrationsSpec where
 
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Test

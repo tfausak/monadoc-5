@@ -1,7 +1,4 @@
-module Monadoc.Handler.Logo
-  ( handle
-  )
-where
+module Monadoc.Handler.Logo where
 
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.App as App

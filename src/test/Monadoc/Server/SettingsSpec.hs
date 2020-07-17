@@ -1,7 +1,4 @@
-module Monadoc.Server.SettingsSpec
-  ( spec
-  )
-where
+module Monadoc.Server.SettingsSpec where
 
 import qualified Monadoc
 import qualified Monadoc.Server.Settings as Settings
