@@ -23,7 +23,6 @@ import qualified Distribution.Types.PackageName as Cabal
 import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
@@ -46,7 +45,7 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 
-run :: Stack.HasCallStack => App.App request ()
+run :: App.App request ()
 run = do
   Console.info "Starting worker ..."
   Exception.handle sendExceptionToDiscord . Monad.forever $ do
@@ -84,7 +83,7 @@ pluralize :: String -> Int -> String
 pluralize word count =
   unwords [show count, if count == 1 then word else word <> "s"]
 
-updateIndex :: Stack.HasCallStack => App.App request ()
+updateIndex :: App.App request ()
 updateIndex = do
   etag <- getEtag
   Console.info $ unwords ["Updating Hackage index with", show etag, "..."]
@@ -156,8 +155,7 @@ handle304 :: App.App request ()
 handle304 = Console.info "Hackage index has not changed."
 
 handleOther
-  :: Stack.HasCallStack
-  => Client.Request
+  :: Client.Request
   -> Client.Response LazyByteString.ByteString
   -> App.App request a
 handleOther request response =
@@ -167,7 +165,7 @@ handleOther request response =
     . LazyByteString.toStrict
     $ Client.responseBody response
 
-processIndex :: Stack.HasCallStack => App.App request ()
+processIndex :: App.App request ()
 processIndex = do
   maybeSha256 <- getSha256
   case maybeSha256 of
@@ -202,7 +200,7 @@ getBinary sha256 = do
     [] -> Nothing
     Sql.Only binary : _ -> Just binary
 
-processIndexWith :: Stack.HasCallStack => Binary.Binary -> App.App request ()
+processIndexWith :: Binary.Binary -> App.App request ()
 processIndexWith binary = do
   countVar <- Trans.lift $ Stm.newTVarIO 1
   revisionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
@@ -278,9 +276,7 @@ processPreferredVersion versionsVar path strictContents = do
     versionRange
 
 parsePackageName
-  :: (Stack.HasCallStack, Exception.MonadThrow m)
-  => String
-  -> m PackageName.PackageName
+  :: Exception.MonadThrow m => String -> m PackageName.PackageName
 parsePackageName string = case PackageName.fromString string of
   Nothing -> WithCallStack.throw $ InvalidPackageName string
   Just packageName -> pure packageName
@@ -352,8 +348,7 @@ processPackageDescription revisionsVar path strictContents digest = do
     \on conflict (name) do update set digest = excluded.digest"
     (digest, newPath)
 
-parseVersion
-  :: (Stack.HasCallStack, Exception.MonadThrow m) => String -> m Cabal.Version
+parseVersion :: Exception.MonadThrow m => String -> m Cabal.Version
 parseVersion string = case Cabal.simpleParsec string of
   Nothing -> WithCallStack.throw $ InvalidVersionNumber string
   Just version -> pure version
@@ -466,7 +461,7 @@ newtype UnknownEntry
 
 instance Exception.Exception UnknownEntry
 
-unsafeThrow :: (Stack.HasCallStack, Exception.Exception e) => e -> a
+unsafeThrow :: Exception.Exception e => e -> a
 unsafeThrow = Unsafe.unsafePerformIO . WithCallStack.throw
 
 sleep :: IO.MonadIO m => Double -> m ()

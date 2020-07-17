@@ -13,7 +13,6 @@ import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
@@ -31,7 +30,7 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified System.Random as Random
 
-handle :: Stack.HasCallStack => App.App Wai.Request Wai.Response
+handle :: App.App Wai.Request Wai.Response
 handle = do
   code <- getCode
   token <- getToken code
@@ -47,7 +46,7 @@ handle = do
     . Map.insert Http.hSetCookie (Common.renderCookie cookie)
     $ Common.defaultHeaders config
 
-getCode :: Stack.HasCallStack => App.App Wai.Request ByteString.ByteString
+getCode :: App.App Wai.Request ByteString.ByteString
 getCode = do
   request <- Reader.asks Context.request
   case lookup "code" $ Wai.queryString request of
@@ -60,8 +59,7 @@ newtype NoCodeProvided
 
 instance Exception.Exception NoCodeProvided
 
-getToken
-  :: Stack.HasCallStack => ByteString.ByteString -> App.App request Text.Text
+getToken :: ByteString.ByteString -> App.App request Text.Text
 getToken code = do
   context <- Reader.ask
   initialRequest <- Client.parseRequest
@@ -90,7 +88,7 @@ data TokenRequestFailed
 
 instance Exception.Exception TokenRequestFailed
 
-getUser :: Stack.HasCallStack => Text.Text -> App.App request GHUser.User
+getUser :: Text.Text -> App.App request GHUser.User
 getUser token = do
   context <- Reader.ask
   initialRequest <- Client.parseRequest "https://api.github.com/user"
@@ -113,11 +111,7 @@ data UserRequestFailed
 
 instance Exception.Exception UserRequestFailed
 
-upsertUser
-  :: Stack.HasCallStack
-  => Text.Text
-  -> GHUser.User
-  -> App.App request Guid.Guid
+upsertUser :: Text.Text -> GHUser.User -> App.App request Guid.Guid
 upsertUser token ghUser = do
   guid <- Trans.lift $ Random.getStdRandom Guid.random
   let

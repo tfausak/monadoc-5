@@ -3,7 +3,6 @@ module Monadoc.Server.Application
   )
 where
 
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Handler.Account as Handler.Account
 import qualified Monadoc.Handler.Favicon as Handler.Favicon
 import qualified Monadoc.Handler.GitHubCallback as Handler.GitHubCallback
@@ -23,7 +22,7 @@ import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
 
-application :: Stack.HasCallStack => Context.Context request -> Wai.Application
+application :: Context.Context request -> Wai.Application
 application context request respond = do
   response <-
     App.run context { Context.request = request } . runRoute $ parseRoute
@@ -34,10 +33,7 @@ parseRoute :: Wai.Request -> Maybe Route.Route
 parseRoute request =
   Router.parseRoute (Wai.requestMethod request) (Wai.pathInfo request)
 
-runRoute
-  :: Stack.HasCallStack
-  => Maybe Route.Route
-  -> App.App Wai.Request Wai.Response
+runRoute :: Maybe Route.Route -> App.App Wai.Request Wai.Response
 runRoute maybeRoute = do
   route <- maybe
     (WithCallStack.throw NotFoundException.NotFoundException)

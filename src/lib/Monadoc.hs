@@ -11,7 +11,6 @@ import qualified Control.Monad.Catch as Exception
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Options as Options
@@ -30,7 +29,7 @@ import qualified System.Exit as Exit
 import qualified System.IO as IO
 
 -- | The main app entrypoint. This is what the executable runs.
-monadoc :: Stack.HasCallStack => IO ()
+monadoc :: IO ()
 monadoc = do
   Monad.forM_ [IO.stderr, IO.stdout] $ \handle -> do
     IO.hSetBuffering handle IO.LineBuffering
