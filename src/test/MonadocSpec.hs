@@ -38,15 +38,15 @@ spec = describe "Monadoc" $ do
 
     it "sets the port" $ do
       case Monadoc.argumentsToConfigResult "x" ["--port=123"] of
-        ConfigResult.Success _ config -> Config.port config `shouldBe` 123
+        ConfigResult.Success _ cfg -> Config.port cfg `shouldBe` 123
         result -> result `shouldSatisfy` isSuccess
 
   describe "configToContext" $ do
 
     it "works" $ do
-      let config = testConfig
-      context <- Monadoc.configToContext config
-      Context.config context `shouldBe` config
+      let cfg = testConfig
+      ctx <- Monadoc.configToContext cfg
+      Context.config ctx `shouldBe` cfg
 
 isExitWith :: ConfigResult.ConfigResult -> Bool
 isExitWith configResult = case configResult of

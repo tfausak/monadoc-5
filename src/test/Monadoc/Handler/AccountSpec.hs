@@ -13,8 +13,8 @@ spec = describe "Monadoc.Handler.Account" $ do
   describe "handle" $ do
 
     it "works" $ do
-      context <- makeContext
+      ctx <- makeContext
       response <- App.run
-        context { Context.request = Wai.defaultRequest }
+        ctx { Context.request = Wai.defaultRequest }
         Account.handle
       Wai.responseStatus response `shouldBe` Http.found302

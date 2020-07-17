@@ -13,8 +13,8 @@ spec = describe "Monadoc.Handler.Favicon" $ do
   describe "handle" $ do
 
     it "works" $ do
-      context <- makeContext
+      ctx <- makeContext
       response <- App.run
-        context { Context.request = Wai.defaultRequest }
+        ctx { Context.request = Wai.defaultRequest }
         Favicon.handle
       Wai.responseStatus response `shouldBe` Http.ok200

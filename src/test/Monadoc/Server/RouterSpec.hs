@@ -16,8 +16,8 @@ spec = describe "Monadoc.Server.Router" $ do
   describe "renderAbsoluteRoute" $ do
 
     it "works" $ do
-      let config = testConfig { Config.url = "http://test" }
-      Router.renderAbsoluteRoute config Route.Index `shouldBe` "http://test/"
+      let cfg = testConfig { Config.url = "http://test" }
+      Router.renderAbsoluteRoute cfg Route.Index `shouldBe` "http://test/"
 
   describe "renderRelativeRoute" $ do
 

@@ -13,8 +13,8 @@ spec = describe "Monadoc.Handler.Tachyons" $ do
   describe "handle" $ do
 
     it "works" $ do
-      context <- makeContext
+      ctx <- makeContext
       response <- App.run
-        context { Context.request = Wai.defaultRequest }
+        ctx { Context.request = Wai.defaultRequest }
         Tachyons.handle
       Wai.responseStatus response `shouldBe` Http.ok200

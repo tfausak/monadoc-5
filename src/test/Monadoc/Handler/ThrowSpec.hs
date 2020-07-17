@@ -15,10 +15,10 @@ spec = describe "Monadoc.Handler.Throw" $ do
   describe "handle" $ do
 
     it "works" $ do
-      context <- makeContext
+      ctx <- makeContext
       let
         result =
-          App.run context { Context.request = Wai.defaultRequest } Throw.handle
+          App.run ctx { Context.request = Wai.defaultRequest } Throw.handle
       result `shouldThrow` aTestException
 
 aTestException :: Exception.SomeException -> Bool
