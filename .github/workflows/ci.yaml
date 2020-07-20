@@ -80,7 +80,7 @@ jobs:
       - uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: monadoc
-          template: aws/cloud-formation.yaml
+          template: config/cloud-formation.yaml
           parameter-overrides: ClientSecret=${{ secrets.CLIENT_SECRET }},DiscordUrl=${{ secrets.DISCORD_URL }},TagName=${{ github.sha }}
           no-fail-on-empty-changeset: '1'
           capabilities: CAPABILITY_NAMED_IAM
