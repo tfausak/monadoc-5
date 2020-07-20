@@ -1,29 +1,25 @@
-module Monadoc.Server.RouterSpec
-  ( spec
-  )
-where
+module Monadoc.Server.RouterSpec where
 
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Server.Router" $ do
+spec :: Spec
+spec = describe "Monadoc.Server.Router" $ do
 
-  Test.describe "parseRoute" $ do
+  describe "parseRoute" $ do
 
-    Test.it "works" $ do
-      Router.parseRoute "GET" [] `Test.shouldBe` Just Route.Index
+    it "works" $ do
+      Router.parseRoute "GET" [] `shouldBe` Just Route.Index
 
-  Test.describe "renderAbsoluteRoute" $ do
+  describe "renderAbsoluteRoute" $ do
 
-    Test.it "works" $ do
-      let config = Test.config { Config.url = "http://test" }
-      Router.renderAbsoluteRoute config Route.Index
-        `Test.shouldBe` "http://test/"
+    it "works" $ do
+      let cfg = testConfig { Config.url = "http://test" }
+      Router.renderAbsoluteRoute cfg Route.Index `shouldBe` "http://test/"
 
-  Test.describe "renderRelativeRoute" $ do
+  describe "renderRelativeRoute" $ do
 
-    Test.it "works" $ do
-      Router.renderRelativeRoute Route.Index `Test.shouldBe` "/"
+    it "works" $ do
+      Router.renderRelativeRoute Route.Index `shouldBe` "/"

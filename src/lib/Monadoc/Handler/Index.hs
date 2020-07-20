@@ -1,7 +1,4 @@
-module Monadoc.Handler.Index
-  ( handle
-  )
-where
+module Monadoc.Handler.Index where
 
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Lucid as H

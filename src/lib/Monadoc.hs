@@ -1,17 +1,10 @@
-module Monadoc
-  ( argumentsToConfigResult
-  , configToContext
-  , monadoc
-  )
-where
+module Monadoc where
 
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.Maybe as Maybe
 import qualified Data.Pool as Pool
-import qualified GHC.Stack as Stack
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Options as Options
@@ -30,18 +23,19 @@ import qualified System.Exit as Exit
 import qualified System.IO as IO
 
 -- | The main app entrypoint. This is what the executable runs.
-monadoc :: Stack.HasCallStack => IO ()
+monadoc :: IO ()
 monadoc = do
   Monad.forM_ [IO.stderr, IO.stdout] $ \handle -> do
     IO.hSetBuffering handle IO.LineBuffering
     IO.hSetEncoding handle IO.utf8
   config <- getConfig
-  Console.info $ unwords
-    [ "\x1f516 Starting Monadoc version"
+  Console.info $ mconcat
+    [ "\x1f516 Starting Monadoc version "
     , Version.string
-    , "commit"
-    , Maybe.fromMaybe "unknown" Commit.hash
-    , "..."
+    , case Commit.hash of
+      Nothing -> ""
+      Just hash -> " commit " <> hash
+    , " ..."
     ]
   context <- configToContext config
   Exception.finally (App.run context Main.run)

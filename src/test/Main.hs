@@ -1,7 +1,4 @@
-module Main
-  ( main
-  )
-where
+module Main where
 
 import qualified Monadoc.CabalSpec
 import qualified Monadoc.ConsoleSpec
@@ -9,6 +6,7 @@ import qualified Monadoc.Data.CommitSpec
 import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
+import qualified Monadoc.Extra.SqlSpec
 import qualified Monadoc.GhcSpec
 import qualified Monadoc.Handler.AccountSpec
 import qualified Monadoc.Handler.FaviconSpec
@@ -45,6 +43,7 @@ import qualified Monadoc.Type.MigrationMismatchSpec
 import qualified Monadoc.Type.MigrationSpec
 import qualified Monadoc.Type.NotFoundExceptionSpec
 import qualified Monadoc.Type.PathSpec
+import qualified Monadoc.Type.RevisionSpec
 import qualified Monadoc.Type.RouteSpec
 import qualified Monadoc.Type.ServiceSpec
 import qualified Monadoc.Type.Sha256Spec
@@ -59,16 +58,17 @@ import qualified Monadoc.Vendor.SqlSpec
 import qualified Monadoc.Vendor.TimeSpec
 import qualified Monadoc.Worker.MainSpec
 import qualified MonadocSpec
-import qualified Test
+import Test
 
 main :: IO ()
-main = Test.hspec $ do
+main = hspec $ do
   Monadoc.CabalSpec.spec
   Monadoc.ConsoleSpec.spec
   Monadoc.Data.CommitSpec.spec
   Monadoc.Data.MigrationsSpec.spec
   Monadoc.Data.OptionsSpec.spec
   Monadoc.Data.VersionSpec.spec
+  Monadoc.Extra.SqlSpec.spec
   Monadoc.GhcSpec.spec
   Monadoc.Handler.AccountSpec.spec
   Monadoc.Handler.FaviconSpec.spec
@@ -105,6 +105,7 @@ main = Test.hspec $ do
   Monadoc.Type.MigrationSpec.spec
   Monadoc.Type.NotFoundExceptionSpec.spec
   Monadoc.Type.PathSpec.spec
+  Monadoc.Type.RevisionSpec.spec
   Monadoc.Type.RouteSpec.spec
   Monadoc.Type.ServiceSpec.spec
   Monadoc.Type.Sha256Spec.spec

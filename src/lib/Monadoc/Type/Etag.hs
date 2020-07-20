@@ -1,9 +1,4 @@
-module Monadoc.Type.Etag
-  ( Etag
-  , fromByteString
-  , toByteString
-  )
-where
+module Monadoc.Type.Etag where
 
 import qualified Data.ByteString as ByteString
 import qualified Monadoc.Vendor.Sql as Sql

@@ -1,5 +1,8 @@
 packages: .
+
 jobs: $ncpus
 
 package monadoc
+  optimization: 2
+  split-sections: true
   tests: true

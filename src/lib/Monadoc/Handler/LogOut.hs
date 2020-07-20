@@ -1,7 +1,4 @@
-module Monadoc.Handler.LogOut
-  ( handle
-  )
-where
+module Monadoc.Handler.LogOut where
 
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map

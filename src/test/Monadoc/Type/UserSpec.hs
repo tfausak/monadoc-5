@@ -1,11 +1,8 @@
-module Monadoc.Type.UserSpec
-  ( spec
-  )
-where
+module Monadoc.Type.UserSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.User" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.User" $ do
 
-  Test.it "needs tests" Test.pending
+  it "needs tests" pending

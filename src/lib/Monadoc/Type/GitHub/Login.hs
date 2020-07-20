@@ -1,9 +1,4 @@
-module Monadoc.Type.GitHub.Login
-  ( Login
-  , fromText
-  , toText
-  )
-where
+module Monadoc.Type.GitHub.Login where
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Text as Text

@@ -1,7 +1,4 @@
-module Monadoc.Type.NotFoundException
-  ( NotFoundException(..)
-  )
-where
+module Monadoc.Type.NotFoundException where
 
 import qualified Control.Monad.Catch as Exception
 

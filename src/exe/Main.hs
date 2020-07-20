@@ -1,10 +1,6 @@
-module Main
-  ( main
-  )
-where
+module Main where
 
-import qualified GHC.Stack as Stack
 import qualified Monadoc
 
-main :: Stack.HasCallStack => IO ()
+main :: IO ()
 main = Monadoc.monadoc

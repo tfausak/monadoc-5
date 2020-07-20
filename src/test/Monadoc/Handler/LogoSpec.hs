@@ -1,23 +1,20 @@
-module Monadoc.Handler.LogoSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.LogoSpec where
 
 import qualified Monadoc.Handler.Logo as Logo
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Handler.Logo" $ do
+spec :: Spec
+spec = describe "Monadoc.Handler.Logo" $ do
 
-  Test.describe "handle" $ do
+  describe "handle" $ do
 
-    Test.it "works" $ do
-      context <- Test.makeContext
+    it "works" $ do
+      ctx <- makeContext
       response <- App.run
-        context { Context.request = Wai.defaultRequest }
+        ctx { Context.request = Wai.defaultRequest }
         Logo.handle
-      Wai.responseStatus response `Test.shouldBe` Http.ok200
+      Wai.responseStatus response `shouldBe` Http.ok200

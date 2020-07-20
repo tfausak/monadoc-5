@@ -1,9 +1,4 @@
-module Monadoc.Type.Url
-  ( Url
-  , fromUri
-  , toUri
-  )
-where
+module Monadoc.Type.Url where
 
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.URI as Uri

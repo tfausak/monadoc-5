@@ -1,11 +1,8 @@
-module Monadoc.Handler.GitHubCallbackSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.GitHubCallbackSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Handler.GitHubCallback" $ do
+spec :: Spec
+spec = describe "Monadoc.Handler.GitHubCallback" $ do
 
-  Test.it "needs tests" Test.pending
+  it "needs tests" pending

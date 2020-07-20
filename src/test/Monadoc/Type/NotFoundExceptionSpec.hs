@@ -1,11 +1,8 @@
-module Monadoc.Type.NotFoundExceptionSpec
-  ( spec
-  )
-where
+module Monadoc.Type.NotFoundExceptionSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.NotFoundException" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.NotFoundException" $ do
 
   pure ()

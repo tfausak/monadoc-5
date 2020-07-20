@@ -1,7 +1,4 @@
-module Monadoc.Handler.Robots
-  ( handle
-  )
-where
+module Monadoc.Handler.Robots where
 
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Monadoc.Server.Common as Common

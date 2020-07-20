@@ -1,7 +1,4 @@
-module Monadoc.Type.ConfigResult
-  ( ConfigResult(..)
-  )
-where
+module Monadoc.Type.ConfigResult where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Monadoc.Type.Config as Config

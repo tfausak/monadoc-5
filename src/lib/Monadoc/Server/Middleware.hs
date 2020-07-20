@@ -1,7 +1,4 @@
-module Monadoc.Server.Middleware
-  ( middleware
-  )
-where
+module Monadoc.Server.Middleware where
 
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Monad.Catch as Exception

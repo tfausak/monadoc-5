@@ -1,7 +1,4 @@
-module Monadoc.Type.GitHub.User
-  ( User(..)
-  )
-where
+module Monadoc.Type.GitHub.User where
 
 import qualified Data.Aeson as Aeson
 import qualified Monadoc.Type.GitHub.Login as Login

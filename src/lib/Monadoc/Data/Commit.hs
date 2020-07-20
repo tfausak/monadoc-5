@@ -1,7 +1,4 @@
-module Monadoc.Data.Commit
-  ( hash
-  )
-where
+module Monadoc.Data.Commit where
 
 -- | The Git commit hash this package was built at, if available. Like the
 -- version number, you'll probably only need this for diagnostics.

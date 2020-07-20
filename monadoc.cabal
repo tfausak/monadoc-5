@@ -1,7 +1,7 @@
 cabal-version: 2.2
 
 name: monadoc
-version: 0.2020.7.5
+version: 0.2020.7.20
 synopsis: Better Haskell documentation.
 description: Monadoc provides better Haskell documentation.
 
@@ -57,7 +57,9 @@ common library
     -Wno-all-missed-specialisations
     -Wno-implicit-prelude
     -Wno-missing-deriving-strategies
+    -Wno-missing-export-lists
     -Wno-missing-exported-signatures
+    -Wno-missing-import-lists
     -Wno-missing-local-signatures
     -Wno-missing-safe-haskell-mode
     -Wno-monomorphism-restriction
@@ -83,6 +85,8 @@ library
     Monadoc.Data.Migrations
     Monadoc.Data.Options
     Monadoc.Data.Version
+    Monadoc.Extra.Sql
+    Monadoc.Extra.Time
     Monadoc.Ghc
     Monadoc.Handler.Account
     Monadoc.Handler.Favicon
@@ -119,6 +123,7 @@ library
     Monadoc.Type.MigrationMismatch
     Monadoc.Type.NotFoundException
     Monadoc.Type.Path
+    Monadoc.Type.Revision
     Monadoc.Type.Route
     Monadoc.Type.Service
     Monadoc.Type.Sha256
@@ -154,6 +159,8 @@ test-suite test
     Monadoc.Data.MigrationsSpec
     Monadoc.Data.OptionsSpec
     Monadoc.Data.VersionSpec
+    Monadoc.Extra.SqlSpec
+    Monadoc.Extra.TimeSpec
     Monadoc.GhcSpec
     Monadoc.Handler.AccountSpec
     Monadoc.Handler.FaviconSpec
@@ -174,6 +181,7 @@ test-suite test
     Monadoc.Server.RouterSpec
     Monadoc.Server.SettingsSpec
     Monadoc.Server.TemplateSpec
+    Monadoc.Test
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
     Monadoc.Type.Cabal.PackageNameSpec
@@ -190,6 +198,7 @@ test-suite test
     Monadoc.Type.MigrationSpec
     Monadoc.Type.NotFoundExceptionSpec
     Monadoc.Type.PathSpec
+    Monadoc.Type.RevisionSpec
     Monadoc.Type.RouteSpec
     Monadoc.Type.ServiceSpec
     Monadoc.Type.Sha256Spec

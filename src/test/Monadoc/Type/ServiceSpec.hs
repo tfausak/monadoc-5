@@ -1,11 +1,8 @@
-module Monadoc.Type.ServiceSpec
-  ( spec
-  )
-where
+module Monadoc.Type.ServiceSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.Service" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.Service" $ do
 
   pure ()

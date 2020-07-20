@@ -1,11 +1,8 @@
-module Monadoc.Type.ContextSpec
-  ( spec
-  )
-where
+module Monadoc.Type.ContextSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.Context" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.Context" $ do
 
   pure ()

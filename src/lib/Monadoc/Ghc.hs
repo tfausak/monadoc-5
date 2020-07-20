@@ -1,9 +1,4 @@
-module Monadoc.Ghc
-  ( Errors(..)
-  , Module(..)
-  , parse
-  )
-where
+module Monadoc.Ghc where
 
 import qualified Bag
 import qualified Data.ByteString

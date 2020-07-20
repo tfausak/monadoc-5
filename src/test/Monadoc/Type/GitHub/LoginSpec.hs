@@ -1,11 +1,8 @@
-module Monadoc.Type.GitHub.LoginSpec
-  ( spec
-  )
-where
+module Monadoc.Type.GitHub.LoginSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.GitHub.Login" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.GitHub.Login" $ do
 
   pure ()

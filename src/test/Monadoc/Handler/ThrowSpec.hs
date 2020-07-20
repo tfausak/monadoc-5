@@ -1,7 +1,4 @@
-module Monadoc.Handler.ThrowSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.ThrowSpec where
 
 import qualified Control.Monad.Catch as Exception
 import qualified Monadoc.Handler.Throw as Throw
@@ -10,19 +7,19 @@ import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.TestException as TestException
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Handler.Throw" $ do
+spec :: Spec
+spec = describe "Monadoc.Handler.Throw" $ do
 
-  Test.describe "handle" $ do
+  describe "handle" $ do
 
-    Test.it "works" $ do
-      context <- Test.makeContext
+    it "works" $ do
+      ctx <- makeContext
       let
-        it =
-          App.run context { Context.request = Wai.defaultRequest } Throw.handle
-      it `Test.shouldThrow` aTestException
+        result =
+          App.run ctx { Context.request = Wai.defaultRequest } Throw.handle
+      result `shouldThrow` aTestException
 
 aTestException :: Exception.SomeException -> Bool
 aTestException =

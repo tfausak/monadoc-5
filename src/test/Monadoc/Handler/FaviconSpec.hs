@@ -1,23 +1,20 @@
-module Monadoc.Handler.FaviconSpec
-  ( spec
-  )
-where
+module Monadoc.Handler.FaviconSpec where
 
 import qualified Monadoc.Handler.Favicon as Favicon
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Handler.Favicon" $ do
+spec :: Spec
+spec = describe "Monadoc.Handler.Favicon" $ do
 
-  Test.describe "handle" $ do
+  describe "handle" $ do
 
-    Test.it "works" $ do
-      context <- Test.makeContext
+    it "works" $ do
+      ctx <- makeContext
       response <- App.run
-        context { Context.request = Wai.defaultRequest }
+        ctx { Context.request = Wai.defaultRequest }
         Favicon.handle
-      Wai.responseStatus response `Test.shouldBe` Http.ok200
+      Wai.responseStatus response `shouldBe` Http.ok200

@@ -1,19 +1,16 @@
-module Monadoc.CabalSpec
-  ( spec
-  )
-where
+module Monadoc.CabalSpec where
 
 import qualified Data.Either as Either
 import qualified Monadoc.Cabal as Cabal
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Cabal" $ do
+spec :: Spec
+spec = describe "Monadoc.Cabal" $ do
 
-  Test.describe "parse" $ do
+  describe "parse" $ do
 
-    Test.it "parses an empty package" $ do
-      Cabal.parse "name:x\nversion:0" `Test.shouldSatisfy` Either.isRight
+    it "parses an empty package" $ do
+      Cabal.parse "name:x\nversion:0" `shouldSatisfy` Either.isRight
 
-    Test.it "fails to parse an invalid package" $ do
-      Cabal.parse "" `Test.shouldSatisfy` Either.isLeft
+    it "fails to parse an invalid package" $ do
+      Cabal.parse "" `shouldSatisfy` Either.isLeft

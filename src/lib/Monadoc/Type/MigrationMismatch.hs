@@ -1,7 +1,4 @@
-module Monadoc.Type.MigrationMismatch
-  ( MigrationMismatch(..)
-  )
-where
+module Monadoc.Type.MigrationMismatch where
 
 import qualified Control.Monad.Catch as Exception
 import qualified Monadoc.Type.Sha256 as Sha256

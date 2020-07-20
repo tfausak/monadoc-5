@@ -1,7 +1,4 @@
-module Monadoc.Handler.Account
-  ( handle
-  )
-where
+module Monadoc.Handler.Account where
 
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map

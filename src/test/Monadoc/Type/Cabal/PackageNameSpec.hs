@@ -1,23 +1,20 @@
-module Monadoc.Type.Cabal.PackageNameSpec
-  ( spec
-  )
-where
+module Monadoc.Type.Cabal.PackageNameSpec where
 
 import qualified Data.Maybe as Maybe
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.Cabal.PackageName" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.Cabal.PackageName" $ do
 
-  Test.describe "fromString" $ do
+  describe "fromString" $ do
 
-    Test.it "works" $ do
-      PackageName.fromString "some-package" `Test.shouldSatisfy` Maybe.isJust
+    it "works" $ do
+      PackageName.fromString "some-package" `shouldSatisfy` Maybe.isJust
 
-  Test.describe "toString" $ do
+  describe "toString" $ do
 
-    Test.it "works" $ do
+    it "works" $ do
       let string = "some-package"
       Just packageName <- pure $ PackageName.fromString string
-      PackageName.toString packageName `Test.shouldBe` string
+      PackageName.toString packageName `shouldBe` string

@@ -1,7 +1,4 @@
-module Monadoc.Type.Context
-  ( Context(..)
-  )
-where
+module Monadoc.Type.Context where
 
 import qualified Data.Pool as Pool
 import qualified Monadoc.Type.Config as Config

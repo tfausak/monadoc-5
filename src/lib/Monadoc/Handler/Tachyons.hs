@@ -1,7 +1,4 @@
-module Monadoc.Handler.Tachyons
-  ( handle
-  )
-where
+module Monadoc.Handler.Tachyons where
 
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.App as App

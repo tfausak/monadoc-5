@@ -1,8 +1,4 @@
-module Monadoc.Type.Migration
-  ( Migration(..)
-  , sha256
-  )
-where
+module Monadoc.Type.Migration where
 
 import qualified Crypto.Hash as Crypto
 import qualified Data.Ord as Ord

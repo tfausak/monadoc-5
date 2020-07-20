@@ -1,8 +1,4 @@
-module Monadoc.Console
-  ( info
-  , warn
-  )
-where
+module Monadoc.Console where
 
 import qualified Control.Concurrent.STM as Stm
 import qualified Control.Monad.Catch as Exception
@@ -29,7 +25,7 @@ logOn handle message = do
         (Stm.atomically $ Stm.takeTMVar logVar)
         (Stm.atomically . Stm.putTMVar logVar)
     $ \() -> IO.liftIO . IO.hPutStrLn handle $ unwords
-        [Time.formatTime "%Y-%m-%dT%H:%M:%S%3QZ" now, message]
+        [Time.format "%Y-%m-%dT%H:%M:%S%3QZ" now, message]
 
 logVar :: Stm.TMVar ()
 logVar = Unsafe.unsafePerformIO $ Stm.newTMVarIO ()

@@ -1,21 +1,18 @@
-module Monadoc.Type.MigrationMismatchSpec
-  ( spec
-  )
-where
+module Monadoc.Type.MigrationMismatchSpec where
 
 import qualified Control.Monad.Catch as Exception
 import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Time as Time
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Type.MigrationMismatch" $ do
+spec :: Spec
+spec = describe "Monadoc.Type.MigrationMismatch" $ do
 
-  Test.describe "displayException" $ do
+  describe "displayException" $ do
 
-    Test.it "looks nice" $ do
+    it "looks nice" $ do
       let
         expected = replicate 64 '0'
         actual = replicate 64 '1'
@@ -31,4 +28,4 @@ spec = Test.describe "Monadoc.Type.MigrationMismatch" $ do
           , " but got "
           , actual
           ]
-      Exception.displayException migrationMismatch `Test.shouldBe` string
+      Exception.displayException migrationMismatch `shouldBe` string

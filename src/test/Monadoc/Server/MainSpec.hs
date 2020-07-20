@@ -1,11 +1,8 @@
-module Monadoc.Server.MainSpec
-  ( spec
-  )
-where
+module Monadoc.Server.MainSpec where
 
-import qualified Test
+import Test
 
-spec :: Test.Spec
-spec = Test.describe "Monadoc.Server.Main" $ do
+spec :: Spec
+spec = describe "Monadoc.Server.Main" $ do
 
-  Test.it "needs tests" Test.pending
+  it "needs tests" pending

@@ -1,11 +1,4 @@
-module Monadoc.Type.WithCallStack
-  ( WithCallStack(..)
-  , catch
-  , throw
-  , withCallStack
-  , withoutCallStack
-  )
-where
+module Monadoc.Type.WithCallStack where
 
 import qualified Control.Monad.Catch as Exception
 import qualified Data.Function as Function
