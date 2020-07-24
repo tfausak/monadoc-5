@@ -26,6 +26,6 @@ handle = do
     . Template.makeHtmlWith config maybeUser loginUrl
     . H.p_
     $ do
-        "TODO: Your query was "
+        "Your query was "
         H.code_ $ H.toHtml query
         " but search is not implemented yet."

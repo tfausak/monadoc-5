@@ -501,7 +501,6 @@ fetchTarball path = do
     Sql.Only count : _ | count > (0 :: Int) -> pure ()
     _ -> do
       sha256 <- do
-        -- TODO
         oldFileRows <- App.sql
           "select digest from files where name = ?"
           [Path.fromStrings [package, version, package <> ".tar.gz"]]
