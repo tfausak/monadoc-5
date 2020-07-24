@@ -3,6 +3,7 @@ packages: .
 jobs: $ncpus
 
 package monadoc
+  ghc-options: -Werror
   optimization: 2
   split-sections: true
   tests: true
