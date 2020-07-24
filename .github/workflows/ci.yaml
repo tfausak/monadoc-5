@@ -34,10 +34,8 @@ jobs:
             ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
             ${{ matrix.os }}-${{ matrix.ghc }}-
       - run: runghc src/script/set-commit-hash.hs src/lib/Monadoc/Data/Commit.hs ${{ github.sha }}
-      - run: cabal build --only-dependencies
-      - run: cabal build
       - run: cabal test --test-show-details direct
-      - run: cabal install --install-method copy --installdir docker
+      - run: cabal install --install-method copy --installdir docker exe:monadoc
       - uses: actions/upload-artifact@v2
         with:
           path: docker/monadoc*
