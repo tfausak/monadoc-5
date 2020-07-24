@@ -10,11 +10,11 @@ on:
 
 jobs:
 
-  build:
+  build-ubuntu: &build
     name: build (${{ matrix.os }})
     strategy:
       matrix:
-        os: [ ubuntu-18.04, macos-10.15, windows-2019 ]
+        os: [ ubuntu-18.04 ]
         ghc: [ '8.10' ]
         cabal: [ '3.2' ]
     runs-on: ${{ matrix.os }}
@@ -43,8 +43,24 @@ jobs:
           path: docker/monadoc*
           name: monadoc-${{ matrix.os }}-${{ github.sha }}
 
+  build-macos:
+    <<: *build
+    strategy:
+      matrix:
+        os: [ macos-10.15 ]
+        ghc: [ '8.10' ]
+        cabal: [ '3.2' ]
+
+  build-windows:
+    <<: *build
+    strategy:
+      matrix:
+        os: [ windows-2019 ]
+        ghc: [ '8.10' ]
+        cabal: [ '3.2' ]
+
   push:
-    needs: build
+    needs: build-ubuntu
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
