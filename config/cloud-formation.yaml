@@ -19,12 +19,12 @@ Description:
 Parameters:
 
   AmiId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
+    Type: String
+    Default: ami-00c7c1cf5bdc913ed
     Description:
       The ECS optimized Amazon Machine Image (AMI) ID to use for EC2 instances
-      in the auto scaling group. This value changes regularly. As of 2020-06-26
-      it is ami-00c7c1cf5bdc913ed.
+      in the auto scaling group. The default value was picked on 2020-06-26.
+      # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/retrieve-ecs-optimized_AMI.html
 
   ClientId:
     Type: String
