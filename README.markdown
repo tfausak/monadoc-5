@@ -27,3 +27,10 @@ Here's a wishlist of features that I want to implement:
 - Various maintainer tools like reverse dependencies (<https://packdeps.haskellers.com/>), licenses, and feeds/notifications about versions/comments.
 
 In addition, I want this project to be easy to hack on. That means it should build easily on Linux, macOS, and Windows with both Cabal and Stack. It shouldn't require any special infrastructure like Docker or Nix. It should prefer simpler code so that anyone can jump in. Whenever possible things should be tested and enforced by CI.
+
+## TODO
+
+- [ ] Implement search in `src/lib/Monadoc/Handler/Search.hs`.
+- [ ] Allow template to vary by handler in `src/lib/Monadoc/Server/Template.hs`.
+- [ ] Remove handling for old files in `src/lib/Monadoc/Worker/Main.hs`.
+- [ ] Skip processing for things that haven't changed.

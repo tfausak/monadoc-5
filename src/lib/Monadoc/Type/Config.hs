@@ -23,8 +23,8 @@ data Config = Config
   -- either the empty string or @":memory:"@.
   , discordUrl :: String
   -- ^ A URL to execute a Discord webhook. This is currently used for easy
-  -- exception reporting. If you don't have a Discord server set up, you can
-  -- ignore this. It's not critical.
+  -- exception reporting. If you don't have a Discord server set up, set this
+  -- to the empty string.
   , hackageUrl :: String
   -- ^ The base Hackage URL. This can be useful to point to a mirror or even a
   -- local Hackage server.
@@ -48,7 +48,7 @@ initial = Config
   { clientId = "235ce8c873f4ed90905c"
   , clientSecret = "48e202a2b3aa30ad2a4e844f77b7d10807ab1deb"
   , database = "monadoc.sqlite3"
-  , discordUrl = "http://invalid/api/webhooks/id/token"
+  , discordUrl = ""
   , hackageUrl = "https://hackage.haskell.org"
   , help = False
   , host = "127.0.0.1"

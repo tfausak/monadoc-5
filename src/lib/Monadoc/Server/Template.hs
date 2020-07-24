@@ -10,10 +10,6 @@ import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.User as User
 
--- # TODO
--- - [ ] Vary title.
--- - [ ] Vary description.
--- - [ ] Vary canonical URL.
 makeHtmlWith
   :: Config.Config -> Maybe User.User -> Text.Text -> H.Html () -> H.Html ()
 makeHtmlWith config maybeUser loginUrl content = do

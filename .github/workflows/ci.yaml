@@ -25,10 +25,11 @@ jobs:
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: ${{ matrix.cabal }}
+      - run: cabal freeze
       - uses: actions/cache@v2
         with:
           path: ${{ steps.setup-haskell.outputs.cabal-store  }}
-          key: ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-${{ hashFiles('*.cabal') }}
+          key: ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-${{ hashFiles('cabal.project.freeze') }}
           restore-keys: |
             ${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-
             ${{ matrix.os }}-${{ matrix.ghc }}-
@@ -80,7 +81,7 @@ jobs:
       - uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: monadoc
-          template: aws/cloud-formation.yaml
+          template: config/cloud-formation.yaml
           parameter-overrides: ClientSecret=${{ secrets.CLIENT_SECRET }},DiscordUrl=${{ secrets.DISCORD_URL }},TagName=${{ github.sha }}
           no-fail-on-empty-changeset: '1'
           capabilities: CAPABILITY_NAMED_IAM

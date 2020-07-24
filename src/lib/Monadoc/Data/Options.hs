@@ -75,7 +75,7 @@ discordUrlOption =
       ["discord-url"]
       ("Sets the Discord webhook URL. Defaults to "
       <> show (Config.discordUrl Config.initial)
-      <> " which will fail without causing problems."
+      <> " which will disable exception reporting."
       )
     . argument "URL"
     $ \discordUrl config -> Right config { Config.discordUrl = discordUrl }

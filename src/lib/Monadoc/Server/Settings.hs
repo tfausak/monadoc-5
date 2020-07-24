@@ -55,15 +55,19 @@ onException context _ exception
 
 sendExceptionToDiscord
   :: Context.Context request -> Exception.SomeException -> IO ()
-sendExceptionToDiscord context exception = do
-  initialRequest <- Client.parseRequest . Config.discordUrl $ Context.config
-    context
-  let
-    content = Utf8.fromString
-      $ mconcat ["```\n", Exception.displayException exception, "```"]
-    request = Client.urlEncodedBody [("content", content)] initialRequest
-    manager = Context.manager context
-  Monad.void $ Client.httpLbs request manager
+sendExceptionToDiscord context exception =
+  case Client.parseRequest . Config.discordUrl $ Context.config context of
+    Left someException -> case Exception.fromException someException of
+      Just (Client.InvalidUrlException url reason) ->
+        Console.warn $ "invalid Discord URL (" <> reason <> "): " <> show url
+      _ -> Exception.throwM someException
+    Right initialRequest -> do
+      let
+        content = Utf8.fromString
+          $ mconcat ["```\n", Exception.displayException exception, "```"]
+        request = Client.urlEncodedBody [("content", content)] initialRequest
+        manager = Context.manager context
+      Monad.void $ Client.httpLbs request manager
 
 onExceptionResponse :: Config.Config -> Exception.SomeException -> Wai.Response
 onExceptionResponse config exception
