@@ -21,6 +21,7 @@ import qualified Distribution.Types.PackageName as Cabal
 import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
+import qualified Monadoc.Cabal
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
@@ -53,6 +54,7 @@ run = do
     processIndex
     fetchTarballs
     processTarballs
+    parsePackageDescriptions
     Console.info "Worker waiting ..."
     sleep $ 15 * 60
 
@@ -710,3 +712,53 @@ data InvalidPrefix
   deriving (Eq, Show)
 
 instance Exception.Exception InvalidPrefix
+
+parsePackageDescriptions :: App.App request ()
+parsePackageDescriptions = do
+  Console.info "Parsing package descriptions ..."
+  countVar <- Trans.lift $ Stm.newTVarIO 1
+  rows <- App.sql
+    "select name, digest \
+    \from files \
+    \where name like 'd/%/%/%/.cabal' \
+    \order by name asc"
+    ()
+  mapM_ (uncurry $ parsePackageDescription countVar) rows
+
+parsePackageDescription
+  :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
+parsePackageDescription countVar path sha256 = do
+  count <- Trans.lift . Stm.atomically $ do
+    count <- Stm.readTVar countVar
+    Stm.modifyTVar countVar (+ 1)
+    pure count
+  Monad.when (rem count 1000 == 0)
+    . Console.info
+    . unwords
+    $ ["Parsing package description number", show count, "..."]
+  (pkg, ver, rev) <- case Path.toStrings path of
+    ["d", rawPackage, rawVersion, rawRevision, ".cabal"] -> do
+      package <- parsePackageName rawPackage
+      version <- parseVersion rawVersion
+      revision <- parseRevision rawRevision
+      pure (package, version, revision)
+    strings -> WithCallStack.throw $ UnexpectedPath strings
+  binary <- do
+    maybeBinary <- getBinary sha256
+    case maybeBinary of
+      Nothing -> WithCallStack.throw $ MissingBinary sha256
+      Just binary -> pure binary
+  case Monadoc.Cabal.parse $ Binary.toByteString binary of
+    Left errs -> WithCallStack.throw . userError $ show (pkg, ver, rev, errs)
+    Right _package -> pure ()
+
+parseRevision :: Exception.MonadThrow m => String -> m Revision.Revision
+parseRevision string = case Revision.fromString string of
+  Nothing -> WithCallStack.throw $ InvalidRevision string
+  Just revision -> pure revision
+
+newtype InvalidRevision
+  = InvalidRevision String
+  deriving (Eq, Show)
+
+instance Exception.Exception InvalidRevision

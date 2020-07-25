@@ -1,8 +1,13 @@
 module Monadoc.Type.Revision where
 
+import qualified Text.Read as Read
+
 newtype Revision
   = Revision Word
   deriving (Eq, Show)
+
+fromString :: String -> Maybe Revision
+fromString = fmap Revision . Read.readMaybe
 
 fromWord :: Word -> Revision
 fromWord = Revision
