@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal
 import qualified Distribution.Types.PackageName as Cabal
@@ -642,12 +643,13 @@ processTarballEntry package version linkVar entry =
           Nothing -> Stm.putTMVar linkVar link
 
     Tar.NormalFile byteString _ -> do
+      let entryPath = Tar.entryPath entry
       maybeLink <- Trans.lift . Stm.atomically $ Stm.tryTakeTMVar linkVar
       partialPath <- case maybeLink of
-        Nothing -> pure . Path.fromFilePath $ Tar.entryPath entry
+        Nothing -> pure $ Path.fromFilePath entryPath
         Just link -> do
           let
-            prefix = Path.toFilePath . Path.fromFilePath $ Tar.entryPath entry
+            prefix = Path.toFilePath $ Path.fromFilePath entryPath
             string = Path.toFilePath link
           Monad.unless (prefix `List.isPrefixOf` string)
             . WithCallStack.throw
@@ -674,8 +676,10 @@ processTarballEntry package version linkVar entry =
             "insert into files (digest, name) values (?, ?) \
             \on conflict (name) do update set digest = excluded.digest"
             (sha256, fullPath)
-        else Console.warn $ "IGNORING " <> show
-          (package, version, Tar.entryPath entry)
+        else
+          Monad.when (Set.notMember entryPath ignoredPaths)
+          . WithCallStack.throw
+          $ InvalidPrefix prefix string
 
     Tar.Directory -> pure ()
     Tar.HardLink _ -> pure () -- https://github.com/haskell/hackage-server/issues/858
@@ -685,6 +689,20 @@ processTarballEntry package version linkVar entry =
     Tar.SymbolicLink _ -> pure ()
 
     _ -> WithCallStack.throw $ UnknownEntry entry
+
+-- | Some old package tarballs contain paths that don't start with the package
+-- identifier. In general we want to throw an exception if we encounter a path
+-- with the wrong prefix. Since these paths already exist, we don't want to
+-- throw and exception for them.
+ignoredPaths :: Set.Set FilePath
+ignoredPaths = Set.fromList $ fmap
+  FilePath.joinPath
+  [ [".", "._BirdPP-1.1"]
+  , [".", "._ParserFunction-0.0.4"]
+  , [".", "._ParserFunction-0.0.5"]
+  , ["cabal-sign-0.1.0.0.sig"]
+  , ["cabal-sign-0.2.0.0.sig"]
+  ]
 
 stripTrailingNullBytes :: ByteString.ByteString -> ByteString.ByteString
 stripTrailingNullBytes = fst . ByteString.spanEnd (== 0x00)
