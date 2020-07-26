@@ -18,6 +18,9 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal
+import qualified Distribution.Types.GenericPackageDescription as Cabal
+import qualified Distribution.Types.PackageDescription as Cabal
+import qualified Distribution.Types.PackageId as Cabal
 import qualified Distribution.Types.PackageName as Cabal
 import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
@@ -770,7 +773,34 @@ parsePackageDescription countVar path sha256 = do
       Just binary -> pure binary
   case Monadoc.Cabal.parse $ Binary.toByteString binary of
     Left errs -> WithCallStack.throw . userError $ show (pkg, ver, rev, errs)
-    Right _package -> pure ()
+    Right package -> do
+      let
+        packageName =
+          Cabal.pkgName
+            . Cabal.package
+            . Cabal.packageDescription
+            $ Monadoc.Cabal.unwrapPackage package
+        versionNumber =
+          Cabal.pkgVersion
+            . Cabal.package
+            . Cabal.packageDescription
+            $ Monadoc.Cabal.unwrapPackage package
+      Monad.when (packageName /= PackageName.toCabal pkg)
+        . WithCallStack.throw
+        $ PackageNameMismatch pkg packageName
+      Monad.when (versionNumber /= ver)
+        . WithCallStack.throw
+        $ VersionNumberMismatch ver versionNumber
+      -- We don't bother checking the revision against the x-revision field
+      -- because it's often wrong. See these Hackage issues for details:
+      -- <https://github.com/haskell/hackage-server/issues/337>
+      -- <https://github.com/haskell/hackage-server/issues/779>
+
+data VersionNumberMismatch
+  = VersionNumberMismatch Cabal.Version Cabal.Version
+  deriving (Eq, Show)
+
+instance Exception.Exception VersionNumberMismatch
 
 parseRevision :: Exception.MonadThrow m => String -> m Revision.Revision
 parseRevision string = case Revision.fromString string of
