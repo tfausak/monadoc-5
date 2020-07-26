@@ -702,6 +702,8 @@ ignoredPaths = Set.fromList $ fmap
   , [".", "._ParserFunction-0.0.5"]
   , ["cabal-sign-0.1.0.0.sig"]
   , ["cabal-sign-0.2.0.0.sig"]
+  , [".", "._mtlx-0.1.1"]
+  , [".", "._mtlx-0.1"]
   ]
 
 stripTrailingNullBytes :: ByteString.ByteString -> ByteString.ByteString
