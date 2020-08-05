@@ -16,6 +16,7 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import qualified Data.Time as Time
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal
 import qualified Distribution.Types.GenericPackageDescription as Cabal
@@ -39,6 +40,7 @@ import qualified Monadoc.Type.Path as Path
 import qualified Monadoc.Type.Revision as Revision
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
+import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Monadoc.Vendor.Sql as Sql
@@ -180,7 +182,7 @@ processIndex = do
       indexUrl <- getIndexUrl
       Console.info $ mconcat ["Missing SHA256 for ", show indexUrl, "."]
       removeCache
-    Just sha256 -> do
+    Just sha256 -> maybeProcess_ indexPath sha256 $ do
       maybeBinary <- getBinary sha256
       case maybeBinary of
         Nothing -> do
@@ -455,8 +457,7 @@ upsertBlob contents sha256 = do
   rows <- App.sql "select count(*) from blobs where sha256 = ?" [sha256]
   let count = maybe (0 :: Int) Sql.fromOnly $ Maybe.listToMaybe rows
   if count < 1
-    then pure False
-    else do
+    then do
       App.sql_
         "insert into blobs (octets, sha256, size) values (?, ?, ?)"
         ( Binary.fromByteString contents
@@ -464,6 +465,7 @@ upsertBlob contents sha256 = do
         , Size.fromInt $ ByteString.length contents
         )
       pure True
+    else pure False
 
 newtype UnknownExtension
   = UnknownExtension Tar.Entry
@@ -592,7 +594,7 @@ processTarballs = do
 
 processTarball
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
-processTarball countVar path sha256 = do
+processTarball countVar path sha256 = maybeProcess_ path sha256 $ do
   count <- Trans.lift . Stm.atomically $ do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
@@ -757,7 +759,7 @@ parsePackageDescriptions = do
 
 parsePackageDescription
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
-parsePackageDescription countVar path sha256 = do
+parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
   count <- Trans.lift . Stm.atomically $ do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
@@ -819,3 +821,26 @@ newtype InvalidRevision
   deriving (Eq, Show)
 
 instance Exception.Exception InvalidRevision
+
+maybeProcess_
+  :: Path.Path -> Sha256.Sha256 -> App.App request () -> App.App request ()
+maybeProcess_ path sha256 = Monad.void . maybeProcess path sha256
+
+maybeProcess
+  :: Path.Path
+  -> Sha256.Sha256
+  -> App.App request a
+  -> App.App request (Maybe a)
+maybeProcess path sha256 process = do
+  rows <- App.sql "select sha256 from processed_files where path = ?" [path]
+  case rows of
+    Sql.Only actual : _ | actual == sha256 -> pure Nothing
+    _ -> do
+      result <- process
+      timestamp <- IO.liftIO $ fmap Timestamp.fromUtcTime Time.getCurrentTime
+      App.sql_
+        "insert into processed_files (path, sha256, timestamp) \
+        \values (?, ?, ?) on conflict (path) do update set \
+        \sha256 = excluded.sha256, timestamp = excluded.timestamp"
+        (path, sha256, timestamp)
+      pure $ Just result
