@@ -141,7 +141,7 @@ handle200 response = do
   let
     body = LazyByteString.toStrict $ Client.responseBody response
     sha256 = Sha256.fromDigest $ Crypto.hash body
-  upsertBlob body sha256
+  upsertBlob_ body sha256
   indexUrl <- getIndexUrl
   App.sql_
     "insert into cache (etag, sha256, url) values (?, 'unused', ?) \
@@ -350,7 +350,7 @@ processPackageDescription revisionsVar path strictContents digest = do
         , show digest
         , "!"
         ]
-  upsertBlob strictContents digest
+  upsertBlob_ strictContents digest
   App.sql_
     "insert into files (digest, name) values (?, ?) \
     \on conflict (name) do update set digest = excluded.digest"
@@ -411,7 +411,7 @@ processPackageSignature path strictContents digest = do
         , show digest
         , "!"
         ]
-  upsertBlob strictContents digest
+  upsertBlob_ strictContents digest
   App.sql_
     "insert into files (digest, name) values (?, ?) \
     \on conflict (name) do update set digest = excluded.digest"
@@ -447,16 +447,23 @@ data PackageNameMismatch
 
 instance Exception.Exception PackageNameMismatch
 
-upsertBlob :: ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
+upsertBlob_ :: ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
+upsertBlob_ contents = Monad.void . upsertBlob contents
+
+upsertBlob :: ByteString.ByteString -> Sha256.Sha256 -> App.App request Bool
 upsertBlob contents sha256 = do
   rows <- App.sql "select count(*) from blobs where sha256 = ?" [sha256]
   let count = maybe (0 :: Int) Sql.fromOnly $ Maybe.listToMaybe rows
-  Monad.when (count < 1) $ App.sql_
-    "insert into blobs (octets, sha256, size) values (?, ?, ?)"
-    ( Binary.fromByteString contents
-    , sha256
-    , Size.fromInt $ ByteString.length contents
-    )
+  if count < 1
+    then pure False
+    else do
+      App.sql_
+        "insert into blobs (octets, sha256, size) values (?, ?, ?)"
+        ( Binary.fromByteString contents
+        , sha256
+        , Size.fromInt $ ByteString.length contents
+        )
+      pure True
 
 newtype UnknownExtension
   = UnknownExtension Tar.Entry
@@ -547,7 +554,7 @@ fetchTarball path = do
                   . lookup Http.hETag
                   $ Client.responseHeaders response
               sha256 = Sha256.fromDigest $ Crypto.hash body
-            upsertBlob body sha256
+            upsertBlob_ body sha256
             App.sql_
               "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
               (newEtag, url)
@@ -666,7 +673,7 @@ processTarballEntry package version linkVar entry =
         string = Path.toFilePath partialPath
       if prefix `List.isPrefixOf` string
         then do
-          upsertBlob contents sha256
+          upsertBlob_ contents sha256
           let
             fullPath =
               Path.fromStrings
