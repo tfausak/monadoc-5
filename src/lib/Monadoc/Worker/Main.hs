@@ -12,11 +12,13 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Int as Int
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Time as Time
+import qualified Data.Word as Word
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal
 import qualified Distribution.Types.GenericPackageDescription as Cabal
@@ -26,6 +28,7 @@ import qualified Distribution.Types.PackageName as Cabal
 import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
+import qualified GHC.Clock as Clock
 import qualified Monadoc.Cabal
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
@@ -49,20 +52,54 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
+import qualified System.Mem as Mem
+import qualified Text.Printf as Printf
 
 run :: App.App request ()
 run = do
   Console.info "Starting worker ..."
   Exception.handle sendExceptionToDiscord . Monad.forever $ do
-    Console.info "Worker running ..."
-    pruneBlobs
-    updateIndex
-    processIndex
-    fetchTarballs
-    processTarballs
-    parsePackageDescriptions
-    Console.info "Worker waiting ..."
+    withLogging "worker-loop" $ do
+      withLogging "prune-blobs" pruneBlobs
+      withLogging "update-index" updateIndex
+      withLogging "process-index" processIndex
+      withLogging "fetch-tarballs" fetchTarballs
+      withLogging "process-tarballs" processTarballs
+      withLogging "parse-package-descriptions" parsePackageDescriptions
     sleep $ 15 * 60
+
+withLogging :: String -> App.App request a -> App.App request a
+withLogging label action = do
+  Console.info $ "Starting " <> label <> " ..."
+  ((result, bytes), nanoseconds) <- withNanoseconds $ withBytes action
+  Console.info $ Printf.printf
+    "Finished %s after %.3f seconds using %s bytes."
+    label
+    (fromIntegral nanoseconds / 1000000000 :: Double)
+    (withCommas bytes)
+  pure result
+
+withCommas :: Show a => a -> String
+withCommas = reverse . List.intercalate "," . chunksOf 3 . reverse . show
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf n xs = case splitAt n xs of
+  ([], _) -> []
+  (ys, zs) -> ys : chunksOf n zs
+
+withBytes :: IO.MonadIO m => m a -> m (a, Int.Int64)
+withBytes action = do
+  before <- IO.liftIO Mem.getAllocationCounter
+  result <- action
+  after <- IO.liftIO Mem.getAllocationCounter
+  pure (result, before - after)
+
+withNanoseconds :: IO.MonadIO m => m a -> m (a, Word.Word64)
+withNanoseconds action = do
+  before <- IO.liftIO Clock.getMonotonicTimeNSec
+  result <- action
+  after <- IO.liftIO Clock.getMonotonicTimeNSec
+  pure (result, after - before)
 
 sendExceptionToDiscord :: Exception.SomeException -> App.App request a
 sendExceptionToDiscord exception = do
@@ -71,8 +108,12 @@ sendExceptionToDiscord exception = do
   Trans.lift $ Settings.sendExceptionToDiscord context exception
   Exception.throwM exception
 
+-- TODO: This method of pruning blobs is way too time consuming.
+doNot :: Applicative m => m a -> m ()
+doNot = const $ pure ()
+
 pruneBlobs :: App.App request ()
-pruneBlobs = do
+pruneBlobs = doNot $ do
   rows <- App.sql
     "select blobs.sha256 \
     \from blobs \
@@ -81,11 +122,13 @@ pruneBlobs = do
     \where files.digest is null"
     ()
   let count = length rows
-  Monad.when (count > 0) $ do
-    Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
-    mapM_
-      (App.sql_ "delete from blobs where sha256 = ?")
-      (rows :: [Sql.Only Sha256.Sha256])
+  if count == 0
+    then Console.info "Did not find any orphaned blobs."
+    else do
+      Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
+      mapM_
+        (App.sql_ "delete from blobs where sha256 = ?")
+        (rows :: [Sql.Only Sha256.Sha256])
 
 pluralize :: String -> Int -> String
 pluralize word count =
@@ -175,7 +218,6 @@ handleOther request response =
 
 processIndex :: App.App request ()
 processIndex = do
-  Console.info "Processing Hackage index ..."
   maybeSha256 <- getSha256
   case maybeSha256 of
     Nothing -> do
@@ -496,7 +538,6 @@ addRequestHeader name value request = request
 
 fetchTarballs :: App.App request ()
 fetchTarballs = do
-  Console.info "Fetching package tarballs ..."
   names <- App.sql
     "select name from files where name like 'd/%/%/0/.cabal' order by name asc"
     ()
@@ -582,7 +623,6 @@ emptyTarball = LazyByteString.toStrict . Gzip.compress $ Tar.write []
 
 processTarballs :: App.App request ()
 processTarballs = do
-  Console.info "Processing package tarballs ..."
   countVar <- Trans.lift $ Stm.newTVarIO 1
   rows <- App.sql
     "select name, digest \
@@ -747,7 +787,6 @@ instance Exception.Exception InvalidPrefix
 
 parsePackageDescriptions :: App.App request ()
 parsePackageDescriptions = do
-  Console.info "Parsing package descriptions ..."
   countVar <- Trans.lift $ Stm.newTVarIO 1
   rows <- App.sql
     "select name, digest \
