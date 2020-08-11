@@ -19,9 +19,15 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Time as Time
 import qualified Data.Word as Word
+import qualified Distribution.Compiler as Cabal
+import qualified Distribution.PackageDescription.Configuration as Cabal
 import qualified Distribution.Parsec as Cabal
-import qualified Distribution.Pretty as Cabal
+import qualified Distribution.System as Cabal
+import qualified Distribution.Types.ComponentRequestedSpec as Cabal
+import qualified Distribution.Types.Dependency as Cabal
+import qualified Distribution.Types.Flag as Cabal
 import qualified Distribution.Types.GenericPackageDescription as Cabal
+import qualified Distribution.Types.Library as Cabal
 import qualified Distribution.Types.PackageDescription as Cabal
 import qualified Distribution.Types.PackageId as Cabal
 import qualified Distribution.Types.PackageName as Cabal
@@ -34,7 +40,9 @@ import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
+import qualified Monadoc.Type.Cabal.ModuleName as ModuleName
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
+import qualified Monadoc.Type.Cabal.Version as Version
 import qualified Monadoc.Type.Cabal.VersionRange as VersionRange
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
@@ -277,7 +285,7 @@ processIndexEntry
   -> Stm.TVar
        ( Map.Map
            PackageName.PackageName
-           (Map.Map Cabal.Version Revision.Revision)
+           (Map.Map Version.Version Revision.Revision)
        )
   -> Stm.TVar (Map.Map PackageName.PackageName VersionRange.VersionRange)
   -> Tar.Entry
@@ -336,7 +344,7 @@ processPackageDescription
   :: Stm.TVar
        ( Map.Map
            PackageName.PackageName
-           (Map.Map Cabal.Version Revision.Revision)
+           (Map.Map Version.Version Revision.Revision)
        )
   -> Path.Path
   -> ByteString.ByteString
@@ -376,7 +384,7 @@ processPackageDescription revisionsVar path strictContents digest = do
     newPath = Path.fromStrings
       [ "d"
       , PackageName.toString packageName
-      , Cabal.prettyShow version
+      , Version.toString version
       , Revision.toString revision
       , ".cabal"
       ]
@@ -400,10 +408,10 @@ processPackageDescription revisionsVar path strictContents digest = do
     \on conflict (name) do update set digest = excluded.digest"
     (digest, newPath)
 
-parseVersion :: Exception.MonadThrow m => String -> m Cabal.Version
+parseVersion :: Exception.MonadThrow m => String -> m Version.Version
 parseVersion string = case Cabal.simpleParsec string of
   Nothing -> WithCallStack.throw $ InvalidVersionNumber string
-  Just version -> pure version
+  Just version -> pure $ Version.fromCabal version
 
 -- For now we are essentially ignoring these entries. In the future we may want
 -- to do something with them. That's why we're storing them in the database.
@@ -439,7 +447,7 @@ processPackageSignature path strictContents digest = do
     newPath = Path.fromStrings
       [ "s"
       , PackageName.toString packageName
-      , Cabal.prettyShow version
+      , Version.toString version
       , ".json"
       ]
   rows <- App.sql "select digest from files where name = ?" [newPath]
@@ -549,7 +557,7 @@ fetchTarball path = do
     ["d", rawPackage, rawVersion, "0", ".cabal"] -> do
       package <- parsePackageName rawPackage
       version <- parseVersion rawVersion
-      pure (PackageName.toString package, Cabal.prettyShow version)
+      pure (PackageName.toString package, Version.toString version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
   let tarballPath = Path.fromStrings ["t", package, version, ".tar.gz"]
   fileRows <- App.sql "select count(*) from files where name = ?" [tarballPath]
@@ -670,7 +678,7 @@ handleFormatError formatError = case formatError of
 
 processTarballEntry
   :: PackageName.PackageName
-  -> Cabal.Version
+  -> Version.Version
   -> Stm.TMVar Path.Path
   -> Tar.Entry
   -> App.App request ()
@@ -711,7 +719,7 @@ processTarballEntry package version linkVar entry =
         contents = LazyByteString.toStrict byteString
         sha256 = Sha256.fromDigest $ Crypto.hash contents
         prefix = mconcat
-          [PackageName.toString package, "-", Cabal.prettyShow version, "/"]
+          [PackageName.toString package, "-", Version.toString version, "/"]
         string = Path.toFilePath partialPath
       if prefix `List.isPrefixOf` string
         then do
@@ -721,7 +729,7 @@ processTarballEntry package version linkVar entry =
               Path.fromStrings
                 . ("c" :)
                 . (PackageName.toString package :)
-                . (Cabal.prettyShow version :)
+                . (Version.toString version :)
                 . drop 1
                 $ Path.toStrings partialPath
           App.sql_
@@ -829,7 +837,8 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
             . Cabal.packageDescription
             $ Monadoc.Cabal.unwrapPackage package
         versionNumber =
-          Cabal.pkgVersion
+          Version.fromCabal
+            . Cabal.pkgVersion
             . Cabal.package
             . Cabal.packageDescription
             $ Monadoc.Cabal.unwrapPackage package
@@ -844,8 +853,51 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
       -- <https://github.com/haskell/hackage-server/issues/337>
       -- <https://github.com/haskell/hackage-server/issues/779>
 
+      -- One package can potentially have many public sub-libraries, but
+      -- this feature isn't well supported yet. See this issue for details:
+      -- <https://github.com/haskell/cabal/issues/5660>.
+      case toPackageDescription package of
+        Left _ -> WithCallStack.throw . userError $ show (pkg, ver, rev)
+        Right (pacdes, _) -> case Cabal.library pacdes of
+          Nothing -> pure ()
+          Just library ->
+            Monad.forM_ (Cabal.exposedModules library) $ \moduleName ->
+              App.sql_
+                "insert into exposed_modules \
+                \(package, version, revision, module) values (?, ?, ?, ?) \
+                \on conflict (package, version, revision, module) do nothing"
+                (pkg, ver, rev, ModuleName.fromCabal moduleName)
+
+-- | Although the generic package description type does have a package
+-- description in it, that nested PD isn't actually usable. This function is
+-- necessary in order to choose the platform, compiler, flags, and other stuff.
+toPackageDescription
+  :: Monadoc.Cabal.Package
+  -> Either
+       [Cabal.Dependency]
+       (Cabal.PackageDescription, Cabal.FlagAssignment)
+toPackageDescription =
+  let
+    flagAssignment = Cabal.mkFlagAssignment []
+    componentRequestedSpec = Cabal.ComponentRequestedSpec False False
+    isDependencySatisfiable = const True
+    platform = Cabal.Platform Cabal.X86_64 Cabal.Linux
+    compilerId = Cabal.CompilerId Cabal.GHC $ Cabal.mkVersion [8, 10, 1]
+    abiTag = Cabal.NoAbiTag
+    compilerInfo = Cabal.unknownCompilerInfo compilerId abiTag
+    additionalConstraints = []
+  in
+    Cabal.finalizePD
+        flagAssignment
+        componentRequestedSpec
+        isDependencySatisfiable
+        platform
+        compilerInfo
+        additionalConstraints
+      . Monadoc.Cabal.unwrapPackage
+
 data VersionNumberMismatch
-  = VersionNumberMismatch Cabal.Version Cabal.Version
+  = VersionNumberMismatch Version.Version Version.Version
   deriving (Eq, Show)
 
 instance Exception.Exception VersionNumberMismatch
