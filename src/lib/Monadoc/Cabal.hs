@@ -1,32 +1,27 @@
 module Monadoc.Cabal where
 
-import qualified Data.ByteString
-import qualified Data.Function
-import qualified Data.List.NonEmpty
-import qualified Distribution.PackageDescription.Parsec
-import qualified Distribution.Parsec.Error
-import qualified Distribution.Types.GenericPackageDescription
+import qualified Data.ByteString as ByteString
+import qualified Data.Function as Function
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Distribution.PackageDescription.Parsec as Cabal
+import qualified Distribution.Parsec.Error as Cabal
+import qualified Distribution.Types.GenericPackageDescription as Cabal
 
 newtype Errors = Errors
-  { unwrapErrors :: Data.List.NonEmpty.NonEmpty Distribution.Parsec.Error.PError
+  { unwrapErrors :: NonEmpty.NonEmpty Cabal.PError
   } deriving Show
 
 instance Eq Errors where
-  (==) = Data.Function.on (==) show
+  (==) = Function.on (==) show
 
 newtype Package = Package
-  { unwrapPackage :: Distribution.Types.GenericPackageDescription.GenericPackageDescription
+  { unwrapPackage :: Cabal.GenericPackageDescription
   } deriving (Eq, Show)
 
-parse :: Data.ByteString.ByteString -> Either Errors Package
+parse :: ByteString.ByteString -> Either Errors Package
 parse byteString =
-  let
-    parseResult =
-      Distribution.PackageDescription.Parsec.parseGenericPackageDescription
-        byteString
+  let parseResult = Cabal.parseGenericPackageDescription byteString
   in
-    case
-      snd $ Distribution.PackageDescription.Parsec.runParseResult parseResult
-    of
+    case snd $ Cabal.runParseResult parseResult of
       Left (_, x) -> Left $ Errors x
       Right x -> Right $ Package x

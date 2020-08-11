@@ -12,20 +12,37 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Int as Int
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
+import qualified Data.Time as Time
+import qualified Data.Word as Word
+import qualified Distribution.Compiler as Cabal
+import qualified Distribution.PackageDescription.Configuration as Cabal
 import qualified Distribution.Parsec as Cabal
-import qualified Distribution.Pretty as Cabal
+import qualified Distribution.System as Cabal
+import qualified Distribution.Types.ComponentRequestedSpec as Cabal
+import qualified Distribution.Types.Dependency as Cabal
+import qualified Distribution.Types.Flag as Cabal
+import qualified Distribution.Types.GenericPackageDescription as Cabal
+import qualified Distribution.Types.Library as Cabal
+import qualified Distribution.Types.PackageDescription as Cabal
+import qualified Distribution.Types.PackageId as Cabal
 import qualified Distribution.Types.PackageName as Cabal
 import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
+import qualified GHC.Clock as Clock
+import qualified Monadoc.Cabal
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
+import qualified Monadoc.Type.Cabal.ModuleName as ModuleName
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
+import qualified Monadoc.Type.Cabal.Version as Version
 import qualified Monadoc.Type.Cabal.VersionRange as VersionRange
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
@@ -34,6 +51,7 @@ import qualified Monadoc.Type.Path as Path
 import qualified Monadoc.Type.Revision as Revision
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
+import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Monadoc.Vendor.Sql as Sql
@@ -42,19 +60,54 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
+import qualified System.Mem as Mem
+import qualified Text.Printf as Printf
 
 run :: App.App request ()
 run = do
   Console.info "Starting worker ..."
   Exception.handle sendExceptionToDiscord . Monad.forever $ do
-    Console.info "Worker running ..."
-    pruneBlobs
-    updateIndex
-    processIndex
-    fetchTarballs
-    processTarballs
-    Console.info "Worker waiting ..."
+    withLogging "worker-loop" $ do
+      withLogging "prune-blobs" pruneBlobs
+      withLogging "update-index" updateIndex
+      withLogging "process-index" processIndex
+      withLogging "fetch-tarballs" fetchTarballs
+      withLogging "process-tarballs" processTarballs
+      withLogging "parse-package-descriptions" parsePackageDescriptions
     sleep $ 15 * 60
+
+withLogging :: String -> App.App request a -> App.App request a
+withLogging label action = do
+  Console.info $ "Starting " <> label <> " ..."
+  ((result, bytes), nanoseconds) <- withNanoseconds $ withBytes action
+  Console.info $ Printf.printf
+    "Finished %s after %.3f seconds using %s bytes."
+    label
+    (fromIntegral nanoseconds / 1000000000 :: Double)
+    (withCommas bytes)
+  pure result
+
+withCommas :: Show a => a -> String
+withCommas = reverse . List.intercalate "," . chunksOf 3 . reverse . show
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf n xs = case splitAt n xs of
+  ([], _) -> []
+  (ys, zs) -> ys : chunksOf n zs
+
+withBytes :: IO.MonadIO m => m a -> m (a, Int.Int64)
+withBytes action = do
+  before <- IO.liftIO Mem.getAllocationCounter
+  result <- action
+  after <- IO.liftIO Mem.getAllocationCounter
+  pure (result, before - after)
+
+withNanoseconds :: IO.MonadIO m => m a -> m (a, Word.Word64)
+withNanoseconds action = do
+  before <- IO.liftIO Clock.getMonotonicTimeNSec
+  result <- action
+  after <- IO.liftIO Clock.getMonotonicTimeNSec
+  pure (result, after - before)
 
 sendExceptionToDiscord :: Exception.SomeException -> App.App request a
 sendExceptionToDiscord exception = do
@@ -63,8 +116,12 @@ sendExceptionToDiscord exception = do
   Trans.lift $ Settings.sendExceptionToDiscord context exception
   Exception.throwM exception
 
+-- TODO: This method of pruning blobs is way too time consuming.
+doNot :: Applicative m => m a -> m ()
+doNot = const $ pure ()
+
 pruneBlobs :: App.App request ()
-pruneBlobs = do
+pruneBlobs = doNot $ do
   rows <- App.sql
     "select blobs.sha256 \
     \from blobs \
@@ -73,11 +130,13 @@ pruneBlobs = do
     \where files.digest is null"
     ()
   let count = length rows
-  Monad.when (count > 0) $ do
-    Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
-    mapM_
-      (App.sql_ "delete from blobs where sha256 = ?")
-      (rows :: [Sql.Only Sha256.Sha256])
+  if count == 0
+    then Console.info "Did not find any orphaned blobs."
+    else do
+      Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
+      mapM_
+        (App.sql_ "delete from blobs where sha256 = ?")
+        (rows :: [Sql.Only Sha256.Sha256])
 
 pluralize :: String -> Int -> String
 pluralize word count =
@@ -135,7 +194,7 @@ handle200 response = do
   let
     body = LazyByteString.toStrict $ Client.responseBody response
     sha256 = Sha256.fromDigest $ Crypto.hash body
-  upsertBlob body sha256
+  upsertBlob_ body sha256
   indexUrl <- getIndexUrl
   App.sql_
     "insert into cache (etag, sha256, url) values (?, 'unused', ?) \
@@ -167,14 +226,13 @@ handleOther request response =
 
 processIndex :: App.App request ()
 processIndex = do
-  Console.info "Processing Hackage index ..."
   maybeSha256 <- getSha256
   case maybeSha256 of
     Nothing -> do
       indexUrl <- getIndexUrl
       Console.info $ mconcat ["Missing SHA256 for ", show indexUrl, "."]
       removeCache
-    Just sha256 -> do
+    Just sha256 -> maybeProcess_ indexPath sha256 $ do
       maybeBinary <- getBinary sha256
       case maybeBinary of
         Nothing -> do
@@ -227,7 +285,7 @@ processIndexEntry
   -> Stm.TVar
        ( Map.Map
            PackageName.PackageName
-           (Map.Map Cabal.Version Revision.Revision)
+           (Map.Map Version.Version Revision.Revision)
        )
   -> Stm.TVar (Map.Map PackageName.PackageName VersionRange.VersionRange)
   -> Tar.Entry
@@ -286,7 +344,7 @@ processPackageDescription
   :: Stm.TVar
        ( Map.Map
            PackageName.PackageName
-           (Map.Map Cabal.Version Revision.Revision)
+           (Map.Map Version.Version Revision.Revision)
        )
   -> Path.Path
   -> ByteString.ByteString
@@ -326,7 +384,7 @@ processPackageDescription revisionsVar path strictContents digest = do
     newPath = Path.fromStrings
       [ "d"
       , PackageName.toString packageName
-      , Cabal.prettyShow version
+      , Version.toString version
       , Revision.toString revision
       , ".cabal"
       ]
@@ -344,16 +402,16 @@ processPackageDescription revisionsVar path strictContents digest = do
         , show digest
         , "!"
         ]
-  upsertBlob strictContents digest
+  upsertBlob_ strictContents digest
   App.sql_
     "insert into files (digest, name) values (?, ?) \
     \on conflict (name) do update set digest = excluded.digest"
     (digest, newPath)
 
-parseVersion :: Exception.MonadThrow m => String -> m Cabal.Version
+parseVersion :: Exception.MonadThrow m => String -> m Version.Version
 parseVersion string = case Cabal.simpleParsec string of
   Nothing -> WithCallStack.throw $ InvalidVersionNumber string
-  Just version -> pure version
+  Just version -> pure $ Version.fromCabal version
 
 -- For now we are essentially ignoring these entries. In the future we may want
 -- to do something with them. That's why we're storing them in the database.
@@ -389,7 +447,7 @@ processPackageSignature path strictContents digest = do
     newPath = Path.fromStrings
       [ "s"
       , PackageName.toString packageName
-      , Cabal.prettyShow version
+      , Version.toString version
       , ".json"
       ]
   rows <- App.sql "select digest from files where name = ?" [newPath]
@@ -405,7 +463,7 @@ processPackageSignature path strictContents digest = do
         , show digest
         , "!"
         ]
-  upsertBlob strictContents digest
+  upsertBlob_ strictContents digest
   App.sql_
     "insert into files (digest, name) values (?, ?) \
     \on conflict (name) do update set digest = excluded.digest"
@@ -441,16 +499,23 @@ data PackageNameMismatch
 
 instance Exception.Exception PackageNameMismatch
 
-upsertBlob :: ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
+upsertBlob_ :: ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
+upsertBlob_ contents = Monad.void . upsertBlob contents
+
+upsertBlob :: ByteString.ByteString -> Sha256.Sha256 -> App.App request Bool
 upsertBlob contents sha256 = do
   rows <- App.sql "select count(*) from blobs where sha256 = ?" [sha256]
   let count = maybe (0 :: Int) Sql.fromOnly $ Maybe.listToMaybe rows
-  Monad.when (count < 1) $ App.sql_
-    "insert into blobs (octets, sha256, size) values (?, ?, ?)"
-    ( Binary.fromByteString contents
-    , sha256
-    , Size.fromInt $ ByteString.length contents
-    )
+  if count < 1
+    then do
+      App.sql_
+        "insert into blobs (octets, sha256, size) values (?, ?, ?)"
+        ( Binary.fromByteString contents
+        , sha256
+        , Size.fromInt $ ByteString.length contents
+        )
+      pure True
+    else pure False
 
 newtype UnknownExtension
   = UnknownExtension Tar.Entry
@@ -481,7 +546,6 @@ addRequestHeader name value request = request
 
 fetchTarballs :: App.App request ()
 fetchTarballs = do
-  Console.info "Fetching package tarballs ..."
   names <- App.sql
     "select name from files where name like 'd/%/%/0/.cabal' order by name asc"
     ()
@@ -493,7 +557,7 @@ fetchTarball path = do
     ["d", rawPackage, rawVersion, "0", ".cabal"] -> do
       package <- parsePackageName rawPackage
       version <- parseVersion rawVersion
-      pure (PackageName.toString package, Cabal.prettyShow version)
+      pure (PackageName.toString package, Version.toString version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
   let tarballPath = Path.fromStrings ["t", package, version, ".tar.gz"]
   fileRows <- App.sql "select count(*) from files where name = ?" [tarballPath]
@@ -541,7 +605,7 @@ fetchTarball path = do
                   . lookup Http.hETag
                   $ Client.responseHeaders response
               sha256 = Sha256.fromDigest $ Crypto.hash body
-            upsertBlob body sha256
+            upsertBlob_ body sha256
             App.sql_
               "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
               (newEtag, url)
@@ -567,7 +631,6 @@ emptyTarball = LazyByteString.toStrict . Gzip.compress $ Tar.write []
 
 processTarballs :: App.App request ()
 processTarballs = do
-  Console.info "Processing package tarballs ..."
   countVar <- Trans.lift $ Stm.newTVarIO 1
   rows <- App.sql
     "select name, digest \
@@ -579,7 +642,7 @@ processTarballs = do
 
 processTarball
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
-processTarball countVar path sha256 = do
+processTarball countVar path sha256 = maybeProcess_ path sha256 $ do
   count <- Trans.lift . Stm.atomically $ do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
@@ -615,7 +678,7 @@ handleFormatError formatError = case formatError of
 
 processTarballEntry
   :: PackageName.PackageName
-  -> Cabal.Version
+  -> Version.Version
   -> Stm.TMVar Path.Path
   -> Tar.Entry
   -> App.App request ()
@@ -640,12 +703,13 @@ processTarballEntry package version linkVar entry =
           Nothing -> Stm.putTMVar linkVar link
 
     Tar.NormalFile byteString _ -> do
+      let entryPath = Tar.entryPath entry
       maybeLink <- Trans.lift . Stm.atomically $ Stm.tryTakeTMVar linkVar
       partialPath <- case maybeLink of
-        Nothing -> pure . Path.fromFilePath $ Tar.entryPath entry
+        Nothing -> pure $ Path.fromFilePath entryPath
         Just link -> do
           let
-            prefix = Path.toFilePath . Path.fromFilePath $ Tar.entryPath entry
+            prefix = Path.toFilePath $ Path.fromFilePath entryPath
             string = Path.toFilePath link
           Monad.unless (prefix `List.isPrefixOf` string)
             . WithCallStack.throw
@@ -655,25 +719,27 @@ processTarballEntry package version linkVar entry =
         contents = LazyByteString.toStrict byteString
         sha256 = Sha256.fromDigest $ Crypto.hash contents
         prefix = mconcat
-          [PackageName.toString package, "-", Cabal.prettyShow version, "/"]
+          [PackageName.toString package, "-", Version.toString version, "/"]
         string = Path.toFilePath partialPath
       if prefix `List.isPrefixOf` string
         then do
-          upsertBlob contents sha256
+          upsertBlob_ contents sha256
           let
             fullPath =
               Path.fromStrings
                 . ("c" :)
                 . (PackageName.toString package :)
-                . (Cabal.prettyShow version :)
+                . (Version.toString version :)
                 . drop 1
                 $ Path.toStrings partialPath
           App.sql_
             "insert into files (digest, name) values (?, ?) \
             \on conflict (name) do update set digest = excluded.digest"
             (sha256, fullPath)
-        else Console.warn $ "IGNORING " <> show
-          (package, version, Tar.entryPath entry)
+        else
+          Monad.when (Set.notMember entryPath ignoredPaths)
+          . WithCallStack.throw
+          $ InvalidPrefix prefix string
 
     Tar.Directory -> pure ()
     Tar.HardLink _ -> pure () -- https://github.com/haskell/hackage-server/issues/858
@@ -683,6 +749,22 @@ processTarballEntry package version linkVar entry =
     Tar.SymbolicLink _ -> pure ()
 
     _ -> WithCallStack.throw $ UnknownEntry entry
+
+-- | Some old package tarballs contain paths that don't start with the package
+-- identifier. In general we want to throw an exception if we encounter a path
+-- with the wrong prefix. Since these paths already exist, we don't want to
+-- throw and exception for them.
+ignoredPaths :: Set.Set FilePath
+ignoredPaths = Set.fromList $ fmap
+  FilePath.joinPath
+  [ [".", "._BirdPP-1.1"]
+  , [".", "._ParserFunction-0.0.4"]
+  , [".", "._ParserFunction-0.0.5"]
+  , ["cabal-sign-0.1.0.0.sig"]
+  , ["cabal-sign-0.2.0.0.sig"]
+  , [".", "._mtlx-0.1.1"]
+  , [".", "._mtlx-0.1"]
+  ]
 
 stripTrailingNullBytes :: ByteString.ByteString -> ByteString.ByteString
 stripTrailingNullBytes = fst . ByteString.spanEnd (== 0x00)
@@ -710,3 +792,146 @@ data InvalidPrefix
   deriving (Eq, Show)
 
 instance Exception.Exception InvalidPrefix
+
+parsePackageDescriptions :: App.App request ()
+parsePackageDescriptions = do
+  countVar <- Trans.lift $ Stm.newTVarIO 1
+  rows <- App.sql
+    "select name, digest \
+    \from files \
+    \where name like 'd/%/%/%/.cabal' \
+    \order by name asc"
+    ()
+  mapM_ (uncurry $ parsePackageDescription countVar) rows
+
+parsePackageDescription
+  :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
+parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
+  count <- Trans.lift . Stm.atomically $ do
+    count <- Stm.readTVar countVar
+    Stm.modifyTVar countVar (+ 1)
+    pure count
+  Monad.when (rem count 1000 == 0)
+    . Console.info
+    . unwords
+    $ ["Parsing package description number", show count, "..."]
+  (pkg, ver, rev) <- case Path.toStrings path of
+    ["d", rawPackage, rawVersion, rawRevision, ".cabal"] -> do
+      package <- parsePackageName rawPackage
+      version <- parseVersion rawVersion
+      revision <- parseRevision rawRevision
+      pure (package, version, revision)
+    strings -> WithCallStack.throw $ UnexpectedPath strings
+  binary <- do
+    maybeBinary <- getBinary sha256
+    case maybeBinary of
+      Nothing -> WithCallStack.throw $ MissingBinary sha256
+      Just binary -> pure binary
+  case Monadoc.Cabal.parse $ Binary.toByteString binary of
+    Left errs -> WithCallStack.throw . userError $ show (pkg, ver, rev, errs)
+    Right package -> do
+      let
+        packageName =
+          Cabal.pkgName
+            . Cabal.package
+            . Cabal.packageDescription
+            $ Monadoc.Cabal.unwrapPackage package
+        versionNumber =
+          Version.fromCabal
+            . Cabal.pkgVersion
+            . Cabal.package
+            . Cabal.packageDescription
+            $ Monadoc.Cabal.unwrapPackage package
+      Monad.when (packageName /= PackageName.toCabal pkg)
+        . WithCallStack.throw
+        $ PackageNameMismatch pkg packageName
+      Monad.when (versionNumber /= ver)
+        . WithCallStack.throw
+        $ VersionNumberMismatch ver versionNumber
+      -- We don't bother checking the revision against the x-revision field
+      -- because it's often wrong. See these Hackage issues for details:
+      -- <https://github.com/haskell/hackage-server/issues/337>
+      -- <https://github.com/haskell/hackage-server/issues/779>
+
+      -- One package can potentially have many public sub-libraries, but
+      -- this feature isn't well supported yet. See this issue for details:
+      -- <https://github.com/haskell/cabal/issues/5660>.
+      case toPackageDescription package of
+        Left _ -> WithCallStack.throw . userError $ show (pkg, ver, rev)
+        Right (pacdes, _) -> case Cabal.library pacdes of
+          Nothing -> pure ()
+          Just library ->
+            Monad.forM_ (Cabal.exposedModules library) $ \moduleName ->
+              App.sql_
+                "insert into exposed_modules \
+                \(package, version, revision, module) values (?, ?, ?, ?) \
+                \on conflict (package, version, revision, module) do nothing"
+                (pkg, ver, rev, ModuleName.fromCabal moduleName)
+
+-- | Although the generic package description type does have a package
+-- description in it, that nested PD isn't actually usable. This function is
+-- necessary in order to choose the platform, compiler, flags, and other stuff.
+toPackageDescription
+  :: Monadoc.Cabal.Package
+  -> Either
+       [Cabal.Dependency]
+       (Cabal.PackageDescription, Cabal.FlagAssignment)
+toPackageDescription =
+  let
+    flagAssignment = Cabal.mkFlagAssignment []
+    componentRequestedSpec = Cabal.ComponentRequestedSpec False False
+    isDependencySatisfiable = const True
+    platform = Cabal.Platform Cabal.X86_64 Cabal.Linux
+    compilerId = Cabal.CompilerId Cabal.GHC $ Cabal.mkVersion [8, 10, 1]
+    abiTag = Cabal.NoAbiTag
+    compilerInfo = Cabal.unknownCompilerInfo compilerId abiTag
+    additionalConstraints = []
+  in
+    Cabal.finalizePD
+        flagAssignment
+        componentRequestedSpec
+        isDependencySatisfiable
+        platform
+        compilerInfo
+        additionalConstraints
+      . Monadoc.Cabal.unwrapPackage
+
+data VersionNumberMismatch
+  = VersionNumberMismatch Version.Version Version.Version
+  deriving (Eq, Show)
+
+instance Exception.Exception VersionNumberMismatch
+
+parseRevision :: Exception.MonadThrow m => String -> m Revision.Revision
+parseRevision string = case Revision.fromString string of
+  Nothing -> WithCallStack.throw $ InvalidRevision string
+  Just revision -> pure revision
+
+newtype InvalidRevision
+  = InvalidRevision String
+  deriving (Eq, Show)
+
+instance Exception.Exception InvalidRevision
+
+maybeProcess_
+  :: Path.Path -> Sha256.Sha256 -> App.App request () -> App.App request ()
+maybeProcess_ path sha256 = Monad.void . maybeProcess path sha256
+
+maybeProcess
+  :: Path.Path
+  -> Sha256.Sha256
+  -> App.App request a
+  -> App.App request (Maybe a)
+maybeProcess path sha256 process = do
+  rows <- App.sql "select sha256 from processed_files where path = ?" [path]
+  case rows of
+    Sql.Only actual : _ | actual == sha256 -> pure Nothing
+    _ -> do
+      result <- process
+      timestamp <- IO.liftIO $ fmap Timestamp.fromUtcTime Time.getCurrentTime
+      App.sql_
+        "insert into processed_files (path, sha256, timestamp) \
+        \values (?, ?, ?) on conflict (path) do update set \
+        \sha256 = excluded.sha256, timestamp = excluded.timestamp"
+        (path, sha256, timestamp)
+      pure $ Just result

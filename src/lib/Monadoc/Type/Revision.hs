@@ -1,8 +1,17 @@
 module Monadoc.Type.Revision where
 
+import qualified Monadoc.Vendor.Sql as Sql
+import qualified Text.Read as Read
+
 newtype Revision
   = Revision Word
   deriving (Eq, Show)
+
+instance Sql.ToField Revision where
+  toField = Sql.toField . toWord
+
+fromString :: String -> Maybe Revision
+fromString = fmap Revision . Read.readMaybe
 
 fromWord :: Word -> Revision
 fromWord = Revision

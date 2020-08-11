@@ -45,6 +45,23 @@ migrations = Set.fromList
     "create table preferred_versions (\
     \package_name text not null primary key, \
     \version_range text not null)"
+  , makeMigration
+    (2020, 8, 4, 21, 58, 0)
+    "create table processed_files (\
+    \path text primary key, \
+    \sha256 text not null, \
+    \timestamp text not null)"
+  , makeMigration
+    (2020, 8, 10, 21, 7, 0)
+    "create table exposed_modules (\
+    \package text not null, \
+    \version text not null, \
+    \revision integer not null, \
+    \module text not null, \
+    \unique (package, version, revision, module))"
+  , makeMigration
+    (2020, 8, 10, 22, 15, 0)
+    "delete from processed_files where path like 'd/%'"
   ]
 
 makeMigration

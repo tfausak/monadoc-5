@@ -1,7 +1,7 @@
 cabal-version: 2.2
 
 name: monadoc
-version: 0.2020.7.24
+version: 0.2020.8.11
 synopsis: Better Haskell documentation.
 description: Monadoc provides better Haskell documentation.
 
@@ -109,7 +109,9 @@ library
     Monadoc.Server.Template
     Monadoc.Type.App
     Monadoc.Type.Binary
+    Monadoc.Type.Cabal.ModuleName
     Monadoc.Type.Cabal.PackageName
+    Monadoc.Type.Cabal.Version
     Monadoc.Type.Cabal.VersionRange
     Monadoc.Type.Config
     Monadoc.Type.ConfigResult
