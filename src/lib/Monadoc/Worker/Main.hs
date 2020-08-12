@@ -916,8 +916,16 @@ shouldIgnore p v r m =
     ("Facebook-Password-Hacker-Online-Latest-Version", _, _, _) -> True
     ("Fin", "0.2.0.0", _, _) -> True
     ("Fortnite-Hack-Cheats-Free-V-Bucks-Generator", _, _, _) -> True
-    (_, _, _, 'P' : 'a' : 't' : 'h' : 's' : '_' : _) -> True
+    (_, _, _, _) | "Paths_" `List.isPrefixOf` m' -> True
     ("KiCS-debugger", _, _, _) -> True
+    ("KiCS-prophecy", _, _, _) -> True
+    ("KiCS", _, _, _) -> True
+    ("Mobile-Legends-Hack-Cheats", _, _, _) -> True
+    ("Thrift", "0.5.0.1", _, _) -> True
+    ("TypeCompose", "0.6.6", _, _) -> True
+    ("XmlHtmlWriter", "0.0.0.0", _, _) -> True
+    ("applicative-numbers", "0.0.0", _, _) -> True
+    ("asil", _, _, _) -> True
     _ -> False
 
 findSourceFile
@@ -947,7 +955,7 @@ findSourceFileIn
   -> App.App request (Maybe (Path.Path, Sha256.Sha256))
 findSourceFileIn pkg ver dir mdl = mapMaybeM
   (findSourceFileWith pkg ver dir mdl)
-  ["hs", "hsc", "lhs", "chs", "x", "y", "cpphs", "xhs", "xpphs"]
+  ["hs", "hsc", "lhs", "chs", "x", "y", "cpphs", "xhs", "xpphs", "gc"]
 
 findSourceFileWith
   :: PackageName.PackageName
@@ -962,9 +970,10 @@ findSourceFileWith pkg ver dir mdl ext = do
       [ Path.fromStrings ["c", PackageName.toString pkg, Version.toString ver]
       , case dir of
         "." -> mempty
+        "./" -> mempty
+        "./." -> mempty
         '.' : '/' : rest -> Path.fromFilePath rest
         _ -> Path.fromFilePath dir
-      -- if dir == "." || dir == "./" then mempty else Path.fromFilePath dir
       , Path.fromFilePath
       $ Cabal.toFilePath (ModuleName.toCabal mdl)
       <> "."
