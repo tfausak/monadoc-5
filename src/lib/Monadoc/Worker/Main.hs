@@ -20,9 +20,11 @@ import qualified Data.Set as Set
 import qualified Data.Time as Time
 import qualified Data.Word as Word
 import qualified Distribution.Compiler as Cabal
+import qualified Distribution.ModuleName as Cabal
 import qualified Distribution.PackageDescription.Configuration as Cabal
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.System as Cabal
+import qualified Distribution.Types.BuildInfo as Cabal
 import qualified Distribution.Types.ComponentRequestedSpec as Cabal
 import qualified Distribution.Types.Dependency as Cabal
 import qualified Distribution.Types.Flag as Cabal
@@ -68,11 +70,11 @@ run = do
   Console.info "Starting worker ..."
   Exception.handle sendExceptionToDiscord . Monad.forever $ do
     withLogging "worker-loop" $ do
-      withLogging "prune-blobs" pruneBlobs
-      withLogging "update-index" updateIndex
-      withLogging "process-index" processIndex
-      withLogging "fetch-tarballs" fetchTarballs
-      withLogging "process-tarballs" processTarballs
+      -- withLogging "prune-blobs" pruneBlobs
+      -- withLogging "update-index" updateIndex
+      -- withLogging "process-index" processIndex
+      -- withLogging "fetch-tarballs" fetchTarballs
+      -- withLogging "process-tarballs" processTarballs
       withLogging "parse-package-descriptions" parsePackageDescriptions
     sleep $ 15 * 60
 
@@ -860,13 +862,118 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
         Left _ -> WithCallStack.throw . userError $ show (pkg, ver, rev)
         Right (pacdes, _) -> case Cabal.library pacdes of
           Nothing -> pure ()
-          Just library ->
-            Monad.forM_ (Cabal.exposedModules library) $ \moduleName ->
-              App.sql_
-                "insert into exposed_modules \
-                \(package, version, revision, module) values (?, ?, ?, ?) \
-                \on conflict (package, version, revision, module) do nothing"
-                (pkg, ver, rev, ModuleName.fromCabal moduleName)
+          Just library -> do
+            let sourceDirs = Cabal.hsSourceDirs $ Cabal.libBuildInfo library
+            Monad.forM_
+                (fmap ModuleName.fromCabal $ Cabal.exposedModules library)
+              $ \moduleName -> do
+                  App.sql_
+                    "insert into exposed_modules \
+                    \(package, version, revision, module) values (?, ?, ?, ?) \
+                    \on conflict (package, version, revision, module) \
+                    \do nothing"
+                    (pkg, ver, rev, moduleName)
+                  result <- findSourceFile pkg ver sourceDirs moduleName
+                  case result of
+                    Nothing -> if shouldIgnore pkg ver rev moduleName
+                      then Console.warn $ unwords
+                        [ "FAIL" -- TODO
+                        , PackageName.toString pkg
+                        , Version.toString ver
+                        , Revision.toString rev
+                        , ModuleName.toString moduleName
+                        ]
+                      else WithCallStack.throw . userError $ show
+                        (pkg, ver, rev, sourceDirs, moduleName)
+                    Just (file, digest) -> Console.info $ unwords
+                      [ "PASS" -- TODO
+                      , PackageName.toString pkg
+                      , Version.toString ver
+                      , Revision.toString rev
+                      , ModuleName.toString moduleName
+                      , Path.toFilePath file
+                      , Sha256.toString digest
+                      ]
+
+shouldIgnore
+  :: PackageName.PackageName
+  -> Version.Version
+  -> Revision.Revision
+  -> ModuleName.ModuleName
+  -> Bool
+shouldIgnore p v r m =
+  let
+    p' = PackageName.toString p
+    v' = Version.toString v
+    r' = Revision.toWord r
+    m' = ModuleName.toString m
+  in case (p', v', r', m') of
+    (_, _, _, "Agda.Syntax.Parser.Parser") -> True
+    ("Clash-Royale-Hack-Cheats", _, _, _) -> True
+    ("ContArrow", "0.0.1", _, _) -> True
+    ("ContArrow", "0.0.2", _, _) -> True
+    ("Eight-Ball-Pool-Hack-Cheats", _, _, _) -> True
+    ("Facebook-Password-Hacker-Online-Latest-Version", _, _, _) -> True
+    ("Fin", "0.2.0.0", _, _) -> True
+    ("Fortnite-Hack-Cheats-Free-V-Bucks-Generator", _, _, _) -> True
+    (_, _, _, 'P' : 'a' : 't' : 'h' : 's' : '_' : _) -> True
+    ("KiCS-debugger", _, _, _) -> True
+    _ -> False
+
+findSourceFile
+  :: PackageName.PackageName
+  -> Version.Version
+  -> [FilePath]
+  -> ModuleName.ModuleName
+  -> App.App request (Maybe (Path.Path, Sha256.Sha256))
+findSourceFile pkg ver dirs mdl = case dirs of
+  [] -> findSourceFileIn pkg ver "." mdl
+  _ -> mapMaybeM (\dir -> findSourceFileIn pkg ver dir mdl) dirs
+
+mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m (Maybe b)
+mapMaybeM f l = case l of
+  [] -> pure Nothing
+  h : t -> do
+    m <- f h
+    case m of
+      Just x -> pure $ Just x
+      Nothing -> mapMaybeM f t
+
+findSourceFileIn
+  :: PackageName.PackageName
+  -> Version.Version
+  -> FilePath
+  -> ModuleName.ModuleName
+  -> App.App request (Maybe (Path.Path, Sha256.Sha256))
+findSourceFileIn pkg ver dir mdl = mapMaybeM
+  (findSourceFileWith pkg ver dir mdl)
+  ["hs", "hsc", "lhs", "chs", "x", "y", "cpphs", "xhs", "xpphs"]
+
+findSourceFileWith
+  :: PackageName.PackageName
+  -> Version.Version
+  -> FilePath
+  -> ModuleName.ModuleName
+  -> String
+  -> App.App request (Maybe (Path.Path, Sha256.Sha256))
+findSourceFileWith pkg ver dir mdl ext = do
+  let
+    path = mconcat
+      [ Path.fromStrings ["c", PackageName.toString pkg, Version.toString ver]
+      , case dir of
+        "." -> mempty
+        '.' : '/' : rest -> Path.fromFilePath rest
+        _ -> Path.fromFilePath dir
+      -- if dir == "." || dir == "./" then mempty else Path.fromFilePath dir
+      , Path.fromFilePath
+      $ Cabal.toFilePath (ModuleName.toCabal mdl)
+      <> "."
+      <> ext
+      ]
+  rows <- App.sql "select digest from files where name = ?" [path]
+  case rows of
+    [] -> pure Nothing
+    Sql.Only digest : _ -> pure $ Just (path, digest :: Sha256.Sha256)
 
 -- | Although the generic package description type does have a package
 -- description in it, that nested PD isn't actually usable. This function is

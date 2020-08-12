@@ -11,8 +11,14 @@ newtype Path
   = Path [String]
   deriving (Eq, Show)
 
+instance Monoid Path where
+  mempty = fromStrings mempty
+
 instance Sql.FromField Path where
   fromField = fmap fromFilePath . Sql.fromField
+
+instance Semigroup Path where
+  x <> y = fromStrings $ toStrings x <> toStrings y
 
 instance Sql.ToField Path where
   toField = Sql.toField . toFilePath

@@ -60,7 +60,7 @@ migrations = Set.fromList
     \module text not null, \
     \unique (package, version, revision, module))"
   , makeMigration
-    (2020, 8, 10, 22, 15, 0)
+    (2020, 8, 11, 20, 12, 0)
     "delete from processed_files where path like 'd/%'"
   ]
 
