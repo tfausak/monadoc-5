@@ -9,6 +9,7 @@ import qualified ErrUtils
 import qualified FastString
 import qualified GHC
 import qualified GHC.Hs
+import qualified GHC.LanguageExtensions.Type
 import qualified GHC.Paths
 import qualified HeaderInfo
 import qualified Lexer
@@ -38,10 +39,18 @@ instance Eq Module where
 instance Show Module where
   show = Outputable.showSDocUnsafe . Outputable.ppr . unwrapModule
 
-parse :: FilePath -> Data.ByteString.ByteString -> IO (Either Errors Module)
-parse filePath byteString = do
+parse
+  :: [GHC.LanguageExtensions.Type.Extension]
+  -> FilePath
+  -> Data.ByteString.ByteString
+  -> IO (Either Errors Module)
+parse extensions filePath byteString = do
   dynFlags1 <- GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags
-  let dynFlags2 = DynFlags.gopt_set dynFlags1 DynFlags.Opt_KeepRawTokenStream
+  let
+    dynFlags2 = foldr
+      (flip DynFlags.xopt_set)
+      (DynFlags.gopt_set dynFlags1 DynFlags.Opt_KeepRawTokenStream)
+      extensions
   let text = Utf8.toText byteString
   let string = Data.Text.unpack text
   let stringBuffer = StringBuffer.stringToStringBuffer string
