@@ -867,83 +867,20 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
             Monad.forM_
                 (fmap ModuleName.fromCabal $ Cabal.exposedModules library)
               $ \moduleName -> do
+                  maybeFile <- findSourceFile pkg ver sourceDirs moduleName
                   App.sql_
-                    "insert into exposed_modules \
-                    \(package, version, revision, module) values (?, ?, ?, ?) \
+                    "insert into exposed_modules2 \
+                    \(package, version, revision, module, file) values (?, ?, ?, ?, ?) \
                     \on conflict (package, version, revision, module) \
-                    \do nothing"
-                    (pkg, ver, rev, moduleName)
-                  result <- findSourceFile pkg ver sourceDirs moduleName
-                  case result of
-                    Nothing -> if shouldIgnore pkg ver rev moduleName
-                      then pure ()
-                      else Console.info $ unwords
-                        [ PackageName.toString pkg
-                        , Version.toString ver
-                        , Revision.toString rev
-                        , ModuleName.toString moduleName
-                        ]
-                    Just (_file, _digest) -> pure ()
-
--- TODO: Non-simple build types should probably be ignored. We can make a best
--- effort to find source files, but there's a good chance they won't be there
--- at all.
-shouldIgnore
-  :: PackageName.PackageName
-  -> Version.Version
-  -> Revision.Revision
-  -> ModuleName.ModuleName
-  -> Bool
-shouldIgnore p v r m =
-  let
-    p' = PackageName.toString p
-    v' = Version.toString v
-    r' = Revision.toWord r
-    m' = ModuleName.toString m
-  in case (p', v', r', m') of
-
-    ("asil", _, _, _) -> True
-    ("Clash-Royale-Hack-Cheats", _, _, _) -> True
-    ("criu-rpc-types", _, _, _) -> True
-    ("Eight-Ball-Pool-Hack-Cheats", _, _, _) -> True
-    ("encoding", _, _, _) -> True
-    ("Facebook-Password-Hacker-Online-Latest-Version", _, _, _) -> True
-    ("Fortnite-Hack-Cheats-Free-V-Bucks-Generator", _, _, _) -> True
-    ("functor-combo", "0.0.3", _, _) -> True
-    ("ghc-parser", _, _, _) -> True
-    ("gi-atk", _, _, _) -> True
-    ("gi-cairo", _, _, _) -> True
-    ("gi-dbusmenu", _, _, _) -> True
-    ("gi-dbusmenugtk3", _, _, _) -> True
-    ("gi-gdk", _, _, _) -> True
-    ("KiCS-debugger", _, _, _) -> True
-    ("KiCS-prophecy", _, _, _) -> True
-    ("KiCS", _, _, _) -> True
-    ("Mobile-Legends-Hack-Cheats", _, _, _) -> True
-
-    ("applicative-numbers", "0.0.0", _, _) -> True
-    ("barecheck", "0.2.0.4", _, _) -> True
-    ("clist", "0.3.0.0", _, _) -> True
-    ("ContArrow", "0.0.1", _, _) -> True
-    ("ContArrow", "0.0.2", _, _) -> True
-    ("data-ordlist", "0.0", _, _) -> True
-    ("dual", "0.1.0.0", _, _) -> True
-    ("egison", "3.9.2", _, _) -> True
-    ("Fin", "0.2.0.0", _, _) -> True
-    ("Thrift", "0.5.0.1", _, _) -> True
-    ("TypeCompose", "0.6.6", _, _) -> True
-    ("XmlHtmlWriter", "0.0.0.0", _, _) -> True
-
-    (_, _, _, "Agda.Syntax.Parser.Parser") -> True
-
-    _ -> "Paths_" `List.isPrefixOf` m'
+                    \do update set file = excluded.file"
+                    (pkg, ver, rev, moduleName, maybeFile)
 
 findSourceFile
   :: PackageName.PackageName
   -> Version.Version
   -> [FilePath]
   -> ModuleName.ModuleName
-  -> App.App request (Maybe (Path.Path, Sha256.Sha256))
+  -> App.App request (Maybe Path.Path)
 findSourceFile pkg ver dirs mdl = case dirs of
   [] -> findSourceFileIn pkg ver "." mdl
   _ -> mapMaybeM (\dir -> findSourceFileIn pkg ver dir mdl) dirs
@@ -962,7 +899,7 @@ findSourceFileIn
   -> Version.Version
   -> FilePath
   -> ModuleName.ModuleName
-  -> App.App request (Maybe (Path.Path, Sha256.Sha256))
+  -> App.App request (Maybe Path.Path)
 findSourceFileIn pkg ver dir mdl = mapMaybeM
   (findSourceFileWith pkg ver dir mdl)
   ["hs", "hsc", "lhs", "chs", "x", "y", "cpphs", "xhs", "xpphs", "gc"]
@@ -973,7 +910,7 @@ findSourceFileWith
   -> FilePath
   -> ModuleName.ModuleName
   -> String
-  -> App.App request (Maybe (Path.Path, Sha256.Sha256))
+  -> App.App request (Maybe Path.Path)
 findSourceFileWith pkg ver dir mdl ext = do
   let
     path = mconcat
@@ -989,10 +926,10 @@ findSourceFileWith pkg ver dir mdl ext = do
       <> "."
       <> ext
       ]
-  rows <- App.sql "select digest from files where name = ?" [path]
+  rows <- App.sql "select name from files where name = ?" [path]
   case rows of
     [] -> pure Nothing
-    Sql.Only digest : _ -> pure $ Just (path, digest :: Sha256.Sha256)
+    Sql.Only name : _ -> pure $ Just name
 
 -- | Although the generic package description type does have a package
 -- description in it, that nested PD isn't actually usable. This function is
