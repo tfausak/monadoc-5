@@ -70,11 +70,11 @@ run = do
   Console.info "Starting worker ..."
   Exception.handle sendExceptionToDiscord . Monad.forever $ do
     withLogging "worker-loop" $ do
-      -- withLogging "prune-blobs" pruneBlobs
-      -- withLogging "update-index" updateIndex
-      -- withLogging "process-index" processIndex
-      -- withLogging "fetch-tarballs" fetchTarballs
-      -- withLogging "process-tarballs" processTarballs
+      withLogging "prune-blobs" pruneBlobs
+      withLogging "update-index" updateIndex
+      withLogging "process-index" processIndex
+      withLogging "fetch-tarballs" fetchTarballs
+      withLogging "process-tarballs" processTarballs
       withLogging "parse-package-descriptions" parsePackageDescriptions
     sleep $ 15 * 60
 
