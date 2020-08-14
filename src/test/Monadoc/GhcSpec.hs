@@ -1,7 +1,7 @@
 module Monadoc.GhcSpec where
 
 import qualified Data.Either as Either
-import qualified GHC.LanguageExtensions.Type as Ghc
+import qualified GHC.LanguageExtensions.Type as Ext
 import qualified Monadoc.Ghc as Ghc
 import Test
 
@@ -23,5 +23,16 @@ spec = describe "Monadoc.Ghc" $ do
       result `shouldSatisfy` Either.isLeft
 
     it "succeeds with required extension" $ do
-      result <- Ghc.parse [Ghc.MagicHash] "" "x# = ()"
+      result <- Ghc.parse [(True, Ext.MagicHash)] "" "x# = ()"
       result `shouldSatisfy` Either.isRight
+
+    it "succeeds with default extension" $ do
+      result <- Ghc.parse [] "" "data X = X {}"
+      result `shouldSatisfy` Either.isRight
+
+    it "fails with default extension disabled" $ do
+      result <- Ghc.parse
+        [(False, Ext.TraditionalRecordSyntax)]
+        ""
+        "data X = X {}"
+      result `shouldSatisfy` Either.isLeft

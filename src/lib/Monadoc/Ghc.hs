@@ -40,7 +40,7 @@ instance Show Module where
   show = Outputable.showSDocUnsafe . Outputable.ppr . unwrapModule
 
 parse
-  :: [GHC.LanguageExtensions.Type.Extension]
+  :: [(Bool, GHC.LanguageExtensions.Type.Extension)]
   -> FilePath
   -> Data.ByteString.ByteString
   -> IO (Either Errors Module)
@@ -48,7 +48,8 @@ parse extensions filePath byteString = do
   dynFlags1 <- GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags
   let
     dynFlags2 = foldr
-      (flip DynFlags.xopt_set)
+      (\(p, x) -> flip (if p then DynFlags.xopt_set else DynFlags.xopt_unset) x
+      )
       (DynFlags.gopt_set dynFlags1 DynFlags.Opt_KeepRawTokenStream)
       extensions
   let text = Utf8.toText byteString
