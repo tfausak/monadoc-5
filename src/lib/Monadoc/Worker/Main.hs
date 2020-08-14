@@ -876,25 +876,18 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                   result <- findSourceFile pkg ver sourceDirs moduleName
                   case result of
                     Nothing -> if shouldIgnore pkg ver rev moduleName
-                      then Console.warn $ unwords
-                        [ "FAIL" -- TODO
-                        , PackageName.toString pkg
+                      then pure ()
+                      else Console.info $ unwords
+                        [ PackageName.toString pkg
                         , Version.toString ver
                         , Revision.toString rev
                         , ModuleName.toString moduleName
                         ]
-                      else WithCallStack.throw . userError $ show
-                        (pkg, ver, rev, sourceDirs, moduleName)
-                    Just (file, digest) -> Console.info $ unwords
-                      [ "PASS" -- TODO
-                      , PackageName.toString pkg
-                      , Version.toString ver
-                      , Revision.toString rev
-                      , ModuleName.toString moduleName
-                      , Path.toFilePath file
-                      , Sha256.toString digest
-                      ]
+                    Just (_file, _digest) -> pure ()
 
+-- TODO: Non-simple build types should probably be ignored. We can make a best
+-- effort to find source files, but there's a good chance they won't be there
+-- at all.
 shouldIgnore
   :: PackageName.PackageName
   -> Version.Version
@@ -908,25 +901,42 @@ shouldIgnore p v r m =
     r' = Revision.toWord r
     m' = ModuleName.toString m
   in case (p', v', r', m') of
-    (_, _, _, "Agda.Syntax.Parser.Parser") -> True
+
+    ("asil", _, _, _) -> True
     ("Clash-Royale-Hack-Cheats", _, _, _) -> True
-    ("ContArrow", "0.0.1", _, _) -> True
-    ("ContArrow", "0.0.2", _, _) -> True
+    ("criu-rpc-types", _, _, _) -> True
     ("Eight-Ball-Pool-Hack-Cheats", _, _, _) -> True
+    ("encoding", _, _, _) -> True
     ("Facebook-Password-Hacker-Online-Latest-Version", _, _, _) -> True
-    ("Fin", "0.2.0.0", _, _) -> True
     ("Fortnite-Hack-Cheats-Free-V-Bucks-Generator", _, _, _) -> True
-    (_, _, _, _) | "Paths_" `List.isPrefixOf` m' -> True
+    ("functor-combo", "0.0.3", _, _) -> True
+    ("ghc-parser", _, _, _) -> True
+    ("gi-atk", _, _, _) -> True
+    ("gi-cairo", _, _, _) -> True
+    ("gi-dbusmenu", _, _, _) -> True
+    ("gi-dbusmenugtk3", _, _, _) -> True
+    ("gi-gdk", _, _, _) -> True
     ("KiCS-debugger", _, _, _) -> True
     ("KiCS-prophecy", _, _, _) -> True
     ("KiCS", _, _, _) -> True
     ("Mobile-Legends-Hack-Cheats", _, _, _) -> True
+
+    ("applicative-numbers", "0.0.0", _, _) -> True
+    ("barecheck", "0.2.0.4", _, _) -> True
+    ("clist", "0.3.0.0", _, _) -> True
+    ("ContArrow", "0.0.1", _, _) -> True
+    ("ContArrow", "0.0.2", _, _) -> True
+    ("data-ordlist", "0.0", _, _) -> True
+    ("dual", "0.1.0.0", _, _) -> True
+    ("egison", "3.9.2", _, _) -> True
+    ("Fin", "0.2.0.0", _, _) -> True
     ("Thrift", "0.5.0.1", _, _) -> True
     ("TypeCompose", "0.6.6", _, _) -> True
     ("XmlHtmlWriter", "0.0.0.0", _, _) -> True
-    ("applicative-numbers", "0.0.0", _, _) -> True
-    ("asil", _, _, _) -> True
-    _ -> False
+
+    (_, _, _, "Agda.Syntax.Parser.Parser") -> True
+
+    _ -> "Paths_" `List.isPrefixOf` m'
 
 findSourceFile
   :: PackageName.PackageName
