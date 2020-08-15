@@ -1,6 +1,7 @@
 module Monadoc.Ghc where
 
 import qualified Bag
+import qualified Control.Exception
 import qualified Data.ByteString
 import qualified Data.Function
 import qualified Data.Text
@@ -44,7 +45,7 @@ parse
   -> FilePath
   -> Data.ByteString.ByteString
   -> IO (Either Errors Module)
-parse extensions filePath byteString = do
+parse extensions filePath byteString = Control.Exception.handle handler $ do
   dynFlags1 <- GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags
   let
     dynFlags2 = foldr
@@ -69,3 +70,14 @@ parse extensions filePath byteString = do
         if null bagErrMsg
           then Right $ Module locatedHsModuleGhcPs
           else Left $ Errors bagErrMsg
+
+handler :: Control.Exception.SomeException -> IO (Either Errors Module)
+handler e = do
+  f <- GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags
+  pure
+    . Left
+    . Errors
+    . Bag.unitBag
+    . ErrUtils.mkPlainErrMsg f SrcLoc.noSrcSpan
+    . Outputable.text
+    $ show e
