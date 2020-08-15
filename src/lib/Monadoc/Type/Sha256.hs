@@ -14,13 +14,19 @@ newtype Sha256
   deriving (Eq, Show)
 
 instance Sql.FromField Sha256 where
-  fromField = Sql.fromFieldVia $ fmap fromDigest . Read.readMaybe
+  fromField = Sql.fromFieldVia fromString
 
 instance Sql.ToField Sha256 where
-  toField = Sql.toField . show . toDigest
+  toField = Sql.toField . toString
 
 fromDigest :: Crypto.Digest Crypto.SHA256 -> Sha256
 fromDigest = Sha256
 
+fromString :: String -> Maybe Sha256
+fromString = fmap fromDigest . Read.readMaybe
+
 toDigest :: Sha256 -> Crypto.Digest Crypto.SHA256
 toDigest (Sha256 digest) = digest
+
+toString :: Sha256 -> String
+toString = show . toDigest

@@ -60,8 +60,29 @@ migrations = Set.fromList
     \module text not null, \
     \unique (package, version, revision, module))"
   , makeMigration
-    (2020, 8, 10, 22, 15, 0)
+    (2020, 8, 14, 9, 58, 0)
+    "create table exposed_modules2 (\
+    \package text not null, \
+    \version text not null, \
+    \revision integer not null, \
+    \module text not null, \
+    \file text, \
+    \unique (package, version, revision, module))"
+  , makeMigration (2020, 8, 15, 9, 50, 0) "drop table exposed_modules"
+  , makeMigration (2020, 8, 15, 9, 51, 0) "drop table exposed_modules2"
+  , makeMigration
+    (2020, 8, 15, 9, 52, 0)
     "delete from processed_files where path like 'd/%'"
+  , makeMigration
+    (2020, 8, 15, 9, 53, 0)
+    "create table exposed_modules (\
+    \package text not null, \
+    \version text not null, \
+    \revision integer not null, \
+    \module text not null, \
+    \file text, \
+    \parsed boolean not null default false, \
+    \unique (package, version, revision, module))"
   ]
 
 makeMigration

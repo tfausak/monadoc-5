@@ -12,6 +12,7 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Either as Either
 import qualified Data.Int as Int
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -20,9 +21,11 @@ import qualified Data.Set as Set
 import qualified Data.Time as Time
 import qualified Data.Word as Word
 import qualified Distribution.Compiler as Cabal
+import qualified Distribution.ModuleName as Cabal
 import qualified Distribution.PackageDescription.Configuration as Cabal
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.System as Cabal
+import qualified Distribution.Types.BuildInfo as Cabal
 import qualified Distribution.Types.ComponentRequestedSpec as Cabal
 import qualified Distribution.Types.Dependency as Cabal
 import qualified Distribution.Types.Flag as Cabal
@@ -35,8 +38,11 @@ import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
 import qualified GHC.Clock as Clock
+import qualified GHC.LanguageExtensions.Type as G
+import qualified Language.Haskell.Extension as C
 import qualified Monadoc.Cabal
 import qualified Monadoc.Console as Console
+import qualified Monadoc.Ghc
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -860,13 +866,261 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
         Left _ -> WithCallStack.throw . userError $ show (pkg, ver, rev)
         Right (pacdes, _) -> case Cabal.library pacdes of
           Nothing -> pure ()
-          Just library ->
-            Monad.forM_ (Cabal.exposedModules library) $ \moduleName ->
-              App.sql_
-                "insert into exposed_modules \
-                \(package, version, revision, module) values (?, ?, ?, ?) \
-                \on conflict (package, version, revision, module) do nothing"
-                (pkg, ver, rev, ModuleName.fromCabal moduleName)
+          Just library -> do
+            let
+              buildInfo = Cabal.libBuildInfo library
+              sourceDirs = Cabal.hsSourceDirs buildInfo
+              extensions =
+                Maybe.mapMaybe
+                    (\x -> case x of
+                      C.UnknownExtension _ -> Nothing
+                      C.EnableExtension y -> do
+                        z <- convertExtension y
+                        pure (True, z)
+                      C.DisableExtension y -> do
+                        z <- convertExtension y
+                        pure (False, z)
+                    )
+                  $ Cabal.defaultExtensions buildInfo
+                  <> Cabal.oldExtensions buildInfo
+            Monad.forM_
+                (fmap ModuleName.fromCabal $ Cabal.exposedModules library)
+              $ \moduleName -> do
+                  maybeFile <- findSourceFile pkg ver sourceDirs moduleName
+                  App.sql_
+                    "insert into exposed_modules \
+                    \(package, version, revision, module, file) \
+                    \values (?, ?, ?, ?, ?) \
+                    \on conflict (package, version, revision, module) \
+                    \do update set file = excluded.file"
+                    (pkg, ver, rev, moduleName, maybeFile)
+                  let
+                    key = unwords
+                      [ PackageName.toString pkg
+                      , Version.toString ver
+                      , Revision.toString rev
+                      , ModuleName.toString moduleName
+                      ]
+                  case maybeFile of
+                    Nothing -> Console.info $ "SKIP " <> key
+                    Just file -> do
+                      rows <- App.sql
+                        "select blobs.octets from blobs \
+                        \inner join files on files.digest = blobs.sha256 \
+                        \where files.name = ?"
+                        [file]
+                      case rows of
+                        [] -> fail $ "missing contents for " <> show file
+                        Sql.Only contents : _ -> do
+                          let _ = contents :: Binary.Binary
+                          result <- IO.liftIO $ Monadoc.Ghc.parse
+                            extensions
+                            (Path.toFilePath file)
+                            (Binary.toByteString contents)
+                          App.sql_
+                            "update exposed_modules \
+                            \set parsed = ? \
+                            \where package = ? \
+                            \and version = ? \
+                            \and revision = ? \
+                            \and module = ?"
+                            (Either.isRight result, pkg, ver, rev, moduleName)
+                          case result of
+                            Left _ -> Console.info $ "FAIL " <> key
+                            Right _ -> Console.info $ "PASS " <> key
+
+convertExtension :: C.KnownExtension -> Maybe G.Extension
+convertExtension x = case x of
+  C.AllowAmbiguousTypes -> Just G.AllowAmbiguousTypes
+  C.ApplicativeDo -> Just G.ApplicativeDo
+  C.Arrows -> Just G.Arrows
+  C.AutoDeriveTypeable -> Just G.AutoDeriveTypeable
+  C.BangPatterns -> Just G.BangPatterns
+  C.BinaryLiterals -> Just G.BinaryLiterals
+  C.BlockArguments -> Just G.BlockArguments
+  C.CApiFFI -> Just G.CApiFFI
+  C.ConstrainedClassMethods -> Just G.ConstrainedClassMethods
+  C.ConstraintKinds -> Just G.ConstraintKinds
+  C.CPP -> Just G.Cpp
+  C.CUSKs -> Just G.CUSKs
+  C.DataKinds -> Just G.DataKinds
+  C.DatatypeContexts -> Just G.DatatypeContexts
+  C.DefaultSignatures -> Just G.DefaultSignatures
+  C.DeriveAnyClass -> Just G.DeriveAnyClass
+  C.DeriveDataTypeable -> Just G.DeriveDataTypeable
+  C.DeriveFoldable -> Just G.DeriveFoldable
+  C.DeriveFunctor -> Just G.DeriveFunctor
+  C.DeriveGeneric -> Just G.DeriveGeneric
+  C.DeriveLift -> Just G.DeriveLift
+  C.DeriveTraversable -> Just G.DeriveTraversable
+  C.DerivingStrategies -> Just G.DerivingStrategies
+  C.DerivingVia -> Just G.DerivingVia
+  C.DisambiguateRecordFields -> Just G.DisambiguateRecordFields
+  C.DoAndIfThenElse -> Just G.DoAndIfThenElse
+  C.DoRec -> Just G.RecursiveDo
+  C.DuplicateRecordFields -> Just G.DuplicateRecordFields
+  C.EmptyCase -> Just G.EmptyCase
+  C.EmptyDataDecls -> Just G.EmptyDataDecls
+  C.EmptyDataDeriving -> Just G.EmptyDataDeriving
+  C.ExistentialQuantification -> Just G.ExistentialQuantification
+  C.ExplicitForAll -> Just G.ExplicitForAll
+  C.ExplicitNamespaces -> Just G.ExplicitNamespaces
+  C.ExtendedDefaultRules -> Just G.ExtendedDefaultRules
+  C.FlexibleContexts -> Just G.FlexibleContexts
+  C.FlexibleInstances -> Just G.FlexibleInstances
+  C.ForeignFunctionInterface -> Just G.ForeignFunctionInterface
+  C.FunctionalDependencies -> Just G.FunctionalDependencies
+  C.GADTs -> Just G.GADTs
+  C.GADTSyntax -> Just G.GADTSyntax
+  C.GeneralisedNewtypeDeriving -> Just G.GeneralizedNewtypeDeriving
+  C.GeneralizedNewtypeDeriving -> Just G.GeneralizedNewtypeDeriving
+  C.GHCForeignImportPrim -> Just G.GHCForeignImportPrim
+  C.HexFloatLiterals -> Just G.HexFloatLiterals
+  C.ImplicitParams -> Just G.ImplicitParams
+  C.ImplicitPrelude -> Just G.ImplicitPrelude
+  C.ImportQualifiedPost -> Just G.ImportQualifiedPost
+  C.ImpredicativeTypes -> Just G.ImpredicativeTypes
+  C.IncoherentInstances -> Just G.IncoherentInstances
+  C.InstanceSigs -> Just G.InstanceSigs
+  C.InterruptibleFFI -> Just G.InterruptibleFFI
+  C.JavaScriptFFI -> Just G.JavaScriptFFI
+  C.KindSignatures -> Just G.KindSignatures
+  C.LambdaCase -> Just G.LambdaCase
+  C.LiberalTypeSynonyms -> Just G.LiberalTypeSynonyms
+  C.MagicHash -> Just G.MagicHash
+  C.MonadComprehensions -> Just G.MonadComprehensions
+  C.MonadFailDesugaring -> Just G.MonadFailDesugaring
+  C.MonoLocalBinds -> Just G.MonoLocalBinds
+  C.MonomorphismRestriction -> Just G.MonomorphismRestriction
+  C.MonoPatBinds -> Just G.MonoPatBinds
+  C.MultiParamTypeClasses -> Just G.MultiParamTypeClasses
+  C.MultiWayIf -> Just G.MultiWayIf
+  C.NamedFieldPuns -> Just G.RecordPuns
+  C.NamedWildCards -> Just G.NamedWildCards
+  C.NegativeLiterals -> Just G.NegativeLiterals
+  C.NondecreasingIndentation -> Just G.NondecreasingIndentation
+  C.NPlusKPatterns -> Just G.NPlusKPatterns
+  C.NullaryTypeClasses -> Just G.NullaryTypeClasses
+  C.NumDecimals -> Just G.NumDecimals
+  C.NumericUnderscores -> Just G.NumericUnderscores
+  C.OverlappingInstances -> Just G.OverlappingInstances
+  C.OverloadedLabels -> Just G.OverloadedLabels
+  C.OverloadedLists -> Just G.OverloadedLists
+  C.OverloadedStrings -> Just G.OverloadedStrings
+  C.PackageImports -> Just G.PackageImports
+  C.ParallelArrays -> Just G.ParallelArrays
+  C.ParallelListComp -> Just G.ParallelListComp
+  C.PartialTypeSignatures -> Just G.PartialTypeSignatures
+  C.PatternGuards -> Just G.PatternGuards
+  C.PatternSignatures -> Just G.ScopedTypeVariables
+  C.PatternSynonyms -> Just G.PatternSynonyms
+  C.PolyKinds -> Just G.PolyKinds
+  C.PolymorphicComponents -> Just G.RankNTypes
+  C.PostfixOperators -> Just G.PostfixOperators
+  C.QuantifiedConstraints -> Just G.QuantifiedConstraints
+  C.QuasiQuotes -> Just G.QuasiQuotes
+  C.Rank2Types -> Just G.RankNTypes
+  C.RankNTypes -> Just G.RankNTypes
+  C.RebindableSyntax -> Just G.RebindableSyntax
+  C.RecordPuns -> Just G.RecordPuns
+  C.RecordWildCards -> Just G.RecordWildCards
+  C.RecursiveDo -> Just G.RecursiveDo
+  C.RelaxedPolyRec -> Just G.RelaxedPolyRec
+  C.RoleAnnotations -> Just G.RoleAnnotations
+  C.ScopedTypeVariables -> Just G.ScopedTypeVariables
+  C.StandaloneDeriving -> Just G.StandaloneDeriving
+  C.StandaloneKindSignatures -> Just G.StandaloneKindSignatures
+  C.StarIsType -> Just G.StarIsType
+  C.StaticPointers -> Just G.StaticPointers
+  C.Strict -> Just G.Strict
+  C.StrictData -> Just G.StrictData
+  C.TemplateHaskell -> Just G.TemplateHaskell
+  C.TemplateHaskellQuotes -> Just G.TemplateHaskellQuotes
+  C.TraditionalRecordSyntax -> Just G.TraditionalRecordSyntax
+  C.TransformListComp -> Just G.TransformListComp
+  C.TupleSections -> Just G.TupleSections
+  C.TypeApplications -> Just G.TypeApplications
+  C.TypeFamilies -> Just G.TypeFamilies
+  C.TypeFamilyDependencies -> Just G.TypeFamilyDependencies
+  C.TypeInType -> Just G.TypeInType
+  C.TypeOperators -> Just G.TypeOperators
+  C.TypeSynonymInstances -> Just G.TypeSynonymInstances
+  C.UnboxedSums -> Just G.UnboxedSums
+  C.UnboxedTuples -> Just G.UnboxedTuples
+  C.UndecidableInstances -> Just G.UndecidableInstances
+  C.UndecidableSuperClasses -> Just G.UndecidableSuperClasses
+  C.UnicodeSyntax -> Just G.UnicodeSyntax
+  C.UnliftedFFITypes -> Just G.UnliftedFFITypes
+  C.UnliftedNewtypes -> Just G.UnliftedNewtypes
+  C.ViewPatterns -> Just G.ViewPatterns
+
+  C.ExtensibleRecords -> Nothing
+  C.Generics -> Nothing
+  C.HereDocuments -> Nothing
+  C.NewQualifiedOperators -> Nothing
+  C.RegularPatterns -> Nothing
+  C.RestrictedTypeSynonyms -> Nothing
+  C.Safe -> Nothing
+  C.SafeImports -> Nothing
+  C.Trustworthy -> Nothing
+  C.Unsafe -> Nothing
+  C.XmlSyntax -> Nothing
+
+findSourceFile
+  :: PackageName.PackageName
+  -> Version.Version
+  -> [FilePath]
+  -> ModuleName.ModuleName
+  -> App.App request (Maybe Path.Path)
+findSourceFile pkg ver dirs mdl = case dirs of
+  [] -> findSourceFileIn pkg ver "." mdl
+  _ -> mapMaybeM (\dir -> findSourceFileIn pkg ver dir mdl) dirs
+
+mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m (Maybe b)
+mapMaybeM f l = case l of
+  [] -> pure Nothing
+  h : t -> do
+    m <- f h
+    case m of
+      Just x -> pure $ Just x
+      Nothing -> mapMaybeM f t
+
+findSourceFileIn
+  :: PackageName.PackageName
+  -> Version.Version
+  -> FilePath
+  -> ModuleName.ModuleName
+  -> App.App request (Maybe Path.Path)
+findSourceFileIn pkg ver dir mdl = mapMaybeM
+  (findSourceFileWith pkg ver dir mdl)
+  ["hs", "hsc", "lhs", "chs", "x", "y", "cpphs", "xhs", "xpphs", "gc"]
+
+findSourceFileWith
+  :: PackageName.PackageName
+  -> Version.Version
+  -> FilePath
+  -> ModuleName.ModuleName
+  -> String
+  -> App.App request (Maybe Path.Path)
+findSourceFileWith pkg ver dir mdl ext = do
+  let
+    path = mconcat
+      [ Path.fromStrings ["c", PackageName.toString pkg, Version.toString ver]
+      , case dir of
+        "." -> mempty
+        "./" -> mempty
+        "./." -> mempty
+        '.' : '/' : rest -> Path.fromFilePath rest
+        _ -> Path.fromFilePath dir
+      , Path.fromFilePath
+      $ Cabal.toFilePath (ModuleName.toCabal mdl)
+      <> "."
+      <> ext
+      ]
+  rows <- App.sql "select name from files where name = ?" [path]
+  case rows of
+    [] -> pure Nothing
+    Sql.Only name : _ -> pure $ Just name
 
 -- | Although the generic package description type does have a package
 -- description in it, that nested PD isn't actually usable. This function is
