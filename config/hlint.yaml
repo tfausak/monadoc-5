@@ -6,3 +6,4 @@
 - ignore: { name: Redundant do }
 - ignore: { name: Use <$> }
 - ignore: { name: Use =<< }
+- ignore: { name: Use lambda-case }
