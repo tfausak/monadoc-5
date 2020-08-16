@@ -43,7 +43,7 @@ jobs:
           path: docker/monadoc*
           name: monadoc-${{ matrix.os }}-${{ github.sha }}
       - if: matrix.os == 'ubuntu-18.04'
-        run: tar czf ghc.tgz -C /opt/ghc/8.10/lib ghc-8.10.1
+        run: tar czf ghc.tgz -C /opt/ghc/8.10.1/lib ghc-8.10.1
       - if: matrix.os == 'ubuntu-18.04'
         uses: actions/upload-artifact@v2
         with:
