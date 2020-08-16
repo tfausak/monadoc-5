@@ -64,7 +64,6 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: monadoc-ubuntu-18.04-${{ github.sha }}-ghc
-          path: docker
       - run: tar xzf ghc.tgz -C docker
       - uses: docker/build-push-action@v1
         with:
