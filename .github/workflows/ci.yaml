@@ -42,6 +42,11 @@ jobs:
         with:
           path: docker/monadoc*
           name: monadoc-${{ matrix.os }}-${{ github.sha }}
+      - run: tar czf ghc.tgz -C /opt/ghc/8.10/lib ghc-8.10.1
+      - uses: actions/upload-artifact@v2
+        with:
+          path: docker/monadoc*
+          name: monadoc-${{ matrix.os }}-${{ github.sha }}-ghc
 
   push:
     needs: build
@@ -54,6 +59,11 @@ jobs:
           path: docker
       - run: chmod +x docker/monadoc
       - run: cp --recursive data docker
+      - uses: actions/download-artifact@v2
+        with:
+          name: monadoc-ubuntu-18.04-${{ github.sha }}-ghc
+          path: docker
+      - run: tar xzf ghc.tgz -C docker
       - uses: docker/build-push-action@v1
         with:
           username: taylorfausak
