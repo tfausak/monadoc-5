@@ -13,6 +13,7 @@ import qualified GHC.Hs
 import qualified GHC.LanguageExtensions.Type
 import qualified GHC.Paths
 import qualified HeaderInfo
+import qualified Language.Preprocessor.Cpphs as Cpp
 import qualified Lexer
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Outputable
@@ -54,7 +55,10 @@ parse extensions filePath byteString = Control.Exception.handle handler $ do
       (DynFlags.gopt_set dynFlags1 DynFlags.Opt_KeepRawTokenStream)
       extensions
   let text = Utf8.toText byteString
-  let string = Data.Text.unpack text
+  let originalString = Data.Text.unpack text
+  string <- if DynFlags.xopt GHC.LanguageExtensions.Type.Cpp dynFlags2
+    then Cpp.runCpphs cpphsOptions filePath originalString
+    else pure originalString
   let stringBuffer = StringBuffer.stringToStringBuffer string
   let locatedStrings = HeaderInfo.getOptions dynFlags2 stringBuffer filePath
   (dynFlags3, _, _) <- DynFlags.parseDynamicFilePragma dynFlags2 locatedStrings
@@ -70,6 +74,12 @@ parse extensions filePath byteString = Control.Exception.handle handler $ do
         if null bagErrMsg
           then Right $ Module locatedHsModuleGhcPs
           else Left $ Errors bagErrMsg
+
+cpphsOptions :: Cpp.CpphsOptions
+cpphsOptions = Cpp.defaultCpphsOptions
+  { Cpp.boolopts = Cpp.defaultBoolOptions { Cpp.warnings = False }
+  , Cpp.defines = [] -- TODO
+  }
 
 handler :: Control.Exception.SomeException -> IO (Either Errors Module)
 handler e = do

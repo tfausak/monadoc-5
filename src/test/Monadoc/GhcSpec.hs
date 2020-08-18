@@ -36,3 +36,14 @@ spec = describe "Monadoc.Ghc" $ do
         ""
         "data X = X {}"
       result `shouldSatisfy` Either.isLeft
+
+    it "works with CPP" $ do
+      result <- Ghc.parse
+        [(True, Ext.Cpp)]
+        ""
+        "#ifdef NOT_DEFINED\n\
+        \invalid# = True\n\
+        \#else\n\
+        \module M where\n\
+        \#endif"
+      result `shouldSatisfy` Either.isRight
