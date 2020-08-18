@@ -71,9 +71,6 @@ migrations = Set.fromList
   , makeMigration (2020, 8, 15, 9, 50, 0) "drop table exposed_modules"
   , makeMigration (2020, 8, 15, 9, 51, 0) "drop table exposed_modules2"
   , makeMigration
-    (2020, 8, 15, 9, 52, 0)
-    "delete from processed_files where path like 'd/%'"
-  , makeMigration
     (2020, 8, 15, 9, 53, 0)
     "create table exposed_modules (\
     \package text not null, \
@@ -83,6 +80,12 @@ migrations = Set.fromList
     \file text, \
     \parsed boolean not null default false, \
     \unique (package, version, revision, module))"
+  , makeMigration
+    (2020, 8, 18, 7, 44, 0)
+    "delete from processed_files where path like 'd/%'"
+  , makeMigration
+    (2020, 8, 18, 7, 45, 0)
+    "update exposed_modules set parsed = false"
   ]
 
 makeMigration
