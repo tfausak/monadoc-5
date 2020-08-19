@@ -2,6 +2,7 @@ module Monadoc.Ghc where
 
 import qualified Bag
 import qualified Control.Exception
+import qualified Control.Monad
 import qualified Data.ByteString
 import qualified Data.Function
 import qualified Data.Text
@@ -62,6 +63,7 @@ parse extensions filePath byteString = Control.Exception.handle handler $ do
   string2 <- if DynFlags.xopt GHC.LanguageExtensions.Type.Cpp dynFlags3
     then Cpp.runCpphs cpphsOptions filePath string1
     else pure string1
+  Control.Monad.void . Control.Exception.evaluate $ length string2
   let stringBuffer2 = StringBuffer.stringToStringBuffer string2
   let fastString = FastString.mkFastString filePath
   let realSrcLoc = SrcLoc.mkRealSrcLoc fastString 1 1
