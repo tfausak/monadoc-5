@@ -55,16 +55,17 @@ parse extensions filePath byteString = Control.Exception.handle handler $ do
       (DynFlags.gopt_set dynFlags1 DynFlags.Opt_KeepRawTokenStream)
       extensions
   let text = Utf8.toText byteString
-  let originalString = Data.Text.unpack text
-  string <- if DynFlags.xopt GHC.LanguageExtensions.Type.Cpp dynFlags2
-    then Cpp.runCpphs cpphsOptions filePath originalString
-    else pure originalString
-  let stringBuffer = StringBuffer.stringToStringBuffer string
-  let locatedStrings = HeaderInfo.getOptions dynFlags2 stringBuffer filePath
+  let string1 = Data.Text.unpack text
+  let stringBuffer1 = StringBuffer.stringToStringBuffer string1
+  let locatedStrings = HeaderInfo.getOptions dynFlags2 stringBuffer1 filePath
   (dynFlags3, _, _) <- DynFlags.parseDynamicFilePragma dynFlags2 locatedStrings
+  string2 <- if DynFlags.xopt GHC.LanguageExtensions.Type.Cpp dynFlags3
+    then Cpp.runCpphs cpphsOptions filePath string1
+    else pure string1
+  let stringBuffer2 = StringBuffer.stringToStringBuffer string2
   let fastString = FastString.mkFastString filePath
   let realSrcLoc = SrcLoc.mkRealSrcLoc fastString 1 1
-  let pState1 = Lexer.mkPState dynFlags3 stringBuffer realSrcLoc
+  let pState1 = Lexer.mkPState dynFlags3 stringBuffer2 realSrcLoc
   pure $ case Lexer.unP Parser.parseModule pState1 of
     Lexer.PFailed pState2 ->
       Left . Errors . snd $ Lexer.getMessages pState2 dynFlags3
