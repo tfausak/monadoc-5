@@ -81,10 +81,10 @@ migrations = Set.fromList
     \parsed boolean not null default false, \
     \unique (package, version, revision, module))"
   , makeMigration
-    (2020, 8, 18, 7, 44, 0)
+    (2020, 8, 19, 22, 9, 0)
     "delete from processed_files where path like 'd/%'"
   , makeMigration
-    (2020, 8, 18, 7, 45, 0)
+    (2020, 8, 19, 22, 10, 0)
     "update exposed_modules set parsed = false"
   ]
 

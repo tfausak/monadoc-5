@@ -47,3 +47,18 @@ spec = describe "Monadoc.Ghc" $ do
         \module M where\n\
         \#endif"
       result `shouldSatisfy` Either.isRight
+
+    it "works with CPP pragma" $ do
+      result <- Ghc.parse [] "" "{-# language CPP #-}\n#"
+      result `shouldSatisfy` Either.isRight
+
+    it "does not throw impure CPP errors" $ do
+      result <- Ghc.parse [(True, Ext.Cpp)] "" "#error"
+      result `shouldSatisfy` Either.isLeft
+
+    it "works with implied extensions" $ do
+      result <- Ghc.parse
+        [(True, Ext.RankNTypes)]
+        ""
+        "f :: forall a . a -> a\nf a = a"
+      result `shouldSatisfy` Either.isRight
