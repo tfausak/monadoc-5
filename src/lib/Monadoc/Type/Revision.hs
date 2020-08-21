@@ -1,6 +1,7 @@
 module Monadoc.Type.Revision where
 
 import qualified Monadoc.Vendor.Sql as Sql
+import qualified Test.Hspec as Hspec
 import qualified Text.Read as Read
 
 newtype Revision
@@ -27,3 +28,16 @@ toWord (Revision word) = word
 
 zero :: Revision
 zero = fromWord 0
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.Revision" $ do
+
+  Hspec.describe "increment" $ do
+
+    Hspec.it "increases by one" $ do
+      increment zero `Hspec.shouldBe` fromWord 1
+
+  Hspec.describe "toString" $ do
+
+    Hspec.it "renders just the number" $ do
+      toString zero `Hspec.shouldBe` "0"

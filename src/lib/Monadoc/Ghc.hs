@@ -4,6 +4,7 @@ import qualified Bag
 import qualified Control.Exception
 import qualified Control.Monad
 import qualified Data.ByteString
+import qualified Data.Either as Either
 import qualified Data.Function
 import qualified Data.Text
 import qualified DynFlags
@@ -21,6 +22,7 @@ import qualified Outputable
 import qualified Parser
 import qualified SrcLoc
 import qualified StringBuffer
+import qualified Test.Hspec as Hspec
 
 newtype Errors = Errors
   { unwrapErrors :: Bag.Bag ErrUtils.ErrMsg
@@ -142,3 +144,58 @@ impliedExtensions extension = case extension of
     [(True, X.DataKinds), (True, X.KindSignatures), (True, X.PolyKinds)]
   X.TypeOperators -> [(True, X.ExplicitNamespaces)]
   _ -> []
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Ghc" $ do
+
+  Hspec.describe "parse" $ do
+
+    Hspec.it "parses an empty module" $ do
+      result <- parse [] "" "module M where"
+      result `Hspec.shouldSatisfy` Either.isRight
+
+    Hspec.it "fails to parse an invalid module" $ do
+      result <- parse [] "" "module"
+      result `Hspec.shouldSatisfy` Either.isLeft
+
+    Hspec.it "fails without required extension" $ do
+      result <- parse [] "" "x# = ()"
+      result `Hspec.shouldSatisfy` Either.isLeft
+
+    Hspec.it "succeeds with required extension" $ do
+      result <- parse [(True, X.MagicHash)] "" "x# = ()"
+      result `Hspec.shouldSatisfy` Either.isRight
+
+    Hspec.it "succeeds with default extension" $ do
+      result <- parse [] "" "data X = X {}"
+      result `Hspec.shouldSatisfy` Either.isRight
+
+    Hspec.it "fails with default extension disabled" $ do
+      result <- parse [(False, X.TraditionalRecordSyntax)] "" "data X = X {}"
+      result `Hspec.shouldSatisfy` Either.isLeft
+
+    Hspec.it "works with CPP" $ do
+      result <- parse
+        [(True, X.Cpp)]
+        ""
+        "#ifdef NOT_DEFINED\n\
+        \invalid# = True\n\
+        \#else\n\
+        \module M where\n\
+        \#endif"
+      result `Hspec.shouldSatisfy` Either.isRight
+
+    Hspec.it "works with CPP pragma" $ do
+      result <- parse [] "" "{-# language CPP #-}\n#"
+      result `Hspec.shouldSatisfy` Either.isRight
+
+    Hspec.it "does not throw impure CPP errors" $ do
+      result <- parse [(True, X.Cpp)] "" "#error"
+      result `Hspec.shouldSatisfy` Either.isLeft
+
+    Hspec.it "works with implied extensions" $ do
+      result <- parse
+        [(True, X.RankNTypes)]
+        ""
+        "f :: forall a . a -> a\nf a = a"
+      result `Hspec.shouldSatisfy` Either.isRight

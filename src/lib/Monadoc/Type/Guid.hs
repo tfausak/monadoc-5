@@ -4,6 +4,7 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.UUID as Uuid
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified System.Random as Random
+import qualified Test.Hspec as Hspec
 
 -- | A thin wrapper around a UUID. This is called "GUID" because it's easier to
 -- say as a word. It rhymes with "squid".
@@ -32,3 +33,16 @@ random = Random.random
 
 toUuid :: Guid -> Uuid.UUID
 toUuid (Guid uuid) = uuid
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.Guid" $ do
+
+  Hspec.describe "random" $ do
+
+    Hspec.it "generates a random GUID" $ do
+      let
+        gen = Random.mkStdGen 0
+        (guid, _) = random gen
+      uuid <- maybe (fail "invalid UUID") pure
+        $ Uuid.fromString "fffd04bd-0ede-42e0-8088-a28c5fba9949"
+      guid `Hspec.shouldBe` fromUuid uuid

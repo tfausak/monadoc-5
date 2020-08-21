@@ -18,6 +18,7 @@ import qualified Monadoc.Type.NotFoundException as NotFoundException
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
+import qualified Test.Hspec as Hspec
 
 application :: Context.Context request -> Wai.Application
 application context request respond = do
@@ -48,3 +49,8 @@ runRoute maybeRoute = do
     Route.Search -> Handler.Search.handle
     Route.Tachyons -> Handler.Tachyons.handle
     Route.Throw -> Handler.Throw.handle
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Server.Application" $ do
+
+  Hspec.it "needs tests" Hspec.pending

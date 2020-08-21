@@ -20,6 +20,7 @@ import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
 import qualified Monadoc.Worker.Main as Worker
+import qualified Test.Hspec as Hspec
 
 run :: App.App request ()
 run = do
@@ -82,3 +83,8 @@ checkDigest migration expectedSha256 = do
       , MigrationMismatch.expected = expectedSha256
       , MigrationMismatch.timestamp = Migration.timestamp migration
       }
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Main" $ do
+
+  Hspec.it "needs tests" Hspec.pending

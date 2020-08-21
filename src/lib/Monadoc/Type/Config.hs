@@ -3,6 +3,7 @@ module Monadoc.Type.Config where
 import qualified Data.Set as Set
 import qualified Monadoc.Type.Service as Service
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Test.Hspec as Hspec
 
 -- | Application configuration. This contains all the stuff necessary to start
 -- things up. Descriptions and defaults are available by running the executable
@@ -57,3 +58,17 @@ initial = Config
   , url = "http://localhost:4444"
   , version = False
   }
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.Config" $ do
+
+  Hspec.describe "initial" $ do
+
+    Hspec.it "does not show the help" $ do
+      help initial `Hspec.shouldBe` False
+
+    Hspec.it "does not show the version" $ do
+      version initial `Hspec.shouldBe` False
+
+    Hspec.it "does not bind all hosts" $ do
+      host initial `Hspec.shouldBe` "127.0.0.1"

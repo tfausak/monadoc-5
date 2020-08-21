@@ -17,6 +17,7 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Internal as Wai
 import qualified System.Mem as Mem
+import qualified Test.Hspec as Hspec
 import qualified Text.Printf as Printf
 
 middleware :: Context.Context request -> Wai.Middleware
@@ -115,3 +116,8 @@ acceptsGzip =
 
 longEnough :: LazyByteString.ByteString -> Bool
 longEnough = (> 1024) . LazyByteString.length
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Server.Middleware" $ do
+
+  Hspec.it "needs tests" Hspec.pending

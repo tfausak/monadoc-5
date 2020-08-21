@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
+import qualified Test.Hspec as Hspec
 
 parseRoute :: Http.Method -> [Text.Text] -> Maybe Route.Route
 parseRoute method path = do
@@ -39,3 +40,22 @@ renderRelativeRoute route = case route of
 renderAbsoluteRoute :: Config.Config -> Route.Route -> Text.Text
 renderAbsoluteRoute config =
   mappend (Text.pack $ Config.url config) . renderRelativeRoute
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Server.Router" $ do
+
+  Hspec.describe "parseRoute" $ do
+
+    Hspec.it "works" $ do
+      parseRoute "GET" [] `Hspec.shouldBe` Just Route.Index
+
+  Hspec.describe "renderAbsoluteRoute" $ do
+
+    Hspec.it "works" $ do
+      let cfg = Config.initial { Config.url = "http://test" }
+      renderAbsoluteRoute cfg Route.Index `Hspec.shouldBe` "http://test/"
+
+  Hspec.describe "renderRelativeRoute" $ do
+
+    Hspec.it "works" $ do
+      renderRelativeRoute Route.Index `Hspec.shouldBe` "/"

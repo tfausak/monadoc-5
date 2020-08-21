@@ -2,6 +2,7 @@ module Monadoc.Type.ConfigResult where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Monadoc.Type.Config as Config
+import qualified Test.Hspec as Hspec
 
 -- | The result of attempting to get the config from the environment.
 data ConfigResult
@@ -16,3 +17,8 @@ data ConfigResult
   -- ^ Getting the config succeeded in spite of some warnings. Each warning
   -- will start with @"WARNING: "@ and end with a newline.
   deriving (Eq, Show)
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.ConfigResult" $ do
+
+  Hspec.it "needs tests" Hspec.pending

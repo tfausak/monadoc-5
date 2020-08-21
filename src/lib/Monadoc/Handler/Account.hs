@@ -14,6 +14,7 @@ import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
+import qualified Test.Hspec as Hspec
 
 handle :: App.App Wai.Request Wai.Response
 handle = do
@@ -48,3 +49,16 @@ handle = do
               , H.class_ "bg-inherit bn input-reset pa0 pointer red underline"
               ]
             " of Monadoc."
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Handler.Account" $ do
+
+  Hspec.describe "handle" $ do
+
+    Hspec.it "works" $ do
+      Hspec.pending
+      -- ctx <- makeContext
+      -- response <- App.run
+      --   ctx { Context.request = Wai.defaultRequest }
+      --   handle
+      -- Wai.responseStatus response `Hspec.shouldBe` Http.found302

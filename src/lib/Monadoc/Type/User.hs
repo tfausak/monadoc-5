@@ -5,6 +5,7 @@ import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.GitHub.UserId as UserId
 import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Vendor.Sql as Sql
+import qualified Test.Hspec as Hspec
 
 data User = User
   { guid :: Guid.Guid
@@ -33,3 +34,8 @@ instance Sql.ToRow User where
     , Sql.toField $ login user
     , Sql.toField $ token user
     ]
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.User" $ do
+
+  Hspec.it "needs tests" Hspec.pending

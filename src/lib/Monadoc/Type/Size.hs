@@ -1,6 +1,7 @@
 module Monadoc.Type.Size where
 
 import qualified Monadoc.Vendor.Sql as Sql
+import qualified Test.Hspec as Hspec
 
 -- | The size of something in bytes. Although this is backed by an 'Int', by
 -- convention it is never negative. It uses an 'Int' because most functions
@@ -21,3 +22,22 @@ fromInt = Size
 
 toInt :: Size -> Int
 toInt (Size int) = int
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.Size" $ do
+
+  Hspec.describe "fromField" $ do
+
+    Hspec.it "converts from an integer" $ do
+      let
+        field = Sql.Field (Sql.SQLInteger 123) 0
+        size = fromInt 123
+      Sql.fromField field `Hspec.shouldBe` pure size
+
+  Hspec.describe "toField" $ do
+
+    Hspec.it "converts to an integer" $ do
+      let
+        size = fromInt 123
+        sqlData = Sql.SQLInteger 123
+      Sql.toField size `Hspec.shouldBe` sqlData

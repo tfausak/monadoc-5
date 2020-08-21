@@ -1,122 +1,118 @@
 module Main where
 
-import qualified Monadoc.CabalSpec
-import qualified Monadoc.ConsoleSpec
-import qualified Monadoc.Data.CommitSpec
-import qualified Monadoc.Data.MigrationsSpec
-import qualified Monadoc.Data.OptionsSpec
-import qualified Monadoc.Data.VersionSpec
-import qualified Monadoc.Extra.SqlSpec
-import qualified Monadoc.GhcSpec
-import qualified Monadoc.Handler.AccountSpec
-import qualified Monadoc.Handler.FaviconSpec
-import qualified Monadoc.Handler.GitHubCallbackSpec
-import qualified Monadoc.Handler.IndexSpec
-import qualified Monadoc.Handler.LogoSpec
-import qualified Monadoc.Handler.LogOutSpec
-import qualified Monadoc.Handler.PingSpec
-import qualified Monadoc.Handler.RobotsSpec
-import qualified Monadoc.Handler.SearchSpec
-import qualified Monadoc.Handler.TachyonsSpec
-import qualified Monadoc.Handler.ThrowSpec
-import qualified Monadoc.MainSpec
-import qualified Monadoc.Server.ApplicationSpec
-import qualified Monadoc.Server.CommonSpec
-import qualified Monadoc.Server.MainSpec
-import qualified Monadoc.Server.MiddlewareSpec
-import qualified Monadoc.Server.RouterSpec
-import qualified Monadoc.Server.SettingsSpec
-import qualified Monadoc.Server.TemplateSpec
-import qualified Monadoc.Type.AppSpec
+import qualified Monadoc
+import qualified Monadoc.Cabal
+import qualified Monadoc.Console
+import qualified Monadoc.Data.Commit
+import qualified Monadoc.Data.Migrations
+import qualified Monadoc.Data.Options
+import qualified Monadoc.Data.Version
+import qualified Monadoc.Extra.Sql
+import qualified Monadoc.Ghc
+import qualified Monadoc.Handler.Account
+import qualified Monadoc.Handler.Favicon
+import qualified Monadoc.Handler.GitHubCallback
+import qualified Monadoc.Handler.Index
+import qualified Monadoc.Handler.Logo
+import qualified Monadoc.Handler.LogOut
+import qualified Monadoc.Handler.Ping
+import qualified Monadoc.Handler.Robots
+import qualified Monadoc.Handler.Search
+import qualified Monadoc.Handler.Tachyons
+import qualified Monadoc.Handler.Throw
+import qualified Monadoc.Main
+import qualified Monadoc.Server.Application
+import qualified Monadoc.Server.Common
+import qualified Monadoc.Server.Main
+import qualified Monadoc.Server.Middleware
+import qualified Monadoc.Server.Router
+import qualified Monadoc.Server.Settings
+import qualified Monadoc.Server.Template
+import qualified Monadoc.Type.App
 import qualified Monadoc.Type.Binary
-import qualified Monadoc.Type.Cabal.PackageNameSpec
-import qualified Monadoc.Type.Cabal.VersionRangeSpec
-import qualified Monadoc.Type.ConfigResultSpec
-import qualified Monadoc.Type.ConfigSpec
-import qualified Monadoc.Type.ContextSpec
-import qualified Monadoc.Type.EtagSpec
-import qualified Monadoc.Type.GitHub.LoginSpec
-import qualified Monadoc.Type.GitHub.UserIdSpec
-import qualified Monadoc.Type.GitHub.UserSpec
-import qualified Monadoc.Type.GuidSpec
-import qualified Monadoc.Type.MigrationMismatchSpec
-import qualified Monadoc.Type.MigrationSpec
-import qualified Monadoc.Type.NotFoundExceptionSpec
-import qualified Monadoc.Type.PathSpec
-import qualified Monadoc.Type.RevisionSpec
-import qualified Monadoc.Type.RouteSpec
-import qualified Monadoc.Type.ServiceSpec
-import qualified Monadoc.Type.Sha256Spec
-import qualified Monadoc.Type.SizeSpec
-import qualified Monadoc.Type.TestExceptionSpec
-import qualified Monadoc.Type.TimestampSpec
-import qualified Monadoc.Type.UrlSpec
-import qualified Monadoc.Type.UserSpec
-import qualified Monadoc.Type.WithCallStackSpec
-import qualified Monadoc.Utility.Utf8Spec
-import qualified Monadoc.Vendor.SqlSpec
-import qualified Monadoc.Vendor.TimeSpec
-import qualified Monadoc.Worker.MainSpec
-import qualified MonadocSpec
-import Test
+import qualified Monadoc.Type.Cabal.PackageName
+import qualified Monadoc.Type.Cabal.VersionRange
+import qualified Monadoc.Type.Config
+import qualified Monadoc.Type.ConfigResult
+import qualified Monadoc.Type.Context
+import qualified Monadoc.Type.Etag
+import qualified Monadoc.Type.GitHub.Login
+import qualified Monadoc.Type.GitHub.User
+import qualified Monadoc.Type.GitHub.UserId
+import qualified Monadoc.Type.Guid
+import qualified Monadoc.Type.Migration
+import qualified Monadoc.Type.MigrationMismatch
+import qualified Monadoc.Type.NotFoundException
+import qualified Monadoc.Type.Path
+import qualified Monadoc.Type.Revision
+import qualified Monadoc.Type.Route
+import qualified Monadoc.Type.Service
+import qualified Monadoc.Type.Sha256
+import qualified Monadoc.Type.Size
+import qualified Monadoc.Type.TestException
+import qualified Monadoc.Type.Timestamp
+import qualified Monadoc.Type.Url
+import qualified Monadoc.Type.User
+import qualified Monadoc.Type.WithCallStack
+import qualified Monadoc.Utility.Utf8
+import qualified Monadoc.Worker.Main
+import qualified Test.Hspec as Hspec
 
 main :: IO ()
-main = hspec $ do
-  Monadoc.CabalSpec.spec
-  Monadoc.ConsoleSpec.spec
-  Monadoc.Data.CommitSpec.spec
-  Monadoc.Data.MigrationsSpec.spec
-  Monadoc.Data.OptionsSpec.spec
-  Monadoc.Data.VersionSpec.spec
-  Monadoc.Extra.SqlSpec.spec
-  Monadoc.GhcSpec.spec
-  Monadoc.Handler.AccountSpec.spec
-  Monadoc.Handler.FaviconSpec.spec
-  Monadoc.Handler.GitHubCallbackSpec.spec
-  Monadoc.Handler.IndexSpec.spec
-  Monadoc.Handler.LogoSpec.spec
-  Monadoc.Handler.LogOutSpec.spec
-  Monadoc.Handler.PingSpec.spec
-  Monadoc.Handler.RobotsSpec.spec
-  Monadoc.Handler.SearchSpec.spec
-  Monadoc.Handler.TachyonsSpec.spec
-  Monadoc.Handler.ThrowSpec.spec
-  Monadoc.MainSpec.spec
-  Monadoc.Server.ApplicationSpec.spec
-  Monadoc.Server.CommonSpec.spec
-  Monadoc.Server.MainSpec.spec
-  Monadoc.Server.MiddlewareSpec.spec
-  Monadoc.Server.RouterSpec.spec
-  Monadoc.Server.SettingsSpec.spec
-  Monadoc.Server.TemplateSpec.spec
-  Monadoc.Type.AppSpec.spec
+main = Hspec.hspec $ do
+  Monadoc.Cabal.spec
+  Monadoc.Console.spec
+  Monadoc.Data.Commit.spec
+  Monadoc.Data.Migrations.spec
+  Monadoc.Data.Options.spec
+  Monadoc.Data.Version.spec
+  Monadoc.Extra.Sql.spec
+  Monadoc.Ghc.spec
+  Monadoc.Handler.Account.spec
+  Monadoc.Handler.Favicon.spec
+  Monadoc.Handler.GitHubCallback.spec
+  Monadoc.Handler.Index.spec
+  Monadoc.Handler.Logo.spec
+  Monadoc.Handler.LogOut.spec
+  Monadoc.Handler.Ping.spec
+  Monadoc.Handler.Robots.spec
+  Monadoc.Handler.Search.spec
+  Monadoc.Handler.Tachyons.spec
+  Monadoc.Handler.Throw.spec
+  Monadoc.Main.spec
+  Monadoc.Server.Application.spec
+  Monadoc.Server.Common.spec
+  Monadoc.Server.Main.spec
+  Monadoc.Server.Middleware.spec
+  Monadoc.Server.Router.spec
+  Monadoc.Server.Settings.spec
+  Monadoc.Server.Template.spec
+  Monadoc.Type.App.spec
   Monadoc.Type.Binary.spec
-  Monadoc.Type.Cabal.PackageNameSpec.spec
-  Monadoc.Type.Cabal.VersionRangeSpec.spec
-  Monadoc.Type.ConfigResultSpec.spec
-  Monadoc.Type.ConfigSpec.spec
-  Monadoc.Type.ContextSpec.spec
-  Monadoc.Type.EtagSpec.spec
-  Monadoc.Type.GitHub.LoginSpec.spec
-  Monadoc.Type.GitHub.UserIdSpec.spec
-  Monadoc.Type.GitHub.UserSpec.spec
-  Monadoc.Type.GuidSpec.spec
-  Monadoc.Type.MigrationMismatchSpec.spec
-  Monadoc.Type.MigrationSpec.spec
-  Monadoc.Type.NotFoundExceptionSpec.spec
-  Monadoc.Type.PathSpec.spec
-  Monadoc.Type.RevisionSpec.spec
-  Monadoc.Type.RouteSpec.spec
-  Monadoc.Type.ServiceSpec.spec
-  Monadoc.Type.Sha256Spec.spec
-  Monadoc.Type.SizeSpec.spec
-  Monadoc.Type.TestExceptionSpec.spec
-  Monadoc.Type.TimestampSpec.spec
-  Monadoc.Type.UrlSpec.spec
-  Monadoc.Type.UserSpec.spec
-  Monadoc.Type.WithCallStackSpec.spec
-  Monadoc.Utility.Utf8Spec.spec
-  Monadoc.Vendor.SqlSpec.spec
-  Monadoc.Vendor.TimeSpec.spec
-  Monadoc.Worker.MainSpec.spec
-  MonadocSpec.spec
+  Monadoc.Type.Cabal.PackageName.spec
+  Monadoc.Type.Cabal.VersionRange.spec
+  Monadoc.Type.ConfigResult.spec
+  Monadoc.Type.Config.spec
+  Monadoc.Type.Context.spec
+  Monadoc.Type.Etag.spec
+  Monadoc.Type.GitHub.Login.spec
+  Monadoc.Type.GitHub.UserId.spec
+  Monadoc.Type.GitHub.User.spec
+  Monadoc.Type.Guid.spec
+  Monadoc.Type.MigrationMismatch.spec
+  Monadoc.Type.Migration.spec
+  Monadoc.Type.NotFoundException.spec
+  Monadoc.Type.Path.spec
+  Monadoc.Type.Revision.spec
+  Monadoc.Type.Route.spec
+  Monadoc.Type.Service.spec
+  Monadoc.Type.Sha256.spec
+  Monadoc.Type.Size.spec
+  Monadoc.Type.TestException.spec
+  Monadoc.Type.Timestamp.spec
+  Monadoc.Type.Url.spec
+  Monadoc.Type.User.spec
+  Monadoc.Type.WithCallStack.spec
+  Monadoc.Utility.Utf8.spec
+  Monadoc.Worker.Main.spec
+  Monadoc.spec

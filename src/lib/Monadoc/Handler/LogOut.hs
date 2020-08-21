@@ -14,6 +14,7 @@ import qualified Monadoc.Vendor.Time as Time
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
+import qualified Test.Hspec as Hspec
 import qualified Web.Cookie as Cookie
 
 handle :: App.App Wai.Request Wai.Response
@@ -32,3 +33,8 @@ handle = do
         )
       ]
   pure $ Common.statusResponse Http.found302 headers
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Handler.LogOut" $ do
+
+  Hspec.it "needs tests" Hspec.pending

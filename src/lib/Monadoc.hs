@@ -21,6 +21,7 @@ import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
 import qualified System.IO as IO
+import qualified Test.Hspec as Hspec
 
 -- | The main app entrypoint. This is what the executable runs.
 monadoc :: IO ()
@@ -124,4 +125,63 @@ isInMemory :: FilePath -> Bool
 isInMemory database = case database of
   "" -> True
   ":memory:" -> True
+  _ -> False
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc" $ do
+
+  Hspec.describe "argumentsToConfigResult" $ do
+
+    Hspec.it "returns the default with no arguments" $ do
+      Monadoc.argumentsToConfigResult "x" []
+        `Hspec.shouldBe` ConfigResult.Success [] Config.initial
+
+    Hspec.it "shows the help" $ do
+      Monadoc.argumentsToConfigResult "x" ["--help"]
+        `Hspec.shouldSatisfy` isExitWith
+
+    Hspec.it "shows the version" $ do
+      Monadoc.argumentsToConfigResult "x" ["--version"]
+        `Hspec.shouldSatisfy` isExitWith
+
+    Hspec.it "fails when given disallowed argument" $ do
+      Monadoc.argumentsToConfigResult "x" ["--help=0"]
+        `Hspec.shouldSatisfy` isFailure
+
+    Hspec.it "warns when given unexpected parameters" $ do
+      case Monadoc.argumentsToConfigResult "x" ["y"] of
+        ConfigResult.Success msgs _ -> msgs `Hspec.shouldSatisfy` not . null
+        result -> result `Hspec.shouldSatisfy` isSuccess
+
+    Hspec.it "warns when given unknown options" $ do
+      case Monadoc.argumentsToConfigResult "x" ["-y"] of
+        ConfigResult.Success msgs _ -> msgs `Hspec.shouldSatisfy` not . null
+        result -> result `Hspec.shouldSatisfy` isSuccess
+
+    Hspec.it "sets the port" $ do
+      case Monadoc.argumentsToConfigResult "x" ["--port=123"] of
+        ConfigResult.Success _ cfg -> Config.port cfg `Hspec.shouldBe` 123
+        result -> result `Hspec.shouldSatisfy` isSuccess
+
+  Hspec.describe "configToContext" $ do
+
+    Hspec.it "works" $ do
+      Hspec.pending
+      -- let cfg = testConfig
+      -- ctx <- Monadoc.configToContext cfg
+      -- Context.config ctx `Hspec.shouldBe` cfg
+
+isExitWith :: ConfigResult.ConfigResult -> Bool
+isExitWith configResult = case configResult of
+  ConfigResult.ExitWith _ -> True
+  _ -> False
+
+isFailure :: ConfigResult.ConfigResult -> Bool
+isFailure configResult = case configResult of
+  ConfigResult.Failure _ -> True
+  _ -> False
+
+isSuccess :: ConfigResult.ConfigResult -> Bool
+isSuccess configResult = case configResult of
+  ConfigResult.Success _ _ -> True
   _ -> False

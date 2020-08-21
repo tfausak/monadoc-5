@@ -25,6 +25,7 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified Paths_monadoc as Package
 import qualified System.FilePath as FilePath
+import qualified Test.Hspec as Hspec
 import qualified Web.Cookie as Cookie
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
@@ -153,3 +154,8 @@ stringResponse status headers =
       status
       (Map.insert Http.hContentType "text/plain;charset=utf-8" headers)
     . Utf8.fromString
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Server.Common" $ do
+
+  Hspec.it "needs tests" Hspec.pending

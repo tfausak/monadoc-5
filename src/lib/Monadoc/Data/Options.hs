@@ -9,6 +9,7 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Service as Service
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Console.GetOpt as GetOpt
+import qualified Test.Hspec as Hspec
 import qualified Text.Read as Read
 
 type Option = GetOpt.OptDescr (Config.Config -> Either String Config.Config)
@@ -197,3 +198,14 @@ option c s = flip $ GetOpt.Option c s
 
 argument :: String -> (String -> a) -> GetOpt.ArgDescr a
 argument = flip GetOpt.ReqArg
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Data.Options" $ do
+
+  Hspec.describe "options" $ do
+
+    Hspec.it "has a --help option" $ do
+      let
+        f :: GetOpt.OptDescr a -> [String]
+        f (GetOpt.Option _ x _ _) = x
+      concatMap f options `Hspec.shouldSatisfy` elem "help"

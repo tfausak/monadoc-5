@@ -3,6 +3,7 @@ module Monadoc.Type.GitHub.User where
 import qualified Data.Aeson as Aeson
 import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.GitHub.UserId as UserId
+import qualified Test.Hspec as Hspec
 
 -- | A GitHub user, as described by their v3 REST API. We only care about a
 -- subset of the fields. For a list of all the fields, see
@@ -17,3 +18,8 @@ instance Aeson.FromJSON User where
     id_ <- object Aeson..: "id"
     login_ <- object Aeson..: "login"
     pure User { Monadoc.Type.GitHub.User.id = id_, login = login_ }
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.GitHub.User" $ do
+
+  Hspec.it "needs tests" Hspec.pending

@@ -6,6 +6,7 @@ import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
+import qualified Test.Hspec as Hspec
 
 -- | Collection of migrations to run. The app automatically performs migrations
 -- when it starts. They are run ordered by their timestamps.
@@ -98,3 +99,11 @@ makeMigration (year, month, day, hour, minute, second) query =
     , Migration.timestamp = Timestamp.fromUtcTime
       $ Time.utcTime year month day hour minute second
     }
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Data.Migrations" $ do
+
+  Hspec.describe "migrations" $ do
+
+    Hspec.it "has at least one migration" $ do
+      migrations `Hspec.shouldSatisfy` not . null

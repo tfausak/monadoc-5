@@ -9,6 +9,7 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.User as User
+import qualified Test.Hspec as Hspec
 
 makeHtmlWith
   :: Config.Config -> Maybe User.User -> Text.Text -> H.Html () -> H.Html ()
@@ -91,3 +92,8 @@ makeHtmlWith config maybeUser loginUrl content = do
             " commit "
             H.code_ . H.toHtml $ take 7 commit
         "."
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Server.Template" $ do
+
+  Hspec.it "needs tests" Hspec.pending

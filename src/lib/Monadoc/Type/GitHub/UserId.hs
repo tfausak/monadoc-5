@@ -2,6 +2,7 @@ module Monadoc.Type.GitHub.UserId where
 
 import qualified Data.Aeson as Aeson
 import qualified Monadoc.Vendor.Sql as Sql
+import qualified Test.Hspec as Hspec
 
 -- | A GitHub user's integral ID. This isn't normally surfaced through their
 -- UI, but it's a stable identifier. Note that people can change their
@@ -24,3 +25,8 @@ fromInt = UserId
 
 toInt :: UserId -> Int
 toInt (UserId int) = int
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.GitHub.UserId" $ do
+
+  Hspec.it "needs tests" Hspec.pending

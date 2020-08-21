@@ -6,6 +6,7 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Pool as Pool
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Vendor.Sql as Sql
+import qualified Test.Hspec as Hspec
 
 -- | The main application type. This simply provides the run-time context. Use
 -- 'run' to convert this into 'IO'.
@@ -31,3 +32,22 @@ withConnection :: (Sql.Connection -> App request result) -> App request result
 withConnection action = do
   pool <- Reader.asks Context.pool
   Pool.withResource pool action
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.App" $ do
+
+  Hspec.describe "run" $ do
+
+    Hspec.it "works" $ do
+      Hspec.pending
+      -- ctx <- makeContext
+      -- run ctx (pure ()) `Hspec.shouldReturn` ()
+
+  Hspec.describe "withConnection" $ do
+
+    Hspec.it "works" $ do
+      Hspec.pending
+      -- ctx <- makeContext
+      -- result <- run ctx . withConnection $ \connection ->
+      --   IO.liftIO $ Sql.query_ connection "select 1"
+      -- result `Hspec.shouldBe` [Sql.Only (1 :: Int)]

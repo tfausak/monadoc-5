@@ -18,6 +18,7 @@ import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Test.Hspec as Hspec
 
 -- | Builds Warp server settings from a context.
 fromContext :: Context.Context request -> Warp.Settings
@@ -98,3 +99,22 @@ serverName =
   Utf8.fromString $ "monadoc-" <> Version.string <> case Commit.hash of
     Nothing -> ""
     Just hash -> "-" <> hash
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Server.Settings" $ do
+
+  Hspec.describe "fromConfig" $ do
+
+    Hspec.it "sets the host" $ do
+      Hspec.pending
+      -- let cfg = Config.initial { Config.host = "1.2.3.4" }
+      -- ctx <- Monadoc.configToContext cfg
+      -- let settings = Settings.fromContext ctx
+      -- Warp.getHost settings `Hspec.shouldBe` Config.host cfg
+
+    Hspec.it "sets the port" $ do
+      Hspec.pending
+      -- let cfg = Config.initial { Config.database = ":memory:" }
+      -- ctx <- Monadoc.configToContext cfg
+      -- let settings = Settings.fromContext ctx
+      -- Warp.getPort settings `Hspec.shouldBe` Config.port cfg

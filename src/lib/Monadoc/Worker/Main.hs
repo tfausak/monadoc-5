@@ -67,6 +67,7 @@ import qualified Network.HTTP.Types.Header as Http
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 import qualified System.Mem as Mem
+import qualified Test.Hspec as Hspec
 import qualified Text.Printf as Printf
 
 run :: App.App request ()
@@ -1191,3 +1192,8 @@ maybeProcess path sha256 process = do
         \sha256 = excluded.sha256, timestamp = excluded.timestamp"
         (path, sha256, timestamp)
       pure $ Just result
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Worker.Main" $ do
+
+  Hspec.it "needs tests" Hspec.pending

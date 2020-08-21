@@ -26,6 +26,7 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified System.Random as Random
+import qualified Test.Hspec as Hspec
 
 handle :: App.App Wai.Request Wai.Response
 handle = do
@@ -142,3 +143,8 @@ getRedirect =
     . lookup "redirect"
     . Wai.queryString
     . Context.request
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Handler.GitHubCallback" $ do
+
+  Hspec.it "needs tests" Hspec.pending

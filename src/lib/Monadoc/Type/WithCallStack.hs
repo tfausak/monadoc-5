@@ -1,8 +1,12 @@
 module Monadoc.Type.WithCallStack where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Data.Function as Function
+import qualified Data.Maybe as Maybe
 import qualified GHC.Stack as Stack
+import qualified Monadoc.Type.TestException as TestException
+import qualified Test.Hspec as Hspec
 
 -- | Some value with a 'Stack.CallStack' attached. Typically this is used with
 -- 'Exception.SomeException' to attach call stacks to exceptions.
@@ -68,3 +72,56 @@ withoutCallStack :: Exception.SomeException -> Exception.SomeException
 withoutCallStack e1 = case Exception.fromException e1 of
   Just (WithCallStack _ e2) -> withoutCallStack e2
   Nothing -> e1
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.WithCallStack" $ do
+
+  Hspec.describe "catch" $ do
+
+    Hspec.it "catches an exception without a call stack" $ do
+      catch
+        (Exception.throwM TestException.TestException)
+        (`Hspec.shouldBe` TestException.TestException)
+
+    Hspec.it "catches an exception with a call stack" $ do
+      catch
+        (throw TestException.TestException)
+        (`Hspec.shouldBe` TestException.TestException)
+
+  Hspec.describe "throw" $ do
+
+    Hspec.it "adds a call stack" $ do
+      throw TestException.TestException
+        `Hspec.shouldThrow` (== Just TestException.TestException)
+        . Exception.fromException
+        . value
+
+  Hspec.describe "withCallStack" $ do
+
+    Hspec.it "adds a call stack" $ do
+      let
+        x :: Maybe TestException.TestException
+        x =
+          Monad.join
+            . fmap (Exception.fromException . value)
+            . Exception.fromException
+            . withCallStack
+            $ Exception.toException TestException.TestException
+      x `Hspec.shouldSatisfy` Maybe.isJust
+
+    Hspec.it "does not add two call stacks" $ do
+      let
+        x :: Maybe TestException.TestException
+        x =
+          Monad.join
+            . fmap (Exception.fromException . value)
+            . Exception.fromException
+            . withCallStack
+            . withCallStack
+            $ Exception.toException TestException.TestException
+      x `Hspec.shouldSatisfy` Maybe.isJust
+
+  -- Testing this is tough because it uses @SomeException@, which doesn't have
+  -- an @Eq@ instance. Fortunately this behavior is tested by the @catch@
+  -- tests.
+  Hspec.describe "withoutCallStack" $ pure ()

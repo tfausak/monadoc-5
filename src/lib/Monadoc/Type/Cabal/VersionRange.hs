@@ -1,9 +1,11 @@
 module Monadoc.Type.Cabal.VersionRange where
 
+import qualified Data.Maybe as Maybe
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
 import qualified Monadoc.Vendor.Sql as Sql
+import qualified Test.Hspec as Hspec
 
 newtype VersionRange
   = VersionRange Cabal.VersionRange
@@ -23,3 +25,18 @@ toCabal (VersionRange cabal) = cabal
 
 toString :: VersionRange -> String
 toString = Cabal.prettyShow . toCabal
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.Cabal.VersionRange" $ do
+
+  Hspec.describe "fromString" $ do
+
+    Hspec.it "works" $ do
+      fromString "> 0" `Hspec.shouldSatisfy` Maybe.isJust
+
+  Hspec.describe "toString" $ do
+
+    Hspec.it "works" $ do
+      let string = ">0"
+      Just versionRange <- pure $ fromString string
+      toString versionRange `Hspec.shouldBe` string

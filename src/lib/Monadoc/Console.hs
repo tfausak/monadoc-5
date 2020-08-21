@@ -6,6 +6,7 @@ import qualified Control.Monad.IO.Class as IO
 import qualified Monadoc.Vendor.Time as Time
 import qualified System.IO as IO
 import qualified System.IO.Unsafe as Unsafe
+import qualified Test.Hspec as Hspec
 
 -- | Puts a timestamp in front of the given message and logs it to STDOUT.
 -- Ensures that only one thread outputs at a time, so output won't be garbled
@@ -30,3 +31,8 @@ logOn handle message = do
 logVar :: Stm.TMVar ()
 logVar = Unsafe.unsafePerformIO $ Stm.newTMVarIO ()
 {-# NOINLINE logVar #-}
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Console" $ do
+
+  Hspec.it "needs tests" Hspec.pending

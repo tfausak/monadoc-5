@@ -3,6 +3,7 @@ module Monadoc.Type.Cabal.ModuleName where
 import qualified Data.List as List
 import qualified Distribution.ModuleName as Cabal
 import qualified Monadoc.Vendor.Sql as Sql
+import qualified Test.Hspec as Hspec
 
 newtype ModuleName = ModuleName Cabal.ModuleName deriving (Eq, Ord, Show)
 
@@ -26,3 +27,8 @@ toString = List.intercalate "." . toStrings
 
 toStrings :: ModuleName -> [String]
 toStrings = Cabal.components . toCabal
+
+spec :: Hspec.Spec
+spec = Hspec.describe "Monadoc.Type.Cabal.ModuleName" $ do
+
+  Hspec.it "needs tests" Hspec.pending
