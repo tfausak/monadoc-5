@@ -28,7 +28,7 @@ import qualified Monadoc.Server.RouterSpec
 import qualified Monadoc.Server.SettingsSpec
 import qualified Monadoc.Server.TemplateSpec
 import qualified Monadoc.Type.AppSpec
-import qualified Monadoc.Type.BinarySpec
+import qualified Monadoc.Type.Binary
 import qualified Monadoc.Type.Cabal.PackageNameSpec
 import qualified Monadoc.Type.Cabal.VersionRangeSpec
 import qualified Monadoc.Type.ConfigResultSpec
@@ -90,7 +90,7 @@ main = hspec $ do
   Monadoc.Server.SettingsSpec.spec
   Monadoc.Server.TemplateSpec.spec
   Monadoc.Type.AppSpec.spec
-  Monadoc.Type.BinarySpec.spec
+  Monadoc.Type.Binary.spec
   Monadoc.Type.Cabal.PackageNameSpec.spec
   Monadoc.Type.Cabal.VersionRangeSpec.spec
   Monadoc.Type.ConfigResultSpec.spec

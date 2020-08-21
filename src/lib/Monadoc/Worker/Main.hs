@@ -927,7 +927,9 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                             (Either.isRight result, pkg, ver, rev, moduleName)
                           case result of
                             Left _ -> Console.info $ "FAIL " <> key
-                            Right _ -> Console.info $ "PASS " <> key
+                            Right _ -> do
+                              -- TODO: hsmodExports, hsmodDecls
+                              Console.info $ "PASS " <> key
 
 convertExtension :: C.KnownExtension -> Maybe G.Extension
 convertExtension x = case x of
