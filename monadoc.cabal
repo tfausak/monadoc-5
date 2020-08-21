@@ -1,7 +1,7 @@
 cabal-version: 2.2
 
 name: monadoc
-version: 0.2020.8.16
+version: 0.2020.8.21
 synopsis: Better Haskell documentation.
 description: Monadoc provides better Haskell documentation.
 
