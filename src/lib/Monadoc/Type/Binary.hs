@@ -4,6 +4,24 @@ import qualified Data.ByteString as ByteString
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
+-- | Some binary data. Just a 'ByteString.ByteString' under the hood. Use
+-- 'fromByteString' and 'toByteString' to work with these values.
+newtype Binary
+  = Binary ByteString.ByteString
+  deriving (Eq, Show)
+
+instance Sql.FromField Binary where
+  fromField = fmap fromByteString . Sql.fromField
+
+instance Sql.ToField Binary where
+  toField = Sql.toField . toByteString
+
+fromByteString :: ByteString.ByteString -> Binary
+fromByteString = Binary
+
+toByteString :: Binary -> ByteString.ByteString
+toByteString (Binary byteString) = byteString
+
 spec :: Hspec.Spec
 spec = Hspec.describe "Monadoc.Type.Binary" $ do
 
@@ -24,21 +42,3 @@ spec = Hspec.describe "Monadoc.Type.Binary" $ do
         binary = fromByteString byteString
         sqlData = Sql.SQLBlob byteString
       Sql.toField binary `Hspec.shouldBe` sqlData
-
--- | Some binary data. Just a 'ByteString.ByteString' under the hood. Use
--- 'fromByteString' and 'toByteString' to work with these values.
-newtype Binary
-  = Binary ByteString.ByteString
-  deriving (Eq, Show)
-
-instance Sql.FromField Binary where
-  fromField = fmap fromByteString . Sql.fromField
-
-instance Sql.ToField Binary where
-  toField = Sql.toField . toByteString
-
-fromByteString :: ByteString.ByteString -> Binary
-fromByteString = Binary
-
-toByteString :: Binary -> ByteString.ByteString
-toByteString (Binary byteString) = byteString
