@@ -1,6 +1,7 @@
 module Monadoc.Type.Cabal.Version where
 
 import qualified Data.List as List
+import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Types.Version as Cabal
 import qualified Monadoc.Vendor.Sql as Sql
 
@@ -11,6 +12,9 @@ instance Sql.ToField Version where
 
 fromCabal :: Cabal.Version -> Version
 fromCabal = Version
+
+fromString :: String -> Maybe Version
+fromString = fmap fromCabal . Cabal.simpleParsec
 
 toCabal :: Version -> Cabal.Version
 toCabal (Version cabal) = cabal
