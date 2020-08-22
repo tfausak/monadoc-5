@@ -104,6 +104,7 @@ library
     Monadoc.Handler.Tachyons
     Monadoc.Handler.Throw
     Monadoc.Main
+    Monadoc.Prelude
     Monadoc.Server.Application
     Monadoc.Server.Common
     Monadoc.Server.Main
