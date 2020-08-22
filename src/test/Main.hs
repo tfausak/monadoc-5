@@ -4,7 +4,6 @@ import qualified Monadoc.Data.CommitSpec
 import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
-import qualified Monadoc.Extra.SqlSpec
 import qualified Monadoc.GhcSpec
 import qualified Monadoc.Handler.AccountSpec
 import qualified Monadoc.Handler.FaviconSpec
@@ -51,6 +50,7 @@ import qualified Monadoc.Type.TimestampSpec
 import qualified Monadoc.Type.UrlSpec
 import qualified Monadoc.Type.UserSpec
 import qualified Monadoc.Type.WithCallStackSpec
+import qualified Monadoc.Utility.SqlSpec
 import qualified Monadoc.Utility.TimeSpec
 import qualified Monadoc.Utility.Utf8Spec
 import qualified Monadoc.Vendor.SqlSpec
@@ -67,7 +67,6 @@ main = hspec $ do
   Monadoc.Data.MigrationsSpec.spec
   Monadoc.Data.OptionsSpec.spec
   Monadoc.Data.VersionSpec.spec
-  Monadoc.Extra.SqlSpec.spec
   Monadoc.GhcSpec.spec
   Monadoc.Handler.AccountSpec.spec
   Monadoc.Handler.FaviconSpec.spec
@@ -114,6 +113,7 @@ main = hspec $ do
   Monadoc.Type.UrlSpec.spec
   Monadoc.Type.UserSpec.spec
   Monadoc.Type.WithCallStackSpec.spec
+  Monadoc.Utility.SqlSpec.spec
   Monadoc.Utility.TimeSpec.spec
   Monadoc.Utility.Utf8Spec.spec
   Monadoc.Vendor.SqlSpec.spec

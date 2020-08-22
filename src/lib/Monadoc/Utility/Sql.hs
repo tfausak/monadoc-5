@@ -1,4 +1,4 @@
-module Monadoc.Extra.Sql where
+module Monadoc.Utility.Sql where
 
 import qualified Data.Typeable as Typeable
 import qualified Database.SQLite.Simple as Sql
