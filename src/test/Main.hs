@@ -60,7 +60,6 @@ import qualified Test.Hspec as Hspec
 
 main :: IO ()
 main = Hspec.hspec $ do
-  Monadoc.spec
   Monadoc.Cabal.spec
   Monadoc.Console.spec
   Monadoc.Data.Commit.spec
@@ -92,16 +91,16 @@ main = Hspec.hspec $ do
   Monadoc.Type.Binary.spec
   Monadoc.Type.Cabal.PackageName.spec
   Monadoc.Type.Cabal.VersionRange.spec
-  Monadoc.Type.Config.spec
   Monadoc.Type.ConfigResult.spec
+  Monadoc.Type.Config.spec
   Monadoc.Type.Context.spec
   Monadoc.Type.Etag.spec
   Monadoc.Type.GitHub.Login.spec
-  Monadoc.Type.GitHub.User.spec
   Monadoc.Type.GitHub.UserId.spec
+  Monadoc.Type.GitHub.User.spec
   Monadoc.Type.Guid.spec
-  Monadoc.Type.Migration.spec
   Monadoc.Type.MigrationMismatch.spec
+  Monadoc.Type.Migration.spec
   Monadoc.Type.NotFoundException.spec
   Monadoc.Type.Path.spec
   Monadoc.Type.Revision.spec
@@ -116,3 +115,4 @@ main = Hspec.hspec $ do
   Monadoc.Type.WithCallStack.spec
   Monadoc.Utility.Utf8.spec
   Monadoc.Worker.Main.spec
+  Monadoc.spec
