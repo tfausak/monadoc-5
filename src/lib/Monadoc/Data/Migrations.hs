@@ -4,8 +4,8 @@ import qualified Data.Fixed as Fixed
 import qualified Data.Set as Set
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Timestamp as Timestamp
+import qualified Monadoc.Utility.Time as Time
 import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
 
 -- | Collection of migrations to run. The app automatically performs migrations
 -- when it starts. They are run ordered by their timestamps.

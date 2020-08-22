@@ -140,7 +140,6 @@ library
     Monadoc.Utility.Time
     Monadoc.Utility.Utf8
     Monadoc.Vendor.Sql
-    Monadoc.Vendor.Time
     Monadoc.Worker.Main
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
@@ -216,7 +215,6 @@ test-suite test
     Monadoc.Utility.TimeSpec
     Monadoc.Utility.Utf8Spec
     Monadoc.Vendor.SqlSpec
-    Monadoc.Vendor.TimeSpec
     Monadoc.Worker.MainSpec
     MonadocSpec
   type: exitcode-stdio-1.0

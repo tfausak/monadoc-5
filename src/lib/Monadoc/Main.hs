@@ -17,8 +17,8 @@ import qualified Monadoc.Type.Service as Service
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Type.WithCallStack as WithCallStack
+import qualified Monadoc.Utility.Time as Time
 import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
 import qualified Monadoc.Worker.Main as Worker
 
 run :: App.App request ()

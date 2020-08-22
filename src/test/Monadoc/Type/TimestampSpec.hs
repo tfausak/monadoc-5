@@ -1,8 +1,8 @@
 module Monadoc.Type.TimestampSpec where
 
 import qualified Monadoc.Type.Timestamp as Timestamp
+import qualified Monadoc.Utility.Time as Time
 import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
 import Test.Hspec
 
 spec :: Spec

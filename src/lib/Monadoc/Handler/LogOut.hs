@@ -9,8 +9,8 @@ import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Guid as Guid
 import qualified Monadoc.Type.Route as Route
+import qualified Monadoc.Utility.Time as Time
 import qualified Monadoc.Utility.Utf8 as Utf8
-import qualified Monadoc.Vendor.Time as Time
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai

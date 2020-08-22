@@ -1,7 +1,8 @@
 module Monadoc.Type.Timestamp where
 
+import qualified Data.Time as Time
+import qualified Monadoc.Utility.Time as Time
 import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
 
 -- | A moment in time. This is a wrapper around 'Time.UTCTime'. Use
 -- 'fromUtcTime' and 'toUtcTime' to wrap and unwrap these values. Since this
