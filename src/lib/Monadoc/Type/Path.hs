@@ -1,6 +1,7 @@
 module Monadoc.Type.Path where
 
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified System.FilePath.Posix as Posix
 import qualified System.FilePath.Windows as Windows
 

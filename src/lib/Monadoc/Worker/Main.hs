@@ -20,6 +20,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Time as Time
 import qualified Data.Word as Word
+import qualified Database.SQLite.Simple as Sql
 import qualified Distribution.Compiler as Cabal
 import qualified Distribution.ModuleName as Cabal
 import qualified Distribution.PackageDescription.Configuration as Cabal
@@ -60,7 +61,6 @@ import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Utf8 as Utf8
-import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http

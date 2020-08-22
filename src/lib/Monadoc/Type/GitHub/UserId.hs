@@ -1,7 +1,8 @@
 module Monadoc.Type.GitHub.UserId where
 
 import qualified Data.Aeson as Aeson
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 
 -- | A GitHub user's integral ID. This isn't normally surfaced through their
 -- UI, but it's a stable identifier. Note that people can change their

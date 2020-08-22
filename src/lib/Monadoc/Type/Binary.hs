@@ -1,7 +1,8 @@
 module Monadoc.Type.Binary where
 
 import qualified Data.ByteString as ByteString
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 
 -- | Some binary data. Just a 'ByteString.ByteString' under the hood. Use
 -- 'fromByteString' and 'toByteString' to work with these values.

@@ -55,7 +55,6 @@ import qualified Monadoc.Type.WithCallStackSpec
 import qualified Monadoc.Utility.SqlSpec
 import qualified Monadoc.Utility.TimeSpec
 import qualified Monadoc.Utility.Utf8Spec
-import qualified Monadoc.Vendor.SqlSpec
 import qualified Monadoc.Worker.MainSpec
 import qualified MonadocSpec
 import Test.Hspec
@@ -119,6 +118,5 @@ main = hspec $ do
   Monadoc.Utility.SqlSpec.spec
   Monadoc.Utility.TimeSpec.spec
   Monadoc.Utility.Utf8Spec.spec
-  Monadoc.Vendor.SqlSpec.spec
   Monadoc.Worker.MainSpec.spec
   MonadocSpec.spec

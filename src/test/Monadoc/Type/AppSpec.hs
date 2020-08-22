@@ -1,10 +1,10 @@
 module Monadoc.Type.AppSpec where
 
 import qualified Control.Monad.IO.Class as IO
+import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
-import qualified Monadoc.Vendor.Sql as Sql
 import Test.Hspec
 
 spec :: Spec
