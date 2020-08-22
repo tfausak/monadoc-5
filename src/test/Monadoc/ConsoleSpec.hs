@@ -1,6 +1,6 @@
 module Monadoc.ConsoleSpec where
 
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Console" $ do

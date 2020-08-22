@@ -3,7 +3,7 @@ module Monadoc.Type.BinarySpec where
 import qualified Data.ByteString as ByteString
 import qualified Monadoc.Type.Binary as Monadoc
 import qualified Monadoc.Vendor.Sql as Sql
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Binary" $ do

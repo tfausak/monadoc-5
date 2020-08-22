@@ -3,7 +3,7 @@ module Monadoc.Server.RouterSpec where
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Server.Router" $ do

@@ -3,7 +3,7 @@ module Monadoc.Type.EtagSpec where
 import qualified Data.Text as Text
 import qualified Monadoc.Type.Etag as Etag
 import qualified Monadoc.Vendor.Sql as Sql
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Etag" $ do

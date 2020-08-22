@@ -1,6 +1,6 @@
 module Monadoc.Handler.GitHubCallbackSpec where
 
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Handler.GitHubCallback" $ do

@@ -4,7 +4,7 @@ import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Vendor.Sql as Sql
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Sha256" $ do

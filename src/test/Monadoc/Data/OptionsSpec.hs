@@ -2,7 +2,7 @@ module Monadoc.Data.OptionsSpec where
 
 import qualified Monadoc.Data.Options as Options
 import qualified System.Console.GetOpt as GetOpt
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Data.Options" $ do

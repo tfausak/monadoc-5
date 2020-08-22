@@ -3,7 +3,7 @@ module Monadoc.Type.UrlSpec where
 import qualified Monadoc.Type.Url as Url
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.URI as Uri
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Url" $ do

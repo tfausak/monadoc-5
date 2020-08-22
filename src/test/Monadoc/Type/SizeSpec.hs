@@ -2,7 +2,7 @@ module Monadoc.Type.SizeSpec where
 
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Vendor.Sql as Sql
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Size" $ do

@@ -4,7 +4,7 @@ import qualified Monadoc
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.Config as Config
 import qualified Network.Wai.Handler.Warp as Warp
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Server.Settings" $ do

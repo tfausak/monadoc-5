@@ -1,7 +1,7 @@
 module Monadoc.Data.MigrationsSpec where
 
 import qualified Monadoc.Data.Migrations as Migrations
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Data.Migrations" $ do

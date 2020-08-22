@@ -2,7 +2,7 @@ module Monadoc.CabalSpec where
 
 import qualified Data.Either as Either
 import qualified Monadoc.Cabal as Cabal
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Cabal" $ do

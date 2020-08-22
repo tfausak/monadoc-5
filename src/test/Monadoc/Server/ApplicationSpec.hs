@@ -1,6 +1,6 @@
 module Monadoc.Server.ApplicationSpec where
 
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Server.Application" $ do

@@ -5,7 +5,7 @@ import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Vendor.Sql as Sql
 import qualified Monadoc.Vendor.Time as Time
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Migration" $ do

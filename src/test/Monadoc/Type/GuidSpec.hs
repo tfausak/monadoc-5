@@ -3,7 +3,7 @@ module Monadoc.Type.GuidSpec where
 import qualified Data.UUID as Uuid
 import qualified Monadoc.Type.Guid as Guid
 import qualified System.Random as Random
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Guid" $ do

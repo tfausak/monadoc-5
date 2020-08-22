@@ -1,6 +1,6 @@
 module Monadoc.Type.Cabal.ModuleNameSpec where
 
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Cabal.ModuleName" $ do

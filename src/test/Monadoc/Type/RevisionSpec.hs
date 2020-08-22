@@ -1,7 +1,7 @@
 module Monadoc.Type.RevisionSpec where
 
 import qualified Monadoc.Type.Revision as Revision
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Revision" $ do

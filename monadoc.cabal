@@ -184,7 +184,6 @@ test-suite test
     Monadoc.Server.RouterSpec
     Monadoc.Server.SettingsSpec
     Monadoc.Server.TemplateSpec
-    Monadoc.Test
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
     Monadoc.Type.Cabal.ModuleNameSpec
@@ -220,5 +219,4 @@ test-suite test
     Monadoc.Vendor.TimeSpec
     Monadoc.Worker.MainSpec
     MonadocSpec
-    Test
   type: exitcode-stdio-1.0

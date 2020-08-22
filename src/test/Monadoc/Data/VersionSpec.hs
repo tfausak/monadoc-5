@@ -2,7 +2,7 @@ module Monadoc.Data.VersionSpec where
 
 import qualified Data.Version as Version
 import qualified Monadoc.Data.Version as Monadoc.Version
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Data.Version" $ do

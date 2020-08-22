@@ -2,7 +2,7 @@ module Monadoc.Utility.TimeSpec where
 
 import qualified Data.Time as Time
 import qualified Monadoc.Utility.Time as Time
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Utility.Time" $ do
