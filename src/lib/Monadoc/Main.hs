@@ -5,20 +5,20 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
-import qualified Monadoc.Console as Console
+import qualified Database.SQLite.Simple as Sql
+import qualified Monadoc.Utility.Console as Console
 import qualified Monadoc.Data.Migrations as Migrations
 import qualified Monadoc.Server.Main as Server
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Migration as Migration
-import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
+import qualified Monadoc.Type.Exception.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Service as Service
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Type.WithCallStack as WithCallStack
-import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
+import qualified Monadoc.Utility.Time as Time
 import qualified Monadoc.Worker.Main as Worker
 import qualified Test.Hspec as Hspec
 

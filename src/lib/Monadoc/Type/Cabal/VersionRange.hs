@@ -1,10 +1,10 @@
 module Monadoc.Type.Cabal.VersionRange where
 
 import qualified Data.Maybe as Maybe
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
-import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
 newtype VersionRange

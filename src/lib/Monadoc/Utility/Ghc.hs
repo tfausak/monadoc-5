@@ -1,4 +1,4 @@
-module Monadoc.Ghc where
+module Monadoc.Utility.Ghc where
 
 import qualified Bag
 import qualified Control.Exception
@@ -146,7 +146,7 @@ impliedExtensions extension = case extension of
   _ -> []
 
 spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Ghc" $ do
+spec = Hspec.describe "Monadoc.Utility.Ghc" $ do
 
   Hspec.describe "parse" $ do
 

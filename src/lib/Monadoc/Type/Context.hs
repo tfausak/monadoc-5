@@ -1,8 +1,8 @@
 module Monadoc.Type.Context where
 
 import qualified Data.Pool as Pool
+import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc.Type.Config as Config
-import qualified Monadoc.Vendor.Sql as Sql
 import qualified Network.HTTP.Client as Client
 import qualified Test.Hspec as Hspec
 

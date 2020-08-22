@@ -83,15 +83,10 @@ library
   autogen-modules: Paths_monadoc
   exposed-modules:
     Monadoc
-    Monadoc.Cabal
-    Monadoc.Console
     Monadoc.Data.Commit
     Monadoc.Data.Migrations
     Monadoc.Data.Options
     Monadoc.Data.Version
-    Monadoc.Extra.Sql
-    Monadoc.Extra.Time
-    Monadoc.Ghc
     Monadoc.Handler.Account
     Monadoc.Handler.Favicon
     Monadoc.Handler.GitHubCallback
@@ -126,7 +121,7 @@ library
     Monadoc.Type.GitHub.UserId
     Monadoc.Type.Guid
     Monadoc.Type.Migration
-    Monadoc.Type.MigrationMismatch
+    Monadoc.Type.Exception.MigrationMismatch
     Monadoc.Type.NotFoundException
     Monadoc.Type.Path
     Monadoc.Type.Revision
@@ -139,9 +134,12 @@ library
     Monadoc.Type.Url
     Monadoc.Type.User
     Monadoc.Type.WithCallStack
+    Monadoc.Utility.Cabal
+    Monadoc.Utility.Console
+    Monadoc.Utility.Ghc
+    Monadoc.Utility.Sql
+    Monadoc.Utility.Time
     Monadoc.Utility.Utf8
-    Monadoc.Vendor.Sql
-    Monadoc.Vendor.Time
     Monadoc.Worker.Main
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc

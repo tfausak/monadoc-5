@@ -1,7 +1,10 @@
 module Monadoc.Type.Binary where
 
 import qualified Data.ByteString as ByteString
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Database.SQLite.Simple as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.Internal as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Test.Hspec as Hspec
 
 -- | Some binary data. Just a 'ByteString.ByteString' under the hood. Use

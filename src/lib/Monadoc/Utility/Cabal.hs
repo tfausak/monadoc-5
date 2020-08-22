@@ -1,4 +1,4 @@
-module Monadoc.Cabal where
+module Monadoc.Utility.Cabal where
 
 import qualified Data.ByteString as ByteString
 import qualified Data.Either as Either
@@ -29,7 +29,7 @@ parse byteString =
       Right x -> Right $ Package x
 
 spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Cabal" $ do
+spec = Hspec.describe "Monadoc.Utility.Cabal" $ do
 
   Hspec.describe "parse" $ do
 

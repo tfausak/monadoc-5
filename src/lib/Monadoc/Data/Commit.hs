@@ -16,6 +16,4 @@ spec = Hspec.describe "Monadoc.Data.Commit" $ do
   Hspec.describe "hash" $ do
 
     Hspec.it "is not null if set" $ do
-      case hash of
-        Nothing -> pure ()
-        Just x -> x `Hspec.shouldSatisfy` not . null
+      hash `Hspec.shouldSatisfy` maybe True (not . null)

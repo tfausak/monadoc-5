@@ -1,11 +1,13 @@
 module Monadoc.Type.Cabal.ModuleName where
 
 import qualified Data.List as List
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.ModuleName as Cabal
-import qualified Monadoc.Vendor.Sql as Sql
 import qualified Test.Hspec as Hspec
 
-newtype ModuleName = ModuleName Cabal.ModuleName deriving (Eq, Ord, Show)
+newtype ModuleName
+  = ModuleName Cabal.ModuleName
+  deriving (Eq, Ord, Show)
 
 instance Sql.ToField ModuleName where
   toField = Sql.toField . toString

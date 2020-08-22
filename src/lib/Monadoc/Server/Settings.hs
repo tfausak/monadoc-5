@@ -4,7 +4,7 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Data.ByteString as ByteString
 import qualified Data.Proxy as Proxy
-import qualified Monadoc.Console as Console
+import qualified Monadoc.Utility.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Server.Common as Common

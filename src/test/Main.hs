@@ -1,14 +1,10 @@
-module Main where
-
 import qualified Monadoc
-import qualified Monadoc.Cabal
-import qualified Monadoc.Console
+import qualified Monadoc.Utility.Console
 import qualified Monadoc.Data.Commit
 import qualified Monadoc.Data.Migrations
 import qualified Monadoc.Data.Options
 import qualified Monadoc.Data.Version
-import qualified Monadoc.Extra.Sql
-import qualified Monadoc.Ghc
+import qualified Monadoc.Utility.Ghc
 import qualified Monadoc.Handler.Account
 import qualified Monadoc.Handler.Favicon
 import qualified Monadoc.Handler.GitHubCallback
@@ -41,7 +37,7 @@ import qualified Monadoc.Type.GitHub.User
 import qualified Monadoc.Type.GitHub.UserId
 import qualified Monadoc.Type.Guid
 import qualified Monadoc.Type.Migration
-import qualified Monadoc.Type.MigrationMismatch
+import qualified Monadoc.Type.Exception.MigrationMismatch
 import qualified Monadoc.Type.NotFoundException
 import qualified Monadoc.Type.Path
 import qualified Monadoc.Type.Revision
@@ -54,20 +50,18 @@ import qualified Monadoc.Type.Timestamp
 import qualified Monadoc.Type.Url
 import qualified Monadoc.Type.User
 import qualified Monadoc.Type.WithCallStack
+import qualified Monadoc.Utility.Cabal
+import qualified Monadoc.Utility.Sql
 import qualified Monadoc.Utility.Utf8
 import qualified Monadoc.Worker.Main
 import qualified Test.Hspec as Hspec
 
 main :: IO ()
 main = Hspec.hspec $ do
-  Monadoc.Cabal.spec
-  Monadoc.Console.spec
   Monadoc.Data.Commit.spec
   Monadoc.Data.Migrations.spec
   Monadoc.Data.Options.spec
   Monadoc.Data.Version.spec
-  Monadoc.Extra.Sql.spec
-  Monadoc.Ghc.spec
   Monadoc.Handler.Account.spec
   Monadoc.Handler.Favicon.spec
   Monadoc.Handler.GitHubCallback.spec
@@ -87,20 +81,21 @@ main = Hspec.hspec $ do
   Monadoc.Server.Router.spec
   Monadoc.Server.Settings.spec
   Monadoc.Server.Template.spec
+  Monadoc.spec
   Monadoc.Type.App.spec
   Monadoc.Type.Binary.spec
   Monadoc.Type.Cabal.PackageName.spec
   Monadoc.Type.Cabal.VersionRange.spec
-  Monadoc.Type.ConfigResult.spec
   Monadoc.Type.Config.spec
+  Monadoc.Type.ConfigResult.spec
   Monadoc.Type.Context.spec
   Monadoc.Type.Etag.spec
   Monadoc.Type.GitHub.Login.spec
-  Monadoc.Type.GitHub.UserId.spec
   Monadoc.Type.GitHub.User.spec
+  Monadoc.Type.GitHub.UserId.spec
   Monadoc.Type.Guid.spec
-  Monadoc.Type.MigrationMismatch.spec
   Monadoc.Type.Migration.spec
+  Monadoc.Type.Exception.MigrationMismatch.spec
   Monadoc.Type.NotFoundException.spec
   Monadoc.Type.Path.spec
   Monadoc.Type.Revision.spec
@@ -113,6 +108,9 @@ main = Hspec.hspec $ do
   Monadoc.Type.Url.spec
   Monadoc.Type.User.spec
   Monadoc.Type.WithCallStack.spec
+  Monadoc.Utility.Cabal.spec
+  Monadoc.Utility.Console.spec
+  Monadoc.Utility.Ghc.spec
+  Monadoc.Utility.Sql.spec
   Monadoc.Utility.Utf8.spec
   Monadoc.Worker.Main.spec
-  Monadoc.spec

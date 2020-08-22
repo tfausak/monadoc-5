@@ -1,4 +1,4 @@
-module Monadoc.Extra.Sql where
+module Monadoc.Utility.Sql where
 
 import qualified Data.Typeable as Typeable
 import qualified Database.SQLite.Simple as Sql
@@ -22,7 +22,7 @@ fromFieldVia f x = do
     Just z -> pure z
 
 spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Extra.Sql" $ do
+spec = Hspec.describe "Monadoc.Utility.Sql" $ do
 
   Hspec.describe "fromFieldVia" $ do
 

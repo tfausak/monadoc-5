@@ -1,9 +1,9 @@
-module Monadoc.Type.MigrationMismatch where
+module Monadoc.Type.Exception.MigrationMismatch where
 
 import qualified Control.Monad.Catch as Exception
+import qualified Data.Time.Clock.POSIX as Time
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
-import qualified Monadoc.Vendor.Time as Time
 import qualified Test.Hspec as Hspec
 
 -- | A content mismatch when running a migration. This is thrown when the
@@ -26,7 +26,7 @@ instance Exception.Exception MigrationMismatch where
     ]
 
 spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Type.MigrationMismatch" $ do
+spec = Hspec.describe "Monadoc.Type.Exception.MigrationMismatch" $ do
 
   Hspec.describe "displayException" $ do
 

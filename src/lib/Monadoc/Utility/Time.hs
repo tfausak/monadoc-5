@@ -1,4 +1,4 @@
-module Monadoc.Extra.Time where
+module Monadoc.Utility.Time where
 
 import qualified Data.Fixed as Fixed
 import qualified Data.Time as Time
@@ -6,12 +6,12 @@ import qualified Test.Hspec as Hspec
 
 -- | Uses a format string to format a time value. Uses the
 -- 'Time.defaultTimeLocale'.
-format :: Time.FormatTime t => String -> t -> String
+format :: String -> Time.UTCTime -> String
 format = Time.formatTime Time.defaultTimeLocale
 
 -- | Uses a format string to parse a time string. Uses the
 -- 'Time.defaultTimeLocale'.
-parse :: Time.ParseTime t => String -> String -> Maybe t
+parse :: String -> String -> Maybe Time.UTCTime
 parse = Time.parseTimeM False Time.defaultTimeLocale
 
 -- | Builds a 'Time.UTCTime' using the given year, month, day, hour, minute,
@@ -28,7 +28,7 @@ utcTime year month day hour minute second = Time.UTCTime
   }
 
 spec :: Hspec.Spec
-spec = Hspec.describe "Monadoc.Extra.Time" $ do
+spec = Hspec.describe "Monadoc.Utility.Time" $ do
 
   Hspec.describe "format" $ do
 
@@ -43,7 +43,7 @@ spec = Hspec.describe "Monadoc.Extra.Time" $ do
         `Hspec.shouldBe` Just (utcTime 2001 2 3 4 5 6.007)
 
     Hspec.it "returns nothing on failure" $ do
-      parse "%Y" "invalid" `Hspec.shouldBe` (Nothing :: Maybe Time.UTCTime)
+      parse "%Y" "invalid" `Hspec.shouldBe` Nothing
 
   Hspec.describe "utcTime" $ do
 

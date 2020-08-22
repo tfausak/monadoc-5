@@ -2,7 +2,9 @@ module Monadoc.Type.Guid where
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.UUID as Uuid
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
+import qualified Monadoc.Utility.Sql as Sql
 import qualified System.Random as Random
 import qualified Test.Hspec as Hspec
 

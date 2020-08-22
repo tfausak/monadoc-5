@@ -1,6 +1,5 @@
 #! /usr/bin/env stack
 -- stack exec runghc
-module Main where
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified System.Environment as Environment

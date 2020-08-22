@@ -205,7 +205,5 @@ spec = Hspec.describe "Monadoc.Data.Options" $ do
   Hspec.describe "options" $ do
 
     Hspec.it "has a --help option" $ do
-      let
-        f :: GetOpt.OptDescr a -> [String]
-        f (GetOpt.Option _ x _ _) = x
+      let f (GetOpt.Option _ x _ _) = x
       concatMap f options `Hspec.shouldSatisfy` elem "help"

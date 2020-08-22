@@ -2,10 +2,10 @@ module Monadoc.Data.Migrations where
 
 import qualified Data.Fixed as Fixed
 import qualified Data.Set as Set
+import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Timestamp as Timestamp
-import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
+import qualified Monadoc.Utility.Time as Time
 import qualified Test.Hspec as Hspec
 
 -- | Collection of migrations to run. The app automatically performs migrations

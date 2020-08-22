@@ -1,6 +1,9 @@
 module Monadoc.Type.Size where
 
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Database.SQLite.Simple as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.Internal as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Test.Hspec as Hspec
 
 -- | The size of something in bytes. Although this is backed by an 'Int', by

@@ -2,11 +2,12 @@ module Monadoc.Type.Migration where
 
 import qualified Crypto.Hash as Crypto
 import qualified Data.Ord as Ord
+import qualified Data.Time.Clock.POSIX as Time
+import qualified Database.SQLite.Simple as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Utility.Utf8 as Utf8
-import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
 import qualified Test.Hspec as Hspec
 
 -- | A database migration. This is a single SQL statement along with a

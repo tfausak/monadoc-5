@@ -2,7 +2,12 @@ module Monadoc.Type.Sha256 where
 
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString as ByteString
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Database.SQLite.Simple as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.Internal as Sql
+import qualified Database.SQLite.Simple.Ok as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
+import qualified Monadoc.Utility.Sql as Sql
 import qualified Test.Hspec as Hspec
 import qualified Text.Read as Read
 
