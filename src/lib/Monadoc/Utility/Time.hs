@@ -1,4 +1,4 @@
-module Monadoc.Extra.Time where
+module Monadoc.Utility.Time where
 
 import qualified Data.Fixed as Fixed
 import qualified Data.Time as Time

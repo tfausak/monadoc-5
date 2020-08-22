@@ -1,11 +1,11 @@
-module Monadoc.Extra.TimeSpec where
+module Monadoc.Utility.TimeSpec where
 
 import qualified Data.Time as Time
-import qualified Monadoc.Extra.Time as Time
+import qualified Monadoc.Utility.Time as Time
 import Test
 
 spec :: Spec
-spec = describe "Monadoc.Extra.Time" $ do
+spec = describe "Monadoc.Utility.Time" $ do
 
   describe "format" $ do
 

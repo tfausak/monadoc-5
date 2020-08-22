@@ -51,6 +51,7 @@ import qualified Monadoc.Type.TimestampSpec
 import qualified Monadoc.Type.UrlSpec
 import qualified Monadoc.Type.UserSpec
 import qualified Monadoc.Type.WithCallStackSpec
+import qualified Monadoc.Utility.TimeSpec
 import qualified Monadoc.Utility.Utf8Spec
 import qualified Monadoc.Vendor.SqlSpec
 import qualified Monadoc.Vendor.TimeSpec
@@ -113,6 +114,7 @@ main = hspec $ do
   Monadoc.Type.UrlSpec.spec
   Monadoc.Type.UserSpec.spec
   Monadoc.Type.WithCallStackSpec.spec
+  Monadoc.Utility.TimeSpec.spec
   Monadoc.Utility.Utf8Spec.spec
   Monadoc.Vendor.SqlSpec.spec
   Monadoc.Vendor.TimeSpec.spec
