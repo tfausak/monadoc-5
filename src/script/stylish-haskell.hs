@@ -1,6 +1,7 @@
 #! /usr/bin/env stack
 -- stack exec --package Glob --package process runghc
 module Main where
+import qualified Data.List as List
 import qualified System.FilePath.Glob as Glob
 import qualified System.Process as Process
 
@@ -10,4 +11,4 @@ main = do
   Process.callProcess "stylish-haskell"
     $ "--config=config/stylish-haskell.yaml"
     : "--inplace"
-    : files
+    : filter (not . List.isInfixOf "Prelude.hs") files
