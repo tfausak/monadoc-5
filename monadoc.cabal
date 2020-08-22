@@ -87,7 +87,6 @@ library
     Monadoc.Data.Migrations
     Monadoc.Data.Options
     Monadoc.Data.Version
-    Monadoc.Ghc
     Monadoc.Handler.Account
     Monadoc.Handler.Favicon
     Monadoc.Handler.GitHubCallback
@@ -136,6 +135,7 @@ library
     Monadoc.Type.User
     Monadoc.Type.WithCallStack
     Monadoc.Utility.Cabal
+    Monadoc.Utility.Ghc
     Monadoc.Utility.Sql
     Monadoc.Utility.Time
     Monadoc.Utility.Utf8
@@ -161,7 +161,6 @@ test-suite test
     Monadoc.Data.MigrationsSpec
     Monadoc.Data.OptionsSpec
     Monadoc.Data.VersionSpec
-    Monadoc.GhcSpec
     Monadoc.Handler.AccountSpec
     Monadoc.Handler.FaviconSpec
     Monadoc.Handler.GitHubCallbackSpec
@@ -210,6 +209,7 @@ test-suite test
     Monadoc.Type.UserSpec
     Monadoc.Type.WithCallStackSpec
     Monadoc.Utility.CabalSpec
+    Monadoc.Utility.GhcSpec
     Monadoc.Utility.SqlSpec
     Monadoc.Utility.TimeSpec
     Monadoc.Utility.Utf8Spec

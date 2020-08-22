@@ -42,7 +42,6 @@ import qualified GHC.Clock as Clock
 import qualified GHC.LanguageExtensions.Type as G
 import qualified Language.Haskell.Extension as C
 import qualified Monadoc.Console as Console
-import qualified Monadoc.Ghc
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -60,6 +59,7 @@ import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Cabal
+import qualified Monadoc.Utility.Ghc
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
@@ -913,7 +913,7 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                         [] -> fail $ "missing contents for " <> show file
                         Sql.Only contents : _ -> do
                           let _ = contents :: Binary.Binary
-                          result <- IO.liftIO $ Monadoc.Ghc.parse
+                          result <- IO.liftIO $ Monadoc.Utility.Ghc.parse
                             extensions
                             (Path.toFilePath file)
                             (Binary.toByteString contents)

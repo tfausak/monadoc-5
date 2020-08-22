@@ -3,7 +3,6 @@ import qualified Monadoc.Data.CommitSpec
 import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
 import qualified Monadoc.Data.VersionSpec
-import qualified Monadoc.GhcSpec
 import qualified Monadoc.Handler.AccountSpec
 import qualified Monadoc.Handler.FaviconSpec
 import qualified Monadoc.Handler.GitHubCallbackSpec
@@ -52,6 +51,7 @@ import qualified Monadoc.Type.UrlSpec
 import qualified Monadoc.Type.UserSpec
 import qualified Monadoc.Type.WithCallStackSpec
 import qualified Monadoc.Utility.CabalSpec
+import qualified Monadoc.Utility.GhcSpec
 import qualified Monadoc.Utility.SqlSpec
 import qualified Monadoc.Utility.TimeSpec
 import qualified Monadoc.Utility.Utf8Spec
@@ -66,7 +66,6 @@ main = hspec $ do
   Monadoc.Data.MigrationsSpec.spec
   Monadoc.Data.OptionsSpec.spec
   Monadoc.Data.VersionSpec.spec
-  Monadoc.GhcSpec.spec
   Monadoc.Handler.AccountSpec.spec
   Monadoc.Handler.FaviconSpec.spec
   Monadoc.Handler.GitHubCallbackSpec.spec
@@ -115,6 +114,7 @@ main = hspec $ do
   Monadoc.Type.UserSpec.spec
   Monadoc.Type.WithCallStackSpec.spec
   Monadoc.Utility.CabalSpec.spec
+  Monadoc.Utility.GhcSpec.spec
   Monadoc.Utility.SqlSpec.spec
   Monadoc.Utility.TimeSpec.spec
   Monadoc.Utility.Utf8Spec.spec

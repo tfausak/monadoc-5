@@ -1,4 +1,4 @@
-module Monadoc.Ghc where
+module Monadoc.Utility.Ghc where
 
 import qualified Bag
 import qualified Control.Exception
