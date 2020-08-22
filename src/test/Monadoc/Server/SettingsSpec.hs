@@ -12,13 +12,12 @@ spec = describe "Monadoc.Server.Settings" $ do
   describe "fromConfig" $ do
 
     it "sets the host" $ do
-      let cfg = testConfig { Config.host = "1.2.3.4" }
+      let cfg = Config.test { Config.host = "1.2.3.4" }
       ctx <- Monadoc.configToContext cfg
       let settings = Settings.fromContext ctx
       Warp.getHost settings `shouldBe` Config.host cfg
 
     it "sets the port" $ do
-      let cfg = testConfig { Config.database = ":memory:" }
-      ctx <- Monadoc.configToContext cfg
+      ctx <- Monadoc.configToContext Config.test
       let settings = Settings.fromContext ctx
-      Warp.getPort settings `shouldBe` Config.port cfg
+      Warp.getPort settings `shouldBe` Config.port Config.test

@@ -44,9 +44,8 @@ spec = describe "Monadoc" $ do
   describe "configToContext" $ do
 
     it "works" $ do
-      let cfg = testConfig
-      ctx <- Monadoc.configToContext cfg
-      Context.config ctx `shouldBe` cfg
+      ctx <- Monadoc.configToContext Config.test
+      Context.config ctx `shouldBe` Config.test
 
 isExitWith :: ConfigResult.ConfigResult -> Bool
 isExitWith configResult = case configResult of
