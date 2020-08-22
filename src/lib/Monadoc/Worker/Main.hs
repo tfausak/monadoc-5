@@ -1,5 +1,7 @@
 module Monadoc.Worker.Main where
 
+import Data.Function ((&))
+
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
@@ -39,6 +41,7 @@ import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
 import qualified GHC.Clock as Clock
+import qualified GHC.Hs as Ghc
 import qualified GHC.LanguageExtensions.Type as G
 import qualified Language.Haskell.Extension as C
 import qualified Monadoc.Server.Settings as Settings
@@ -64,6 +67,8 @@ import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
+import qualified Outputable as Ghc
+import qualified SrcLoc as Ghc
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 import qualified System.Mem as Mem
@@ -926,8 +931,22 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                             \and module = ?"
                             (Either.isRight result, pkg, ver, rev, moduleName)
                           case result of
-                            Left _ -> Console.info $ "FAIL " <> key
-                            Right _ -> Console.info $ "PASS " <> key
+                            Left _ -> pure ()
+                            Right module_ -> do
+                              Console.info $ "PASS " <> key
+                              -- https://hackage.haskell.org/package/ghc-8.10.1/docs/GHC-Hs-ImpExp.html#t:IE
+                              module_
+                                & Monadoc.Utility.Ghc.unwrapModule
+                                & Ghc.unLoc
+                                & Ghc.hsmodExports
+                                & fmap Ghc.unLoc
+                                & fmap
+                                    (fmap
+                                      (Ghc.showSDocUnsafe . Ghc.ppr . Ghc.unLoc
+                                      )
+                                    )
+                                & print
+                                & IO.liftIO
 
 convertExtension :: C.KnownExtension -> Maybe G.Extension
 convertExtension x = case x of
