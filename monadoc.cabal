@@ -187,8 +187,10 @@ test-suite test
     Monadoc.Test
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
+    Monadoc.Type.Cabal.ModuleNameSpec
     Monadoc.Type.Cabal.PackageNameSpec
     Monadoc.Type.Cabal.VersionRangeSpec
+    Monadoc.Type.Cabal.VersionSpec
     Monadoc.Type.ConfigResultSpec
     Monadoc.Type.ConfigSpec
     Monadoc.Type.ContextSpec
