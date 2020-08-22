@@ -1,5 +1,3 @@
-module Main where
-
 import qualified Monadoc
 
 main :: IO ()

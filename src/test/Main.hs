@@ -1,5 +1,3 @@
-module Main where
-
 import qualified Monadoc.CabalSpec
 import qualified Monadoc.ConsoleSpec
 import qualified Monadoc.Data.CommitSpec
