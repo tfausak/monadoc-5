@@ -41,7 +41,6 @@ import qualified Distribution.Types.VersionRange as Cabal
 import qualified GHC.Clock as Clock
 import qualified GHC.LanguageExtensions.Type as G
 import qualified Language.Haskell.Extension as C
-import qualified Monadoc.Cabal
 import qualified Monadoc.Console as Console
 import qualified Monadoc.Ghc
 import qualified Monadoc.Server.Settings as Settings
@@ -60,6 +59,7 @@ import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Type.WithCallStack as WithCallStack
+import qualified Monadoc.Utility.Cabal
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
@@ -833,7 +833,7 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
     case maybeBinary of
       Nothing -> WithCallStack.throw $ MissingBinary sha256
       Just binary -> pure binary
-  case Monadoc.Cabal.parse $ Binary.toByteString binary of
+  case Monadoc.Utility.Cabal.parse $ Binary.toByteString binary of
     Left errs -> WithCallStack.throw . userError $ show (pkg, ver, rev, errs)
     Right package -> do
       let
@@ -841,13 +841,13 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
           Cabal.pkgName
             . Cabal.package
             . Cabal.packageDescription
-            $ Monadoc.Cabal.unwrapPackage package
+            $ Monadoc.Utility.Cabal.unwrapPackage package
         versionNumber =
           Version.fromCabal
             . Cabal.pkgVersion
             . Cabal.package
             . Cabal.packageDescription
-            $ Monadoc.Cabal.unwrapPackage package
+            $ Monadoc.Utility.Cabal.unwrapPackage package
       Monad.when (packageName /= PackageName.toCabal pkg)
         . WithCallStack.throw
         $ PackageNameMismatch pkg packageName
@@ -1126,7 +1126,7 @@ findSourceFileWith pkg ver dir mdl ext = do
 -- description in it, that nested PD isn't actually usable. This function is
 -- necessary in order to choose the platform, compiler, flags, and other stuff.
 toPackageDescription
-  :: Monadoc.Cabal.Package
+  :: Monadoc.Utility.Cabal.Package
   -> Either
        [Cabal.Dependency]
        (Cabal.PackageDescription, Cabal.FlagAssignment)
@@ -1148,7 +1148,7 @@ toPackageDescription =
         platform
         compilerInfo
         additionalConstraints
-      . Monadoc.Cabal.unwrapPackage
+      . Monadoc.Utility.Cabal.unwrapPackage
 
 data VersionNumberMismatch
   = VersionNumberMismatch Version.Version Version.Version
