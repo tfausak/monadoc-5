@@ -6,11 +6,10 @@ synopsis: Better Haskell documentation.
 description: Monadoc provides better Haskell documentation.
 
 category: Documentation
-data-dir: data
 data-files:
-  favicon.ico
-  logo.png
-  tachyons-4-12-0.css
+  data/favicon.ico
+  data/logo.png
+  data/tachyons-4-12-0.css
 extra-source-files: README.markdown
 license-file: LICENSE.markdown
 license: ISC
