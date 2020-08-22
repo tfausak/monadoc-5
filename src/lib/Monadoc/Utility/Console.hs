@@ -1,4 +1,4 @@
-module Monadoc.Console where
+module Monadoc.Utility.Console where
 
 import qualified Control.Concurrent.STM as Stm
 import qualified Control.Monad.Catch as Exception

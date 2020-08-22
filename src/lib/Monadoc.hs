@@ -7,7 +7,6 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Pool as Pool
 import qualified Data.Time as Time
 import qualified Database.SQLite.Simple as Sql
-import qualified Monadoc.Console as Console
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Options as Options
 import qualified Monadoc.Data.Version as Version
@@ -16,6 +15,7 @@ import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.ConfigResult as ConfigResult
 import qualified Monadoc.Type.Context as Context
+import qualified Monadoc.Utility.Console as Console
 import qualified Network.HTTP.Client.TLS as Tls
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment

@@ -82,7 +82,6 @@ library
   autogen-modules: Paths_monadoc
   exposed-modules:
     Monadoc
-    Monadoc.Console
     Monadoc.Data.Commit
     Monadoc.Data.Migrations
     Monadoc.Data.Options
@@ -135,6 +134,7 @@ library
     Monadoc.Type.User
     Monadoc.Type.WithCallStack
     Monadoc.Utility.Cabal
+    Monadoc.Utility.Console
     Monadoc.Utility.Ghc
     Monadoc.Utility.Sql
     Monadoc.Utility.Time
@@ -156,7 +156,6 @@ test-suite test
   hs-source-dirs: src/test
   main-is: Main.hs
   other-modules:
-    Monadoc.ConsoleSpec
     Monadoc.Data.CommitSpec
     Monadoc.Data.MigrationsSpec
     Monadoc.Data.OptionsSpec
@@ -209,6 +208,7 @@ test-suite test
     Monadoc.Type.UserSpec
     Monadoc.Type.WithCallStackSpec
     Monadoc.Utility.CabalSpec
+    Monadoc.Utility.ConsoleSpec
     Monadoc.Utility.GhcSpec
     Monadoc.Utility.SqlSpec
     Monadoc.Utility.TimeSpec

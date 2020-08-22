@@ -1,4 +1,3 @@
-import qualified Monadoc.ConsoleSpec
 import qualified Monadoc.Data.CommitSpec
 import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
@@ -51,6 +50,7 @@ import qualified Monadoc.Type.UrlSpec
 import qualified Monadoc.Type.UserSpec
 import qualified Monadoc.Type.WithCallStackSpec
 import qualified Monadoc.Utility.CabalSpec
+import qualified Monadoc.Utility.ConsoleSpec
 import qualified Monadoc.Utility.GhcSpec
 import qualified Monadoc.Utility.SqlSpec
 import qualified Monadoc.Utility.TimeSpec
@@ -61,7 +61,6 @@ import Test.Hspec
 
 main :: IO ()
 main = hspec $ do
-  Monadoc.ConsoleSpec.spec
   Monadoc.Data.CommitSpec.spec
   Monadoc.Data.MigrationsSpec.spec
   Monadoc.Data.OptionsSpec.spec
@@ -114,6 +113,7 @@ main = hspec $ do
   Monadoc.Type.UserSpec.spec
   Monadoc.Type.WithCallStackSpec.spec
   Monadoc.Utility.CabalSpec.spec
+  Monadoc.Utility.ConsoleSpec.spec
   Monadoc.Utility.GhcSpec.spec
   Monadoc.Utility.SqlSpec.spec
   Monadoc.Utility.TimeSpec.spec
