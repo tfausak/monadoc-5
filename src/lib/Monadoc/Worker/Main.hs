@@ -966,10 +966,10 @@ getModuleExports module_ =
           Ghc.Exact{} -> crash "IEVar/IEName/Exact" lRdrName
         Ghc.IEPattern lRdrName -> case Ghc.unLoc lRdrName of
           -- module M ( pattern X )
-          Ghc.Unqual occName -> Ghc.occNameString occName
-          Ghc.Qual{} -> crash "TyClD/FamDecl/FamilyDecl/Qual" lRdrName
-          Ghc.Orig{} -> crash "TyClD/FamDecl/FamilyDecl/Orig" lRdrName
-          Ghc.Exact{} -> crash "TyClD/FamDecl/FamilyDecl/Exact" lRdrName
+          Ghc.Unqual occName -> "pattern " <> Ghc.occNameString occName
+          Ghc.Qual{} -> crash "IEVar/IEPattern/Qual" lRdrName
+          Ghc.Orig{} -> crash "IEVar/IEPattern/Orig" lRdrName
+          Ghc.Exact{} -> crash "IEVar/IEPattern/Exact" lRdrName
         Ghc.IEType{} -> crash "IEVar/IEType" lieWrappedName
 
       Ghc.IEThingAbs _ lieWrappedName -> case Ghc.unLoc lieWrappedName of
@@ -982,7 +982,12 @@ getModuleExports module_ =
           Ghc.Orig{} -> crash "IEThingAbs/IEName/Orig" lRdrName
           Ghc.Exact{} -> crash "IEThingAbs/IEName/Exact" lRdrName
         Ghc.IEPattern{} -> crash "IEThingAbs/IEPattern" lieWrappedName
-        Ghc.IEType{} -> crash "IEThingAbs/IEType" lieWrappedName
+        Ghc.IEType lRdrName -> case Ghc.unLoc lRdrName of
+          -- module M ( type X )
+          Ghc.Unqual occName -> "type " <> Ghc.occNameString occName
+          Ghc.Qual{} -> crash "IEThingAbs/IEType/Qual" lRdrName
+          Ghc.Orig{} -> crash "IEThingAbs/IEType/Orig" lRdrName
+          Ghc.Exact{} -> crash "IEThingAbs/IEType/Exact" lRdrName
 
       Ghc.IEThingAll _ lieWrappedName -> case Ghc.unLoc lieWrappedName of
         Ghc.IEName lRdrName -> case Ghc.unLoc lRdrName of
@@ -997,7 +1002,12 @@ getModuleExports module_ =
           Ghc.Orig{} -> crash "IEThingAll/IEName/Orig" lRdrName
           Ghc.Exact{} -> crash "IEThingAll/IEName/Exact" lRdrName
         Ghc.IEPattern{} -> crash "IEThingAll/IEPattern" lieWrappedName
-        Ghc.IEType{} -> crash "IEThingAll/IEType" lieWrappedName
+        Ghc.IEType lRdrName -> case Ghc.unLoc lRdrName of
+          -- module M ( type X )
+          Ghc.Unqual occName -> "type " <> Ghc.occNameString occName
+          Ghc.Qual{} -> crash "IEThingAll/IEType/Qual" lRdrName
+          Ghc.Orig{} -> crash "IEThingAll/IEType/Orig" lRdrName
+          Ghc.Exact{} -> crash "IEThingAll/IEType/Exact" lRdrName
 
       Ghc.IEThingWith _ lieWrappedName _ _names _fields ->
         case Ghc.unLoc lieWrappedName of
@@ -1013,7 +1023,12 @@ getModuleExports module_ =
             Ghc.Orig{} -> crash "IEThingWith/IEName/Orig" lRdrName
             Ghc.Exact{} -> crash "IEThingWith/IEName/Exact" lRdrName
           Ghc.IEPattern{} -> crash "IEThingWith/IEPattern" lieWrappedName
-          Ghc.IEType{} -> crash "IEThingWith/IEType" lieWrappedName
+          Ghc.IEType lRdrName -> case Ghc.unLoc lRdrName of
+            -- module M ( type X )
+            Ghc.Unqual occName -> "type " <> Ghc.occNameString occName
+            Ghc.Qual{} -> crash "IEThingWith/IEType/Qual" lRdrName
+            Ghc.Orig{} -> crash "IEThingWith/IEType/Orig" lRdrName
+            Ghc.Exact{} -> crash "IEThingWith/IEType/Exact" lRdrName
 
       -- module M ( module N )
       Ghc.IEModuleContents _ lModuleName ->
@@ -1126,11 +1141,11 @@ getModuleExports module_ =
         Ghc.FixSig _ fixitySig -> case fixitySig of
           Ghc.FixitySig _ lRdrNames _ -> fmap
             (\lRdrName -> case Ghc.unLoc lRdrName of
-              -- infix * 0
+              -- infix 0 0
               Ghc.Unqual occName -> Ghc.occNameString occName
-              Ghc.Qual{} -> crash "SigD/TypeSig/Qual" lRdrName
-              Ghc.Orig{} -> crash "SigD/TypeSig/Orig" lRdrName
-              Ghc.Exact{} -> crash "SigD/TypeSig/Exact" lRdrName
+              Ghc.Qual{} -> crash "SigD/FixSig/FixitySig/Qual" lRdrName
+              Ghc.Orig{} -> crash "SigD/FixSig/FixitySig/Orig" lRdrName
+              Ghc.Exact{} -> [] -- TODO: infix 5 : -- See adaptive-containers.
             )
             lRdrNames
           Ghc.XFixitySig{} -> crash "SigD/FixSig/XFixitySig" fixitySig
@@ -1142,7 +1157,8 @@ getModuleExports module_ =
         Ghc.SpecInstSig{} -> []
         Ghc.MinimalSig{} -> crash "SigD/MinimalSig" sig
         Ghc.SCCFunSig{} -> crash "SigD/SCCFunSig" sig
-        Ghc.CompleteMatchSig{} -> crash "SigD/CompleteMatchSig" sig
+        -- {-# COMPLETE ... #-}
+        Ghc.CompleteMatchSig{} -> []
         Ghc.XSig{} -> crash "SigD/XSig" sig
 
       Ghc.KindSigD{} -> crash "KindSigD" hsDecl
@@ -1173,7 +1189,7 @@ getModuleExports module_ =
 
       Ghc.DocD{} -> crash "DocD" hsDecl
 
-      Ghc.RoleAnnotD{} -> crash "RoleAnnotD" hsDecl
+      Ghc.RoleAnnotD{} -> [] -- TODO: type role X ...
 
       Ghc.XHsDecl{} -> crash "XHsDecl" hsDecl
   in case maybeExports of
