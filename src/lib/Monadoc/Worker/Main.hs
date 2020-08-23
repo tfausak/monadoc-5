@@ -7,6 +7,7 @@ import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Concurrent.STM as Stm
+import qualified Control.Exception as Exception (evaluate)
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.IO.Class as IO
@@ -929,16 +930,12 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                             (Either.isRight result, pkg, ver, rev, moduleName)
                           case result of
                             Left _ -> pure ()
-                            Right module_ -> IO.liftIO $ do
-                              putStrLn $ unwords
-                                [ PackageName.toString pkg
-                                , Version.toString ver
-                                , Revision.toString rev
-                                , ModuleName.toString moduleName
-                                , Path.toFilePath file
-                                ]
-                              putStrLn
-                                . List.intercalate ", "
+                            Right module_ ->
+                              Monad.void
+                                . IO.liftIO
+                                . Exception.evaluate
+                                . length
+                                . mconcat
                                 $ getModuleExports module_
 
 -- https://hackage.haskell.org/package/ghc-8.10.1/docs/Parser.html#v:parseModule
@@ -967,7 +964,9 @@ getModuleExports module_ =
         Ghc.IEPattern lRdrName -> case Ghc.unLoc lRdrName of
           -- module M ( pattern X )
           Ghc.Unqual occName -> "pattern " <> Ghc.occNameString occName
-          Ghc.Qual{} -> crash "IEVar/IEPattern/Qual" lRdrName
+          -- module M ( N.X )
+          Ghc.Qual moduleName occName ->
+            Ghc.moduleNameString moduleName <> "." <> Ghc.occNameString occName
           Ghc.Orig{} -> crash "IEVar/IEPattern/Orig" lRdrName
           Ghc.Exact{} -> crash "IEVar/IEPattern/Exact" lRdrName
         Ghc.IEType{} -> crash "IEVar/IEType" lieWrappedName
@@ -985,7 +984,9 @@ getModuleExports module_ =
         Ghc.IEType lRdrName -> case Ghc.unLoc lRdrName of
           -- module M ( type X )
           Ghc.Unqual occName -> "type " <> Ghc.occNameString occName
-          Ghc.Qual{} -> crash "IEThingAbs/IEType/Qual" lRdrName
+          -- module M ( N.X )
+          Ghc.Qual moduleName occName ->
+            Ghc.moduleNameString moduleName <> "." <> Ghc.occNameString occName
           Ghc.Orig{} -> crash "IEThingAbs/IEType/Orig" lRdrName
           Ghc.Exact{} -> crash "IEThingAbs/IEType/Exact" lRdrName
 
@@ -1064,7 +1065,7 @@ getModuleExports module_ =
           Ghc.Unqual occName -> [Ghc.occNameString occName]
           Ghc.Qual{} -> crash "TyClD/DataDecl/Qual" lRdrName
           Ghc.Orig{} -> crash "TyClD/DataDecl/Orig" lRdrName
-          Ghc.Exact{} -> crash "TyClD/DataDecl/Exact" lRdrName
+          Ghc.Exact{} -> [] -- TODO: data () -- See GHC.Tuple.
         Ghc.ClassDecl _ _ lRdrName _ _ _ _ _ _ _ _ ->
           case Ghc.unLoc lRdrName of
           -- class X where ...
@@ -1156,7 +1157,8 @@ getModuleExports module_ =
         -- {-# SPECIALIZE instance ... #-}
         Ghc.SpecInstSig{} -> []
         Ghc.MinimalSig{} -> crash "SigD/MinimalSig" sig
-        Ghc.SCCFunSig{} -> crash "SigD/SCCFunSig" sig
+        -- {-# SCC ... #-}
+        Ghc.SCCFunSig{} -> []
         -- {-# COMPLETE ... #-}
         Ghc.CompleteMatchSig{} -> []
         Ghc.XSig{} -> crash "SigD/XSig" sig
@@ -1180,7 +1182,8 @@ getModuleExports module_ =
       -- {-# DEPRECATED ... #-}
       Ghc.WarningD{} -> []
 
-      Ghc.AnnD{} -> crash "AnnD" hsDecl
+      -- {-# ANN ... #-}
+      Ghc.AnnD{} -> []
 
       -- {-# RULES ... #-}
       Ghc.RuleD{} -> []
