@@ -1,6 +1,7 @@
-module Monadoc.Worker.Main where
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{- hlint ignore "Avoid restricted extensions" -}
 
-import Data.Function ((&))
+module Monadoc.Worker.Main where
 
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
@@ -44,6 +45,7 @@ import qualified GHC.Clock as Clock
 import qualified GHC.Hs as Ghc
 import qualified GHC.LanguageExtensions.Type as G
 import qualified Language.Haskell.Extension as C
+import qualified Module as Ghc
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -67,7 +69,9 @@ import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
+import qualified OccName as Ghc
 import qualified Outputable as Ghc
+import qualified RdrName as Ghc
 import qualified SrcLoc as Ghc
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
@@ -79,11 +83,11 @@ run = do
   Console.info "Starting worker ..."
   Exception.handle sendExceptionToDiscord . Monad.forever $ do
     withLogging "worker-loop" $ do
-      withLogging "prune-blobs" pruneBlobs
-      withLogging "update-index" updateIndex
-      withLogging "process-index" processIndex
-      withLogging "fetch-tarballs" fetchTarballs
-      withLogging "process-tarballs" processTarballs
+      -- withLogging "prune-blobs" pruneBlobs
+      -- withLogging "update-index" updateIndex
+      -- withLogging "process-index" processIndex
+      -- withLogging "fetch-tarballs" fetchTarballs
+      -- withLogging "process-tarballs" processTarballs
       withLogging "parse-package-descriptions" parsePackageDescriptions
     sleep $ 15 * 60
 
@@ -899,15 +903,8 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                     \on conflict (package, version, revision, module) \
                     \do update set file = excluded.file"
                     (pkg, ver, rev, moduleName, maybeFile)
-                  let
-                    key = unwords
-                      [ PackageName.toString pkg
-                      , Version.toString ver
-                      , Revision.toString rev
-                      , ModuleName.toString moduleName
-                      ]
                   case maybeFile of
-                    Nothing -> Console.info $ "SKIP " <> key
+                    Nothing -> pure ()
                     Just file -> do
                       rows <- App.sql
                         "select blobs.octets from blobs \
@@ -933,20 +930,173 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                           case result of
                             Left _ -> pure ()
                             Right module_ -> do
-                              Console.info $ "PASS " <> key
-                              -- https://hackage.haskell.org/package/ghc-8.10.1/docs/GHC-Hs-ImpExp.html#t:IE
-                              module_
-                                & Monadoc.Utility.Ghc.unwrapModule
-                                & Ghc.unLoc
-                                & Ghc.hsmodExports
-                                & fmap Ghc.unLoc
-                                & fmap
-                                    (fmap
-                                      (Ghc.showSDocUnsafe . Ghc.ppr . Ghc.unLoc
-                                      )
-                                    )
-                                & print
-                                & IO.liftIO
+                              let exports = getModuleExports module_
+                              IO.liftIO $ mapM_ print exports
+
+-- https://hackage.haskell.org/package/ghc-8.10.1/docs/Parser.html#v:parseModule
+getModuleExports :: Monadoc.Utility.Ghc.Module -> [String]
+getModuleExports module_ =
+  let
+    ghcmod = Monadoc.Utility.Ghc.unwrapModule module_
+    modnam :: String
+    modnam =
+      maybe "?" (Ghc.moduleNameString . Ghc.unLoc) . Ghc.hsmodName $ Ghc.unLoc
+        ghcmod
+    maybeExports = Ghc.hsmodExports $ Ghc.unLoc ghcmod
+    crash label x =
+      error $ modnam <> " [" <> label <> "] " <> Ghc.showSDocUnsafe (Ghc.ppr x)
+    convertIE ie = case ie of
+
+      Ghc.IEVar _ lieWrappedName -> case Ghc.unLoc lieWrappedName of
+        Ghc.IEName lRdrName -> case Ghc.unLoc lRdrName of
+          -- module M ( x )
+          Ghc.Unqual occName -> Ghc.occNameString occName
+          -- module M ( N.x )
+          Ghc.Qual moduleName occName ->
+            Ghc.moduleNameString moduleName <> "." <> Ghc.occNameString occName
+          Ghc.Orig{} -> crash "IEVar/IEName/Orig" lRdrName
+          Ghc.Exact{} -> crash "IEVar/IEName/Exact" lRdrName
+        Ghc.IEPattern{} -> crash "IEVar/IEPattern" lieWrappedName
+        Ghc.IEType{} -> crash "IEVar/IEType" lieWrappedName
+
+      Ghc.IEThingAbs _ lieWrappedName -> case Ghc.unLoc lieWrappedName of
+        Ghc.IEName lRdrName -> case Ghc.unLoc lRdrName of
+          -- module M ( X )
+          Ghc.Unqual occName -> Ghc.occNameString occName
+          -- module M ( N.X )
+          Ghc.Qual moduleName occName ->
+            Ghc.moduleNameString moduleName <> "." <> Ghc.occNameString occName
+          Ghc.Orig{} -> crash "IEThingAbs/IEName/Orig" lRdrName
+          Ghc.Exact{} -> crash "IEThingAbs/IEName/Exact" lRdrName
+        Ghc.IEPattern{} -> crash "IEThingAbs/IEPattern" lieWrappedName
+        Ghc.IEType{} -> crash "IEThingAbs/IEType" lieWrappedName
+
+      Ghc.IEThingAll _ lieWrappedName -> case Ghc.unLoc lieWrappedName of
+        Ghc.IEName lRdrName -> case Ghc.unLoc lRdrName of
+          -- module M ( X ( .. ) )
+          Ghc.Unqual occName -> Ghc.occNameString occName <> "(..)"
+          -- module M ( N.X ( .. ) )
+          Ghc.Qual moduleName occName ->
+            Ghc.moduleNameString moduleName
+              <> "."
+              <> Ghc.occNameString occName
+              <> "(..)"
+          Ghc.Orig{} -> crash "IEThingAll/IEName/Orig" lRdrName
+          Ghc.Exact{} -> crash "IEThingAll/IEName/Exact" lRdrName
+        Ghc.IEPattern{} -> crash "IEThingAll/IEPattern" lieWrappedName
+        Ghc.IEType{} -> crash "IEThingAll/IEType" lieWrappedName
+
+      Ghc.IEThingWith _ lieWrappedName _ _names _fields ->
+        case Ghc.unLoc lieWrappedName of
+          Ghc.IEName lRdrName -> case Ghc.unLoc lRdrName of
+            -- module M ( X ( TODO ) )
+            Ghc.Unqual occName -> Ghc.occNameString occName <> "()"
+            -- module M ( N.X ( TODO ) )
+            Ghc.Qual moduleName occName ->
+              Ghc.moduleNameString moduleName
+                <> "."
+                <> Ghc.occNameString occName
+                <> "()"
+            Ghc.Orig{} -> crash "IEThingWith/IEName/Orig" lRdrName
+            Ghc.Exact{} -> crash "IEThingWith/IEName/Exact" lRdrName
+          Ghc.IEPattern{} -> crash "IEThingWith/IEPattern" lieWrappedName
+          Ghc.IEType{} -> crash "IEThingWith/IEType" lieWrappedName
+
+      -- module M ( module N )
+      Ghc.IEModuleContents _ lModuleName ->
+        "module " <> Ghc.moduleNameString (Ghc.unLoc lModuleName)
+
+      Ghc.IEGroup{} -> crash "IEGroup" ie
+
+      Ghc.IEDoc{} -> crash "IEDoc" ie
+
+      Ghc.IEDocNamed{} -> crash "IEDocNamed" ie
+
+      Ghc.XIE{} -> crash "XIE" ie
+
+    convertDecl hsDecl = case hsDecl of
+      Ghc.TyClD _ tyClDecl -> case tyClDecl of
+        Ghc.FamDecl{} -> crash "TyClD/FamDecl" tyClDecl
+        Ghc.SynDecl _ lRdrName _ _ _ -> case Ghc.unLoc lRdrName of
+          -- type X = ...
+          Ghc.Unqual occName -> [Ghc.occNameString occName]
+          Ghc.Qual{} -> crash "TyClD/SynDecl/Qual" lRdrName
+          Ghc.Orig{} -> crash "TyClD/SynDecl/Orig" lRdrName
+          Ghc.Exact{} -> crash "TyClD/SynDecl/Exact" lRdrName
+        Ghc.DataDecl _ lRdrName _ _ _ -> case Ghc.unLoc lRdrName of
+          -- data X = ...
+          Ghc.Unqual occName -> [Ghc.occNameString occName]
+          Ghc.Qual{} -> crash "TyClD/DataDecl/Qual" lRdrName
+          Ghc.Orig{} -> crash "TyClD/DataDecl/Orig" lRdrName
+          Ghc.Exact{} -> crash "TyClD/DataDecl/Exact" lRdrName
+        Ghc.ClassDecl _ _ lRdrName _ _ _ _ _ _ _ _ ->
+          case Ghc.unLoc lRdrName of
+          -- class X where ...
+            Ghc.Unqual occName -> [Ghc.occNameString occName]
+            Ghc.Qual{} -> crash "TyClD/ClassDecl/Qual" lRdrName
+            Ghc.Orig{} -> crash "TyClD/ClassDecl/Orig" lRdrName
+            Ghc.Exact{} -> crash "TyClD/ClassDecl/Exact" lRdrName
+        Ghc.XTyClDecl{} -> crash "TyClD/XTyClDecl" tyClDecl
+      Ghc.InstD{} -> [] -- TODO
+      Ghc.DerivD{} -> crash "DerivD" hsDecl
+      Ghc.ValD _ bind -> case bind of
+        Ghc.FunBind _ lRdrName _ _ _ -> case Ghc.unLoc lRdrName of
+          -- x = ...
+          Ghc.Unqual occName -> [Ghc.occNameString occName]
+          Ghc.Qual{} -> crash "ValD/FunBind/Qual" lRdrName
+          Ghc.Orig{} -> crash "ValD/FunBind/Orig" lRdrName
+          Ghc.Exact{} -> crash "ValD/FunBind/Exact" lRdrName
+        Ghc.PatBind{} -> crash "ValD/PatBind" bind
+        Ghc.VarBind{} -> crash "ValD/VarBind" bind
+        Ghc.AbsBinds{} -> crash "ValD/AbsBinds" bind
+        Ghc.PatSynBind{} -> crash "ValD/PatSynBind" bind
+        Ghc.XHsBindsLR{} -> crash "ValD/XHsBindsLR" bind
+      Ghc.SigD _ sig -> case sig of
+        Ghc.TypeSig _ lRdrNames _ -> fmap
+          (\lRdrName -> case Ghc.unLoc lRdrName of
+            -- x :: ...
+            Ghc.Unqual occName -> Ghc.occNameString occName
+            Ghc.Qual{} -> crash "SigD/TypeSig/Qual" lRdrName
+            Ghc.Orig{} -> crash "SigD/TypeSig/Orig" lRdrName
+            Ghc.Exact{} -> crash "SigD/TypeSig/Exact" lRdrName
+          )
+          lRdrNames
+        Ghc.PatSynSig{} -> crash "SigD/PatSynSig" sig
+        Ghc.ClassOpSig{} -> crash "SigD/ClassOpSig" sig
+        Ghc.IdSig{} -> crash "SigD/IdSig" sig
+        Ghc.FixSig _ fixitySig -> case fixitySig of
+          Ghc.FixitySig _ lRdrNames _ -> fmap
+            (\lRdrName -> case Ghc.unLoc lRdrName of
+              -- infix * 0
+              Ghc.Unqual occName -> Ghc.occNameString occName
+              Ghc.Qual{} -> crash "SigD/TypeSig/Qual" lRdrName
+              Ghc.Orig{} -> crash "SigD/TypeSig/Orig" lRdrName
+              Ghc.Exact{} -> crash "SigD/TypeSig/Exact" lRdrName
+            )
+            lRdrNames
+          Ghc.XFixitySig{} -> crash "SigD/FixSig/XFixitySig" fixitySig
+        -- {-# INLINE ... #-}
+        Ghc.InlineSig{} -> []
+        Ghc.SpecSig{} -> crash "SigD/SpecSig" sig
+        Ghc.SpecInstSig{} -> crash "SigD/SpecInstSig" sig
+        Ghc.MinimalSig{} -> crash "SigD/MinimalSig" sig
+        Ghc.SCCFunSig{} -> crash "SigD/SCCFunSig" sig
+        Ghc.CompleteMatchSig{} -> crash "SigD/CompleteMatchSig" sig
+        Ghc.XSig{} -> crash "SigD/XSig" sig
+      Ghc.KindSigD{} -> crash "KindSigD" hsDecl
+      Ghc.DefD{} -> crash "DefD" hsDecl
+      Ghc.ForD{} -> crash "ForD" hsDecl
+      Ghc.WarningD{} -> crash "WarningD" hsDecl
+      Ghc.AnnD{} -> crash "AnnD" hsDecl
+      Ghc.RuleD{} -> crash "RuleD" hsDecl
+      Ghc.SpliceD{} -> crash "SpliceD" hsDecl
+      Ghc.DocD{} -> crash "DocD" hsDecl
+      Ghc.RoleAnnotD{} -> crash "RoleAnnotD" hsDecl
+      Ghc.XHsDecl{} -> crash "XHsDecl" hsDecl
+  in case maybeExports of
+    Nothing ->
+      concatMap (convertDecl . Ghc.unLoc) . Ghc.hsmodDecls $ Ghc.unLoc ghcmod
+    Just exports -> fmap (convertIE . Ghc.unLoc) $ Ghc.unLoc exports
 
 convertExtension :: C.KnownExtension -> Maybe G.Extension
 convertExtension x = case x of
