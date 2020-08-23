@@ -929,9 +929,17 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                             (Either.isRight result, pkg, ver, rev, moduleName)
                           case result of
                             Left _ -> pure ()
-                            Right module_ -> do
-                              let exports = getModuleExports module_
-                              IO.liftIO $ mapM_ print exports
+                            Right module_ -> IO.liftIO $ do
+                              putStrLn $ unwords
+                                [ PackageName.toString pkg
+                                , Version.toString ver
+                                , Revision.toString rev
+                                , ModuleName.toString moduleName
+                                , Path.toFilePath file
+                                ]
+                              putStrLn
+                                . List.intercalate ", "
+                                $ getModuleExports module_
 
 -- https://hackage.haskell.org/package/ghc-8.10.1/docs/Parser.html#v:parseModule
 getModuleExports :: Monadoc.Utility.Ghc.Module -> [String]
@@ -956,7 +964,12 @@ getModuleExports module_ =
             Ghc.moduleNameString moduleName <> "." <> Ghc.occNameString occName
           Ghc.Orig{} -> crash "IEVar/IEName/Orig" lRdrName
           Ghc.Exact{} -> crash "IEVar/IEName/Exact" lRdrName
-        Ghc.IEPattern{} -> crash "IEVar/IEPattern" lieWrappedName
+        Ghc.IEPattern lRdrName -> case Ghc.unLoc lRdrName of
+          -- module M ( pattern X )
+          Ghc.Unqual occName -> Ghc.occNameString occName
+          Ghc.Qual{} -> crash "TyClD/FamDecl/FamilyDecl/Qual" lRdrName
+          Ghc.Orig{} -> crash "TyClD/FamDecl/FamilyDecl/Orig" lRdrName
+          Ghc.Exact{} -> crash "TyClD/FamDecl/FamilyDecl/Exact" lRdrName
         Ghc.IEType{} -> crash "IEVar/IEType" lieWrappedName
 
       Ghc.IEThingAbs _ lieWrappedName -> case Ghc.unLoc lieWrappedName of
@@ -1015,8 +1028,16 @@ getModuleExports module_ =
       Ghc.XIE{} -> crash "XIE" ie
 
     convertDecl hsDecl = case hsDecl of
+
       Ghc.TyClD _ tyClDecl -> case tyClDecl of
-        Ghc.FamDecl{} -> crash "TyClD/FamDecl" tyClDecl
+        Ghc.FamDecl _ familyDecl -> case familyDecl of
+          Ghc.FamilyDecl _ _ lRdrName _ _ _ _ -> case Ghc.unLoc lRdrName of
+            -- type family X ...
+            Ghc.Unqual occName -> [Ghc.occNameString occName]
+            Ghc.Qual{} -> crash "TyClD/FamDecl/FamilyDecl/Qual" lRdrName
+            Ghc.Orig{} -> crash "TyClD/FamDecl/FamilyDecl/Orig" lRdrName
+            Ghc.Exact{} -> crash "TyClD/FamDecl/FamilyDecl/Exact" lRdrName
+          Ghc.XFamilyDecl{} -> crash "TyClD/FamDecl/XFamilyDecl" familyDecl
         Ghc.SynDecl _ lRdrName _ _ _ -> case Ghc.unLoc lRdrName of
           -- type X = ...
           Ghc.Unqual occName -> [Ghc.occNameString occName]
@@ -1037,8 +1058,11 @@ getModuleExports module_ =
             Ghc.Orig{} -> crash "TyClD/ClassDecl/Orig" lRdrName
             Ghc.Exact{} -> crash "TyClD/ClassDecl/Exact" lRdrName
         Ghc.XTyClDecl{} -> crash "TyClD/XTyClDecl" tyClDecl
-      Ghc.InstD{} -> [] -- TODO
-      Ghc.DerivD{} -> crash "DerivD" hsDecl
+
+      Ghc.InstD{} -> [] -- TODO: instance Class Type where ...
+
+      Ghc.DerivD{} -> [] -- TODO: deriving instance Class Type where ...
+
       Ghc.ValD _ bind -> case bind of
         Ghc.FunBind _ lRdrName _ _ _ -> case Ghc.unLoc lRdrName of
           -- x = ...
@@ -1046,11 +1070,38 @@ getModuleExports module_ =
           Ghc.Qual{} -> crash "ValD/FunBind/Qual" lRdrName
           Ghc.Orig{} -> crash "ValD/FunBind/Orig" lRdrName
           Ghc.Exact{} -> crash "ValD/FunBind/Exact" lRdrName
-        Ghc.PatBind{} -> crash "ValD/PatBind" bind
+        Ghc.PatBind _ lPat _ _ -> case Ghc.unLoc lPat of
+          Ghc.WildPat{} -> crash "ValD/PatBind/WildPat" lPat
+          Ghc.VarPat{} -> crash "ValD/PatBind/VarPat" lPat
+          Ghc.LazyPat{} -> crash "ValD/PatBind/LazyPat" lPat
+          Ghc.AsPat{} -> [] -- TODO: x@y = ...
+          Ghc.ParPat{} -> [] -- TODO: ( x : y : _ ) = ...
+          Ghc.BangPat{} -> crash "ValD/PatBind/BangPat" lPat
+          Ghc.ListPat{} -> [] -- TODO: [ x, y ] = ...
+          Ghc.TuplePat{} -> [] -- TODO: ( x, y ) = ...
+          Ghc.SumPat{} -> crash "ValD/PatBind/SumPat" lPat
+          Ghc.ConPatIn{} -> [] -- TODO: C x y = ...
+          Ghc.ConPatOut{} -> crash "ValD/PatBind/ConPatOut" lPat
+          Ghc.ViewPat{} -> crash "ValD/PatBind/ViewPat" lPat
+          Ghc.SplicePat{} -> crash "ValD/PatBind/SplicePat" lPat
+          Ghc.LitPat{} -> crash "ValD/PatBind/LitPat" lPat
+          Ghc.NPat{} -> crash "ValD/PatBind/NPat" lPat
+          Ghc.NPlusKPat{} -> crash "ValD/PatBind/NPlusKPat" lPat
+          Ghc.SigPat{} -> [] -- TODO: x :: ... = ...
+          Ghc.CoPat{} -> crash "ValD/PatBind/CoPat" lPat
+          Ghc.XPat{} -> crash "ValD/PatBind/XPat" lPat
         Ghc.VarBind{} -> crash "ValD/VarBind" bind
         Ghc.AbsBinds{} -> crash "ValD/AbsBinds" bind
-        Ghc.PatSynBind{} -> crash "ValD/PatSynBind" bind
+        Ghc.PatSynBind _ patSynBind -> case patSynBind of
+          Ghc.PSB _ lRdrName _ _ _ -> case Ghc.unLoc lRdrName of
+            -- pattern X = ...
+            Ghc.Unqual occName -> [Ghc.occNameString occName]
+            Ghc.Qual{} -> crash "ValD/PatSynBind/PSB/Qual" lRdrName
+            Ghc.Orig{} -> crash "ValD/PatSynBind/PSB/Orig" lRdrName
+            Ghc.Exact{} -> crash "ValD/PatSynBind/PSB/Exact" lRdrName
+          Ghc.XPatSynBind{} -> crash "ValD/PatSynBind/XPatSynBind" patSynBind
         Ghc.XHsBindsLR{} -> crash "ValD/XHsBindsLR" bind
+
       Ghc.SigD _ sig -> case sig of
         Ghc.TypeSig _ lRdrNames _ -> fmap
           (\lRdrName -> case Ghc.unLoc lRdrName of
@@ -1061,7 +1112,15 @@ getModuleExports module_ =
             Ghc.Exact{} -> crash "SigD/TypeSig/Exact" lRdrName
           )
           lRdrNames
-        Ghc.PatSynSig{} -> crash "SigD/PatSynSig" sig
+        Ghc.PatSynSig _ lRdrNames _ -> fmap
+          (\lRdrName -> case Ghc.unLoc lRdrName of
+            -- pattern X :: ...
+            Ghc.Unqual occName -> Ghc.occNameString occName
+            Ghc.Qual{} -> crash "SigD/PatSynSig/Qual" lRdrName
+            Ghc.Orig{} -> crash "SigD/PatSynSig/Orig" lRdrName
+            Ghc.Exact{} -> crash "SigD/PatSynSig/Exact" lRdrName
+          )
+          lRdrNames
         Ghc.ClassOpSig{} -> crash "SigD/ClassOpSig" sig
         Ghc.IdSig{} -> crash "SigD/IdSig" sig
         Ghc.FixSig _ fixitySig -> case fixitySig of
@@ -1077,21 +1136,45 @@ getModuleExports module_ =
           Ghc.XFixitySig{} -> crash "SigD/FixSig/XFixitySig" fixitySig
         -- {-# INLINE ... #-}
         Ghc.InlineSig{} -> []
-        Ghc.SpecSig{} -> crash "SigD/SpecSig" sig
-        Ghc.SpecInstSig{} -> crash "SigD/SpecInstSig" sig
+        -- {-# SPECIALIZE ... #-}
+        Ghc.SpecSig{} -> []
+        -- {-# SPECIALIZE instance ... #-}
+        Ghc.SpecInstSig{} -> []
         Ghc.MinimalSig{} -> crash "SigD/MinimalSig" sig
         Ghc.SCCFunSig{} -> crash "SigD/SCCFunSig" sig
         Ghc.CompleteMatchSig{} -> crash "SigD/CompleteMatchSig" sig
         Ghc.XSig{} -> crash "SigD/XSig" sig
+
       Ghc.KindSigD{} -> crash "KindSigD" hsDecl
-      Ghc.DefD{} -> crash "DefD" hsDecl
-      Ghc.ForD{} -> crash "ForD" hsDecl
-      Ghc.WarningD{} -> crash "WarningD" hsDecl
+
+      -- default ...
+      Ghc.DefD{} -> []
+
+      Ghc.ForD _ foreignDecl -> case foreignDecl of
+        Ghc.ForeignImport _ lRdrName _ _ -> case Ghc.unLoc lRdrName of
+          -- foreign import ... x :: ...
+          Ghc.Unqual occName -> [Ghc.occNameString occName]
+          Ghc.Qual{} -> crash "ForD/ForeignImport/Qual" lRdrName
+          Ghc.Orig{} -> crash "ForD/ForeignImport/Orig" lRdrName
+          Ghc.Exact{} -> crash "ForD/ForeignImport/Exact" lRdrName
+        -- foreign export ...
+        Ghc.ForeignExport{} -> []
+        Ghc.XForeignDecl{} -> crash "ForD/XForeignDecl" foreignDecl
+
+      -- {-# DEPRECATED ... #-}
+      Ghc.WarningD{} -> []
+
       Ghc.AnnD{} -> crash "AnnD" hsDecl
-      Ghc.RuleD{} -> crash "RuleD" hsDecl
-      Ghc.SpliceD{} -> crash "SpliceD" hsDecl
+
+      -- {-# RULES ... #-}
+      Ghc.RuleD{} -> []
+
+      Ghc.SpliceD{} -> [] -- TODO: $( blah )
+
       Ghc.DocD{} -> crash "DocD" hsDecl
+
       Ghc.RoleAnnotD{} -> crash "RoleAnnotD" hsDecl
+
       Ghc.XHsDecl{} -> crash "XHsDecl" hsDecl
   in case maybeExports of
     Nothing ->
