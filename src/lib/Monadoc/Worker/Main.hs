@@ -1163,7 +1163,8 @@ getModuleExports module_ =
         Ghc.CompleteMatchSig{} -> []
         Ghc.XSig{} -> crash "SigD/XSig" sig
 
-      Ghc.KindSigD{} -> crash "KindSigD" hsDecl
+      -- type X :: ...
+      Ghc.KindSigD{} -> []
 
       -- default ...
       Ghc.DefD{} -> []
