@@ -1,9 +1,13 @@
 module Monadoc.Type.TimestampSpec where
 
+import qualified Database.SQLite.Simple as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.Internal as Sql
+import qualified Database.SQLite.Simple.Ok as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Timestamp as Timestamp
-import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
-import Test
+import qualified Monadoc.Utility.Time as Time
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Timestamp" $ do

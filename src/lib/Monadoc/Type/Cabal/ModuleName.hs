@@ -1,8 +1,8 @@
 module Monadoc.Type.Cabal.ModuleName where
 
 import qualified Data.List as List
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.ModuleName as Cabal
-import qualified Monadoc.Vendor.Sql as Sql
 
 newtype ModuleName = ModuleName Cabal.ModuleName deriving (Eq, Ord, Show)
 

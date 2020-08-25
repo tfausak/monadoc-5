@@ -1,14 +1,14 @@
-module Monadoc.Extra.SqlSpec where
+module Monadoc.Utility.SqlSpec where
 
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.Internal as Sql
 import qualified Database.SQLite.Simple.Ok as Sql
-import qualified Monadoc.Extra.Sql as Sql
-import Test
+import qualified Monadoc.Utility.Sql as Sql
+import Test.Hspec
 import qualified Text.Read as Read
 
 spec :: Spec
-spec = describe "Monadoc.Extra.Sql" $ do
+spec = describe "Monadoc.Utility.Sql" $ do
 
   describe "fromFieldVia" $ do
 

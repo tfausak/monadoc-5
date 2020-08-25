@@ -1,6 +1,6 @@
 module Monadoc.Worker.MainSpec where
 
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Worker.Main" $ do

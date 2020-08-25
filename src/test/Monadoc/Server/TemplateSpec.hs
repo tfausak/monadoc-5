@@ -1,6 +1,6 @@
 module Monadoc.Server.TemplateSpec where
 
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Server.Template" $ do

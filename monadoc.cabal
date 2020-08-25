@@ -81,15 +81,10 @@ library
   autogen-modules: Paths_monadoc
   exposed-modules:
     Monadoc
-    Monadoc.Cabal
-    Monadoc.Console
     Monadoc.Data.Commit
     Monadoc.Data.Migrations
     Monadoc.Data.Options
     Monadoc.Data.Version
-    Monadoc.Extra.Sql
-    Monadoc.Extra.Time
-    Monadoc.Ghc
     Monadoc.Handler.Account
     Monadoc.Handler.Favicon
     Monadoc.Handler.GitHubCallback
@@ -137,9 +132,12 @@ library
     Monadoc.Type.Url
     Monadoc.Type.User
     Monadoc.Type.WithCallStack
+    Monadoc.Utility.Cabal
+    Monadoc.Utility.Console
+    Monadoc.Utility.Ghc
+    Monadoc.Utility.Sql
+    Monadoc.Utility.Time
     Monadoc.Utility.Utf8
-    Monadoc.Vendor.Sql
-    Monadoc.Vendor.Time
     Monadoc.Worker.Main
   hs-source-dirs: src/lib
   other-modules: Paths_monadoc
@@ -157,15 +155,10 @@ test-suite test
   hs-source-dirs: src/test
   main-is: Main.hs
   other-modules:
-    Monadoc.CabalSpec
-    Monadoc.ConsoleSpec
     Monadoc.Data.CommitSpec
     Monadoc.Data.MigrationsSpec
     Monadoc.Data.OptionsSpec
     Monadoc.Data.VersionSpec
-    Monadoc.Extra.SqlSpec
-    Monadoc.Extra.TimeSpec
-    Monadoc.GhcSpec
     Monadoc.Handler.AccountSpec
     Monadoc.Handler.FaviconSpec
     Monadoc.Handler.GitHubCallbackSpec
@@ -185,11 +178,12 @@ test-suite test
     Monadoc.Server.RouterSpec
     Monadoc.Server.SettingsSpec
     Monadoc.Server.TemplateSpec
-    Monadoc.Test
     Monadoc.Type.AppSpec
     Monadoc.Type.BinarySpec
+    Monadoc.Type.Cabal.ModuleNameSpec
     Monadoc.Type.Cabal.PackageNameSpec
     Monadoc.Type.Cabal.VersionRangeSpec
+    Monadoc.Type.Cabal.VersionSpec
     Monadoc.Type.ConfigResultSpec
     Monadoc.Type.ConfigSpec
     Monadoc.Type.ContextSpec
@@ -212,10 +206,12 @@ test-suite test
     Monadoc.Type.UrlSpec
     Monadoc.Type.UserSpec
     Monadoc.Type.WithCallStackSpec
+    Monadoc.Utility.CabalSpec
+    Monadoc.Utility.ConsoleSpec
+    Monadoc.Utility.GhcSpec
+    Monadoc.Utility.SqlSpec
+    Monadoc.Utility.TimeSpec
     Monadoc.Utility.Utf8Spec
-    Monadoc.Vendor.SqlSpec
-    Monadoc.Vendor.TimeSpec
     Monadoc.Worker.MainSpec
     MonadocSpec
-    Test
   type: exitcode-stdio-1.0

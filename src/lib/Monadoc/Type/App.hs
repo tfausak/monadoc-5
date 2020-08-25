@@ -4,8 +4,8 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Pool as Pool
+import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc.Type.Context as Context
-import qualified Monadoc.Vendor.Sql as Sql
 
 -- | The main application type. This simply provides the run-time context. Use
 -- 'run' to convert this into 'IO'.

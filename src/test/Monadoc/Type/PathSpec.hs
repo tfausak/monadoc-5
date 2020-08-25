@@ -1,7 +1,7 @@
 module Monadoc.Type.PathSpec where
 
 import qualified Monadoc.Type.Path as Path
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Path" $ do

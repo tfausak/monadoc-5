@@ -1,4 +1,4 @@
-module Monadoc.Cabal where
+module Monadoc.Utility.Cabal where
 
 import qualified Data.ByteString as ByteString
 import qualified Data.Function as Function

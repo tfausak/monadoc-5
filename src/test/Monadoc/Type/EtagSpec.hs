@@ -1,9 +1,13 @@
 module Monadoc.Type.EtagSpec where
 
 import qualified Data.Text as Text
+import qualified Database.SQLite.Simple as Sql
+import qualified Database.SQLite.Simple.FromField as Sql
+import qualified Database.SQLite.Simple.Internal as Sql
+import qualified Database.SQLite.Simple.Ok as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Etag as Etag
-import qualified Monadoc.Vendor.Sql as Sql
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Etag" $ do

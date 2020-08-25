@@ -1,9 +1,9 @@
 module Monadoc.Type.Cabal.PackageName where
 
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Pretty as Cabal
 import qualified Distribution.Types.PackageName as Cabal
-import qualified Monadoc.Vendor.Sql as Sql
 
 newtype PackageName
   = PackageName Cabal.PackageName

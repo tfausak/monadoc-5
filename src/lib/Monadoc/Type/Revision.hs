@@ -1,6 +1,6 @@
 module Monadoc.Type.Revision where
 
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Text.Read as Read
 
 newtype Revision

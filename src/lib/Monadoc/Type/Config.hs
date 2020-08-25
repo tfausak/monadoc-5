@@ -57,3 +57,11 @@ initial = Config
   , url = "http://localhost:4444"
   , version = False
   }
+
+-- | A config optimized for testing.
+test :: Config
+test = initial
+  { database = ":memory:"
+  , hackageUrl = "http://hackage.test"
+  , url = "http://monadoc.test:4444"
+  }

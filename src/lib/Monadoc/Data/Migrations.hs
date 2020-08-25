@@ -2,10 +2,10 @@ module Monadoc.Data.Migrations where
 
 import qualified Data.Fixed as Fixed
 import qualified Data.Set as Set
+import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Timestamp as Timestamp
-import qualified Monadoc.Vendor.Sql as Sql
-import qualified Monadoc.Vendor.Time as Time
+import qualified Monadoc.Utility.Time as Time
 
 -- | Collection of migrations to run. The app automatically performs migrations
 -- when it starts. They are run ordered by their timestamps.
@@ -81,11 +81,20 @@ migrations = Set.fromList
     \parsed boolean not null default false, \
     \unique (package, version, revision, module))"
   , makeMigration
-    (2020, 8, 19, 22, 9, 0)
+    (2020, 8, 24, 9, 1, 0)
     "delete from processed_files where path like 'd/%'"
   , makeMigration
-    (2020, 8, 19, 22, 10, 0)
+    (2020, 8, 24, 9, 2, 0)
     "update exposed_modules set parsed = false"
+  , makeMigration
+    (2020, 8, 24, 9, 3, 0)
+    "create table exported_identifiers (\
+    \package text not null, \
+    \version text not null, \
+    \revision integer not null, \
+    \module text not null, \
+    \identifier text not null, \
+    \unique (package, version, revision, module, identifier))"
   ]
 
 makeMigration

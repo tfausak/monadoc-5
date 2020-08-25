@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{- hlint ignore "Avoid restricted extensions" -}
+
 module Monadoc.Worker.Main where
 
 import qualified Codec.Archive.Tar as Tar
@@ -20,6 +23,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Time as Time
 import qualified Data.Word as Word
+import qualified Database.SQLite.Simple as Sql
 import qualified Distribution.Compiler as Cabal
 import qualified Distribution.ModuleName as Cabal
 import qualified Distribution.PackageDescription.Configuration as Cabal
@@ -38,11 +42,10 @@ import qualified Distribution.Types.PackageVersionConstraint as Cabal
 import qualified Distribution.Types.Version as Cabal
 import qualified Distribution.Types.VersionRange as Cabal
 import qualified GHC.Clock as Clock
+import qualified GHC.Hs as Ghc
 import qualified GHC.LanguageExtensions.Type as G
 import qualified Language.Haskell.Extension as C
-import qualified Monadoc.Cabal
-import qualified Monadoc.Console as Console
-import qualified Monadoc.Ghc
+import qualified Module as Ghc
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -59,11 +62,17 @@ import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Size as Size
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Type.WithCallStack as WithCallStack
+import qualified Monadoc.Utility.Cabal
+import qualified Monadoc.Utility.Console as Console
+import qualified Monadoc.Utility.Ghc
 import qualified Monadoc.Utility.Utf8 as Utf8
-import qualified Monadoc.Vendor.Sql as Sql
+import qualified Name as Ghc
 import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
+import qualified Outputable as Ghc
+import qualified RdrName as Ghc
+import qualified SrcLoc as Ghc
 import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 import qualified System.Mem as Mem
@@ -833,7 +842,7 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
     case maybeBinary of
       Nothing -> WithCallStack.throw $ MissingBinary sha256
       Just binary -> pure binary
-  case Monadoc.Cabal.parse $ Binary.toByteString binary of
+  case Monadoc.Utility.Cabal.parse $ Binary.toByteString binary of
     Left errs -> WithCallStack.throw . userError $ show (pkg, ver, rev, errs)
     Right package -> do
       let
@@ -841,13 +850,13 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
           Cabal.pkgName
             . Cabal.package
             . Cabal.packageDescription
-            $ Monadoc.Cabal.unwrapPackage package
+            $ Monadoc.Utility.Cabal.unwrapPackage package
         versionNumber =
           Version.fromCabal
             . Cabal.pkgVersion
             . Cabal.package
             . Cabal.packageDescription
-            $ Monadoc.Cabal.unwrapPackage package
+            $ Monadoc.Utility.Cabal.unwrapPackage package
       Monad.when (packageName /= PackageName.toCabal pkg)
         . WithCallStack.throw
         $ PackageNameMismatch pkg packageName
@@ -894,15 +903,8 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                     \on conflict (package, version, revision, module) \
                     \do update set file = excluded.file"
                     (pkg, ver, rev, moduleName, maybeFile)
-                  let
-                    key = unwords
-                      [ PackageName.toString pkg
-                      , Version.toString ver
-                      , Revision.toString rev
-                      , ModuleName.toString moduleName
-                      ]
                   case maybeFile of
-                    Nothing -> Console.info $ "SKIP " <> key
+                    Nothing -> pure ()
                     Just file -> do
                       rows <- App.sql
                         "select blobs.octets from blobs \
@@ -913,7 +915,7 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                         [] -> fail $ "missing contents for " <> show file
                         Sql.Only contents : _ -> do
                           let _ = contents :: Binary.Binary
-                          result <- IO.liftIO $ Monadoc.Ghc.parse
+                          result <- IO.liftIO $ Monadoc.Utility.Ghc.parse
                             extensions
                             (Path.toFilePath file)
                             (Binary.toByteString contents)
@@ -926,8 +928,175 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                             \and module = ?"
                             (Either.isRight result, pkg, ver, rev, moduleName)
                           case result of
-                            Left _ -> Console.info $ "FAIL " <> key
-                            Right _ -> Console.info $ "PASS " <> key
+                            Left _ -> pure ()
+                            Right module_ ->
+                              Monad.forM_ (getModuleExports module_)
+                                $ \identifier -> App.sql_
+                                    "insert or ignore into exported_identifiers \
+                                    \(package, version, revision, module, identifier) \
+                                    \values (?, ?, ?, ?, ?)"
+                                    (pkg, ver, rev, moduleName, identifier)
+
+-- https://hackage.haskell.org/package/ghc-8.10.1/docs/Parser.html#v:parseModule
+getModuleExports :: Monadoc.Utility.Ghc.Module -> [String]
+getModuleExports module_ =
+  let
+    ghcmod = Monadoc.Utility.Ghc.unwrapModule module_
+    modnam :: String
+    modnam =
+      maybe "?" (Ghc.moduleNameString . Ghc.unLoc) . Ghc.hsmodName $ Ghc.unLoc
+        ghcmod
+    maybeExports = Ghc.hsmodExports $ Ghc.unLoc ghcmod
+    crash label x =
+      error $ modnam <> " [" <> label <> "] " <> Ghc.showSDocUnsafe (Ghc.ppr x)
+
+    -- TODO: Does an Orig RdrName actually show up anywhere? I think it's only
+    -- generated by the compiler. Maybe be TH, but I'm not executing that.
+
+    -- TODO: Is documentation ever generated for an Exact RdrName? They're part
+    -- of the syntax. Maybe need to look at GHC.Tuple closer.
+
+    -- TODO: What's the difference between IEThingAbs, IEThingAll, and
+    -- IEThingWith when they're wrapping IEType? I would expect them to be
+    -- `type T`, `type T(..)`, and `type T(x)` respectively, but that didn't
+    -- seem to be the case. Maybe I need to look again.
+
+    -- TODO: I need to include the exported identifiers when dealing with
+    -- IEThingWith.
+
+    convertLRN :: Ghc.Located Ghc.RdrName -> String
+    convertLRN x = case Ghc.unLoc x of
+      Ghc.Unqual y -> Ghc.occNameString y
+      Ghc.Qual y z -> Ghc.moduleNameString y <> "." <> Ghc.occNameString z
+      Ghc.Orig y z ->
+        Ghc.moduleNameString (Ghc.moduleName y) <> "." <> Ghc.occNameString z
+      Ghc.Exact y -> Ghc.occNameString $ Ghc.nameOccName y
+
+    convertLWN :: Ghc.Located (Ghc.IEWrappedName Ghc.RdrName) -> String
+    convertLWN x = case Ghc.unLoc x of
+      Ghc.IEName y -> convertLRN y
+      Ghc.IEPattern y -> "pattern " <> convertLRN y
+      Ghc.IEType y -> "type " <> convertLRN y
+
+    convertIE x = case x of
+      Ghc.IEVar _ y -> convertLWN y
+      Ghc.IEThingAbs _ y -> convertLWN y
+      Ghc.IEThingAll _ y -> convertLWN y <> "(..)"
+      Ghc.IEThingWith _ y _ _names _fields -> convertLWN y <> "({- TODO -})"
+      Ghc.IEModuleContents _ y ->
+        "module " <> Ghc.moduleNameString (Ghc.unLoc y)
+      Ghc.IEGroup{} -> crash "IEGroup" x
+      Ghc.IEDoc{} -> crash "IEDoc" x
+      Ghc.IEDocNamed{} -> crash "IEDocNamed" x
+      Ghc.XIE{} -> crash "XIE" x
+
+    convertDecl hsDecl = case hsDecl of
+
+      Ghc.TyClD _ tyClDecl -> case tyClDecl of
+        -- type family X = ...
+        Ghc.FamDecl _ familyDecl -> case familyDecl of
+          Ghc.FamilyDecl _ _ lrn _ _ _ _ -> [convertLRN lrn]
+          Ghc.XFamilyDecl{} -> crash "TyClD/FamDecl/XFamilyDecl" familyDecl
+        -- type X = ...
+        Ghc.SynDecl _ lrn _ _ _ -> [convertLRN lrn]
+        -- data X = ...
+        Ghc.DataDecl _ lrn _ _ _ -> [convertLRN lrn]
+        -- class X where ...
+        Ghc.ClassDecl _ _ lrn _ _ _ _ _ _ _ _ -> [convertLRN lrn]
+        Ghc.XTyClDecl{} -> crash "TyClD/XTyClDecl" tyClDecl
+
+      Ghc.InstD{} -> [] -- TODO: instance Class Type where ...
+
+      Ghc.DerivD{} -> [] -- TODO: deriving instance Class Type where ...
+
+      Ghc.ValD _ bind -> case bind of
+        -- x = ...
+        Ghc.FunBind _ lrn _ _ _ -> [convertLRN lrn]
+        Ghc.PatBind _ lPat _ _ -> case Ghc.unLoc lPat of
+          Ghc.WildPat{} -> crash "ValD/PatBind/WildPat" lPat
+          Ghc.VarPat{} -> crash "ValD/PatBind/VarPat" lPat
+          Ghc.LazyPat{} -> crash "ValD/PatBind/LazyPat" lPat
+          Ghc.AsPat{} -> [] -- TODO: x@y = ...
+          Ghc.ParPat{} -> [] -- TODO: ( x : y : _ ) = ...
+          Ghc.BangPat{} -> crash "ValD/PatBind/BangPat" lPat
+          Ghc.ListPat{} -> [] -- TODO: [ x, y ] = ...
+          Ghc.TuplePat{} -> [] -- TODO: ( x, y ) = ...
+          Ghc.SumPat{} -> crash "ValD/PatBind/SumPat" lPat
+          Ghc.ConPatIn{} -> [] -- TODO: C x y = ...
+          Ghc.ConPatOut{} -> crash "ValD/PatBind/ConPatOut" lPat
+          Ghc.ViewPat{} -> crash "ValD/PatBind/ViewPat" lPat
+          Ghc.SplicePat{} -> crash "ValD/PatBind/SplicePat" lPat
+          Ghc.LitPat{} -> crash "ValD/PatBind/LitPat" lPat
+          Ghc.NPat{} -> crash "ValD/PatBind/NPat" lPat
+          Ghc.NPlusKPat{} -> crash "ValD/PatBind/NPlusKPat" lPat
+          Ghc.SigPat{} -> [] -- TODO: x :: ... = ...
+          Ghc.CoPat{} -> crash "ValD/PatBind/CoPat" lPat
+          Ghc.XPat{} -> crash "ValD/PatBind/XPat" lPat
+        Ghc.VarBind{} -> crash "ValD/VarBind" bind
+        Ghc.AbsBinds{} -> crash "ValD/AbsBinds" bind
+        -- pattern X = ...
+        Ghc.PatSynBind _ patSynBind -> case patSynBind of
+          Ghc.PSB _ lrn _ _ _ -> [convertLRN lrn]
+          Ghc.XPatSynBind{} -> crash "ValD/PatSynBind/XPatSynBind" patSynBind
+        Ghc.XHsBindsLR{} -> crash "ValD/XHsBindsLR" bind
+
+      Ghc.SigD _ sig -> case sig of
+        -- type X = ...
+        Ghc.TypeSig _ lrns _ -> fmap convertLRN lrns
+        -- pattern X = ...
+        Ghc.PatSynSig _ lrns _ -> fmap convertLRN lrns
+        Ghc.ClassOpSig{} -> crash "SigD/ClassOpSig" sig
+        Ghc.IdSig{} -> crash "SigD/IdSig" sig
+        Ghc.FixSig _ fixitySig -> case fixitySig of
+          -- infix 4 ==
+          Ghc.FixitySig _ lrns _ -> fmap convertLRN lrns
+          Ghc.XFixitySig{} -> crash "SigD/FixSig/XFixitySig" fixitySig
+        -- {-# INLINE ... #-}
+        Ghc.InlineSig{} -> []
+        -- {-# SPECIALIZE ... #-}
+        Ghc.SpecSig{} -> []
+        -- {-# SPECIALIZE instance ... #-}
+        Ghc.SpecInstSig{} -> []
+        Ghc.MinimalSig{} -> crash "SigD/MinimalSig" sig
+        -- {-# SCC ... #-}
+        Ghc.SCCFunSig{} -> []
+        -- {-# COMPLETE ... #-}
+        Ghc.CompleteMatchSig{} -> []
+        Ghc.XSig{} -> crash "SigD/XSig" sig
+
+      -- type X :: ...
+      Ghc.KindSigD{} -> []
+
+      -- default ...
+      Ghc.DefD{} -> []
+
+      Ghc.ForD _ foreignDecl -> case foreignDecl of
+        -- foreign import ... x :: ...
+        Ghc.ForeignImport _ lrn _ _ -> [convertLRN lrn]
+        -- foreign export ...
+        Ghc.ForeignExport{} -> []
+        Ghc.XForeignDecl{} -> crash "ForD/XForeignDecl" foreignDecl
+
+      -- {-# DEPRECATED ... #-}
+      Ghc.WarningD{} -> []
+
+      -- {-# ANN ... #-}
+      Ghc.AnnD{} -> []
+
+      -- {-# RULES ... #-}
+      Ghc.RuleD{} -> []
+
+      Ghc.SpliceD{} -> [] -- TODO: $( blah )
+
+      Ghc.DocD{} -> crash "DocD" hsDecl
+
+      Ghc.RoleAnnotD{} -> [] -- TODO: type role X ...
+
+      Ghc.XHsDecl{} -> crash "XHsDecl" hsDecl
+  in case maybeExports of
+    Nothing ->
+      concatMap (convertDecl . Ghc.unLoc) . Ghc.hsmodDecls $ Ghc.unLoc ghcmod
+    Just exports -> fmap (convertIE . Ghc.unLoc) $ Ghc.unLoc exports
 
 convertExtension :: C.KnownExtension -> Maybe G.Extension
 convertExtension x = case x of
@@ -1126,7 +1295,7 @@ findSourceFileWith pkg ver dir mdl ext = do
 -- description in it, that nested PD isn't actually usable. This function is
 -- necessary in order to choose the platform, compiler, flags, and other stuff.
 toPackageDescription
-  :: Monadoc.Cabal.Package
+  :: Monadoc.Utility.Cabal.Package
   -> Either
        [Cabal.Dependency]
        (Cabal.PackageDescription, Cabal.FlagAssignment)
@@ -1148,7 +1317,7 @@ toPackageDescription =
         platform
         compilerInfo
         additionalConstraints
-      . Monadoc.Cabal.unwrapPackage
+      . Monadoc.Utility.Cabal.unwrapPackage
 
 data VersionNumberMismatch
   = VersionNumberMismatch Version.Version Version.Version

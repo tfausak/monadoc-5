@@ -1,6 +1,6 @@
 module Monadoc.Type.GitHub.UserSpec where
 
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.GitHub.User" $ do

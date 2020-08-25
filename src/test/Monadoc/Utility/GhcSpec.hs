@@ -1,12 +1,12 @@
-module Monadoc.GhcSpec where
+module Monadoc.Utility.GhcSpec where
 
 import qualified Data.Either as Either
 import qualified GHC.LanguageExtensions.Type as Ext
-import qualified Monadoc.Ghc as Ghc
-import Test
+import qualified Monadoc.Utility.Ghc as Ghc
+import Test.Hspec
 
 spec :: Spec
-spec = describe "Monadoc.Ghc" $ do
+spec = describe "Monadoc.Utility.Ghc" $ do
 
   describe "parse" $ do
 

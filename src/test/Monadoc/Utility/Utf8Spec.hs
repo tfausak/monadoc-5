@@ -2,7 +2,7 @@ module Monadoc.Utility.Utf8Spec where
 
 import qualified Data.ByteString as ByteString
 import qualified Monadoc.Utility.Utf8 as Utf8
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Utility.Utf8" $ do

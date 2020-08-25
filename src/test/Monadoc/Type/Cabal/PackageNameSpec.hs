@@ -2,7 +2,7 @@ module Monadoc.Type.Cabal.PackageNameSpec where
 
 import qualified Data.Maybe as Maybe
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.Cabal.PackageName" $ do

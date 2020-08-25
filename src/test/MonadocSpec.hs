@@ -4,7 +4,7 @@ import qualified Monadoc
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.ConfigResult as ConfigResult
 import qualified Monadoc.Type.Context as Context
-import Test
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc" $ do
@@ -44,9 +44,8 @@ spec = describe "Monadoc" $ do
   describe "configToContext" $ do
 
     it "works" $ do
-      let cfg = testConfig
-      ctx <- Monadoc.configToContext cfg
-      Context.config ctx `shouldBe` cfg
+      ctx <- Monadoc.configToContext Config.test
+      Context.config ctx `shouldBe` Config.test
 
 isExitWith :: ConfigResult.ConfigResult -> Bool
 isExitWith configResult = case configResult of
