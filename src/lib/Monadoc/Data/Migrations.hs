@@ -81,11 +81,20 @@ migrations = Set.fromList
     \parsed boolean not null default false, \
     \unique (package, version, revision, module))"
   , makeMigration
-    (2020, 8, 23, 9, 1, 0)
+    (2020, 8, 24, 9, 1, 0)
     "delete from processed_files where path like 'd/%'"
   , makeMigration
-    (2020, 8, 23, 9, 2, 0)
+    (2020, 8, 24, 9, 2, 0)
     "update exposed_modules set parsed = false"
+  , makeMigration
+    (2020, 8, 24, 9, 3, 0)
+    "create table exported_identifiers (\
+    \package text not null, \
+    \version text not null, \
+    \revision integer not null, \
+    \module text not null, \
+    \identifier text not null, \
+    \unique (package, version, revision, module, identifier))"
   ]
 
 makeMigration

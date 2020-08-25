@@ -7,7 +7,6 @@ import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as Gzip
 import qualified Control.Concurrent as Concurrent
 import qualified Control.Concurrent.STM as Stm
-import qualified Control.Exception as Exception (evaluate)
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.IO.Class as IO
@@ -931,12 +930,12 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                           case result of
                             Left _ -> pure ()
                             Right module_ ->
-                              Monad.void
-                                . IO.liftIO
-                                . Exception.evaluate
-                                . length
-                                . mconcat
-                                $ getModuleExports module_
+                              Monad.forM_ (getModuleExports module_)
+                                $ \identifier -> App.sql_
+                                    "insert or ignore into exported_identifiers \
+                                    \(package, version, revision, module, identifier) \
+                                    \values (?, ?, ?, ?, ?)"
+                                    (pkg, ver, rev, moduleName, identifier)
 
 -- https://hackage.haskell.org/package/ghc-8.10.1/docs/Parser.html#v:parseModule
 getModuleExports :: Monadoc.Utility.Ghc.Module -> [String]
