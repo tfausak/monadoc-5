@@ -11,7 +11,7 @@ spec = describe "Monadoc.Data.Version" <| do
   describe "string" <| do
 
     it "is not null" <| do
-      Monadoc.Version.string `shouldSatisfy` notNull
+      Monadoc.Version.string `shouldSatisfy` present
 
   describe "version" <| do
 
@@ -21,4 +21,4 @@ spec = describe "Monadoc.Data.Version" <| do
 
     it "has no tags" <| do
       let Version.Version _ tags = Monadoc.Version.version
-      tags `shouldSatisfy` null
+      tags `shouldSatisfy` blank

@@ -47,7 +47,6 @@ module Monadoc.Prelude
   , Data.Foldable.for_
   , Data.Foldable.length
   , Data.Foldable.notElem
-  , Data.Foldable.null
   , Data.Foldable.sequence_
   , Data.Foldable.traverse_
   , Data.Function.flip
@@ -187,11 +186,12 @@ module Monadoc.Prelude
   , Text.Show.Show
   , Text.Show.show
   , always
+  , blank
   , identity
   , io
   , lookup
   , map
-  , notNull
+  , present
   , read
   , throw
   , toEnum
@@ -260,6 +260,9 @@ import qualified Text.Show
 always :: a -> b -> a
 always = Data.Function.const
 
+blank :: Data.Foldable.Foldable t => t a -> Data.Bool.Bool
+blank = Data.Foldable.null
+
 identity :: a -> a
 identity = Data.Function.id
 
@@ -276,8 +279,8 @@ lookup k xs = Data.List.lookup k (Data.Foldable.toList xs)
 map :: Data.Functor.Functor f => (a -> b) -> f a -> f b
 map = Data.Functor.fmap
 
-notNull :: Data.Foldable.Foldable t => t a -> Data.Bool.Bool
-notNull = Data.Bool.not Data.Function.. Data.Foldable.null
+present :: Data.Foldable.Foldable t => t a -> Data.Bool.Bool
+present xs = Data.Bool.not (blank xs)
 
 read :: Text.Read.Read a => Data.String.String -> Data.Maybe.Maybe a
 read = Text.Read.readMaybe

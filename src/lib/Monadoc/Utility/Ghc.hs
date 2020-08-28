@@ -74,7 +74,7 @@ parse extensions filePath byteString = Control.Exception.handle handler <| do
     Lexer.POk pState2 locatedHsModuleGhcPs ->
       let bagErrMsg = snd <| Lexer.getMessages pState2 dynFlags3
       in
-        if null bagErrMsg
+        if blank bagErrMsg
           then Right <| Module locatedHsModuleGhcPs
           else Left <| Errors bagErrMsg
 

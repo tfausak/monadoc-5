@@ -10,4 +10,4 @@ spec = describe "Monadoc.Data.Migrations" <| do
   describe "migrations" <| do
 
     it "has at least one migration" <| do
-      Migrations.migrations `shouldSatisfy` notNull
+      Migrations.migrations `shouldSatisfy` present
