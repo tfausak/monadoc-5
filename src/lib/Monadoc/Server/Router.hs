@@ -8,7 +8,7 @@ import qualified Network.HTTP.Types as Http
 
 parseRoute :: Http.Method -> [Text.Text] -> Maybe Route.Route
 parseRoute method path = do
-  stdMethod <- either (const Nothing) Just <| Http.parseMethod method
+  stdMethod <- either (always Nothing) Just <| Http.parseMethod method
   case (stdMethod, path) of
     (Http.GET, []) -> Just Route.Index
     (Http.GET, ["account"]) -> Just Route.Account

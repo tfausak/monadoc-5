@@ -34,7 +34,6 @@ module Monadoc.Prelude
   , Data.Foldable.null
   , Data.Foldable.sequence_
   , Data.Foldable.traverse_
-  , Data.Function.const
   , Data.Function.flip
   , Data.Function.id
   , Data.Functor.Functor
@@ -119,6 +118,7 @@ module Monadoc.Prelude
   , Text.Read.read
   , Text.Show.Show
   , Text.Show.show
+  , always
   , (<<<)
   , (<|)
   , (>>>)
@@ -161,6 +161,9 @@ import qualified System.IO
 import qualified System.IO.Error
 import qualified Text.Read
 import qualified Text.Show
+
+always :: a -> b -> a
+always = Data.Function.const
 
 (<<<) :: (b -> c) -> (a -> b) -> (a -> c)
 (<<<) = (Control.Category.<<<)

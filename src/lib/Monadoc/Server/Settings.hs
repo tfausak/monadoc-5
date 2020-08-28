@@ -87,7 +87,7 @@ testException = Proxy.Proxy
 isType
   :: Exception.Exception e => Proxy.Proxy e -> Exception.SomeException -> Bool
 isType proxy =
-  maybe False (const True <<< asType proxy)
+  maybe False (always True <<< asType proxy)
     <<< Exception.fromException
     <<< WithCallStack.withoutCallStack
 

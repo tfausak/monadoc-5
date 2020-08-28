@@ -135,7 +135,7 @@ sendExceptionToDiscord exception = do
 
 -- TODO: This method of pruning blobs is way too time consuming.
 doNot :: Applicative m => m a -> m ()
-doNot = const <| pure ()
+doNot = always <| pure ()
 
 pruneBlobs :: App.App request ()
 pruneBlobs = doNot <| do
@@ -1315,7 +1315,7 @@ toPackageDescription =
   let
     flagAssignment = Cabal.mkFlagAssignment []
     componentRequestedSpec = Cabal.ComponentRequestedSpec False False
-    isDependencySatisfiable = const True
+    isDependencySatisfiable = always True
     platform = Cabal.Platform Cabal.X86_64 Cabal.Linux
     compilerId = Cabal.CompilerId Cabal.GHC <| Cabal.mkVersion [8, 10, 1]
     abiTag = Cabal.NoAbiTag
