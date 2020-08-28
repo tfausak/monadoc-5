@@ -175,6 +175,7 @@ module Monadoc.Prelude
   , always
   , identity
   , lookup
+  , notNull
   , read
   , toEnum
   , (*)
@@ -241,6 +242,9 @@ lookup
   -> t (k, v)
   -> Data.Maybe.Maybe v
 lookup k xs = Data.List.lookup k (Data.Foldable.toList xs)
+
+notNull :: Data.Foldable.Foldable t => t a -> Data.Bool.Bool
+notNull = Data.Bool.not Data.Function.. Data.Foldable.null
 
 read :: Text.Read.Read a => Data.String.String -> Data.Maybe.Maybe a
 read = Text.Read.readMaybe

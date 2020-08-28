@@ -155,7 +155,7 @@ servicesOption =
 readServices :: String -> Maybe (Set.Set Service.Service)
 readServices string = do
   list <- traverse readService <<< Text.splitOn "," <| Text.pack string
-  Monad.guard <<< not <| null list
+  Monad.guard <| notNull list
   let set = Set.fromList list
   Monad.guard <| length set == length list
   pure set
