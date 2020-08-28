@@ -9,19 +9,19 @@ newtype Revision
   deriving (Eq, Show)
 
 instance Sql.ToField Revision where
-  toField = Sql.toField . toWord
+  toField = Sql.toField <<< toWord
 
 fromString :: String -> Maybe Revision
-fromString = fmap Revision . Read.readMaybe
+fromString = fmap Revision <<< Read.readMaybe
 
 fromWord :: Word -> Revision
 fromWord = Revision
 
 increment :: Revision -> Revision
-increment = fromWord . (+ 1) . toWord
+increment = fromWord <<< (+ 1) <<< toWord
 
 toString :: Revision -> String
-toString = show . toWord
+toString = show <<< toWord
 
 toWord :: Revision -> Word
 toWord (Revision word) = word

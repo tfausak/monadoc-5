@@ -40,7 +40,7 @@ clientIdOption =
       <> show (Config.clientId Config.initial)
       <> " which is appropriate for development."
       )
-    . argument "STRING"
+    <<< argument "STRING"
     $ \clientId config -> Right config { Config.clientId = clientId }
 
 clientSecretOption :: Option
@@ -52,7 +52,7 @@ clientSecretOption =
       <> show (Config.clientSecret Config.initial)
       <> "."
       )
-    . argument "STRING"
+    <<< argument "STRING"
     $ \clientSecret config ->
         Right config { Config.clientSecret = clientSecret }
 
@@ -66,7 +66,7 @@ databaseOption =
       <> show (Config.database Config.initial)
       <> "."
       )
-    . argument "FILE"
+    <<< argument "FILE"
     $ \database config -> Right config { Config.database = database }
 
 discordUrlOption :: Option
@@ -78,7 +78,7 @@ discordUrlOption =
       <> show (Config.discordUrl Config.initial)
       <> " which will disable exception reporting."
       )
-    . argument "URL"
+    <<< argument "URL"
     $ \discordUrl config -> Right config { Config.discordUrl = discordUrl }
 
 hackageUrlOption :: Option
@@ -90,13 +90,13 @@ hackageUrlOption =
       <> show (Config.hackageUrl Config.initial)
       <> "."
       )
-    . argument "URL"
+    <<< argument "URL"
     $ \hackageUrl config -> Right config { Config.hackageUrl = hackageUrl }
 
 helpOption :: Option
 helpOption =
   option ['h'] ["help"] "Shows this help message and exits."
-    . GetOpt.NoArg
+    <<< GetOpt.NoArg
     $ \config -> Right config { Config.help = True }
 
 hostOption :: Option
@@ -109,7 +109,7 @@ hostOption =
       <> showHost (Config.host Config.initial)
       <> "."
       )
-    . argument "STRING"
+    <<< argument "STRING"
     $ \host config -> Right config { Config.host = String.fromString host }
 
 showHost :: Warp.HostPreference -> String
@@ -130,13 +130,13 @@ portOption =
       <> showPort (Config.port Config.initial)
       <> "."
       )
-    . argument "NUMBER"
+    <<< argument "NUMBER"
     $ \rawPort config -> case Read.readMaybe rawPort of
         Nothing -> Left $ "invalid port: " <> show rawPort
         Just port -> Right config { Config.port = port }
 
 showPort :: Warp.Port -> String
-showPort = show . show
+showPort = show <<< show
 
 servicesOption :: Option
 servicesOption =
@@ -147,15 +147,15 @@ servicesOption =
       <> showServices (Config.services Config.initial)
       <> " which is all the services."
       )
-    . argument "STRING"
+    <<< argument "STRING"
     $ \rawServices config -> case readServices rawServices of
         Nothing -> Left $ "invalid services: " <> show rawServices
         Just services -> Right config { Config.services = services }
 
 readServices :: String -> Maybe (Set.Set Service.Service)
 readServices string = do
-  list <- traverse readService . Text.splitOn "," $ Text.pack string
-  Monad.guard . not $ null list
+  list <- traverse readService <<< Text.splitOn "," $ Text.pack string
+  Monad.guard <<< not $ null list
   let set = Set.fromList list
   Monad.guard $ length set == length list
   pure set
@@ -167,7 +167,8 @@ readService text = case text of
   _ -> Nothing
 
 showServices :: Set.Set Service.Service -> String
-showServices = show . List.intercalate "," . fmap showService . Set.toList
+showServices =
+  show <<< List.intercalate "," <<< fmap showService <<< Set.toList
 
 showService :: Service.Service -> String
 showService service = case service of
@@ -183,13 +184,13 @@ urlOption =
       <> show (Config.url Config.initial)
       <> "."
       )
-    . argument "URL"
+    <<< argument "URL"
     $ \url config -> Right config { Config.url = url }
 
 versionOption :: Option
 versionOption =
   option ['v'] ["version"] "Shows the version number and exits."
-    . GetOpt.NoArg
+    <<< GetOpt.NoArg
     $ \config -> Right config { Config.version = True }
 
 option

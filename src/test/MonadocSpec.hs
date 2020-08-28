@@ -29,12 +29,12 @@ spec = describe "Monadoc" $ do
 
     it "warns when given unexpected parameters" $ do
       case Monadoc.argumentsToConfigResult "x" ["y"] of
-        ConfigResult.Success msgs _ -> msgs `shouldSatisfy` not . null
+        ConfigResult.Success msgs _ -> msgs `shouldSatisfy` (not <<< null)
         result -> result `shouldSatisfy` isSuccess
 
     it "warns when given unknown options" $ do
       case Monadoc.argumentsToConfigResult "x" ["-y"] of
-        ConfigResult.Success msgs _ -> msgs `shouldSatisfy` not . null
+        ConfigResult.Success msgs _ -> msgs `shouldSatisfy` (not <<< null)
         result -> result `shouldSatisfy` isSuccess
 
     it "sets the port" $ do

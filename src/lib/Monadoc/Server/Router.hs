@@ -39,4 +39,4 @@ renderRelativeRoute route = case route of
 
 renderAbsoluteRoute :: Config.Config -> Route.Route -> Text.Text
 renderAbsoluteRoute config =
-  (Text.pack (Config.url config) <>) . renderRelativeRoute
+  (Text.pack (Config.url config) <>) <<< renderRelativeRoute

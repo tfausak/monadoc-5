@@ -9,16 +9,17 @@ import Monadoc.Prelude
 newtype Version = Version Cabal.Version deriving (Eq, Ord, Show)
 
 instance Sql.ToField Version where
-  toField = Sql.toField . toString
+  toField = Sql.toField <<< toString
 
 fromCabal :: Cabal.Version -> Version
 fromCabal = Version
 
 fromString :: String -> Maybe Version
-fromString = fmap fromCabal . Cabal.simpleParsec
+fromString = fmap fromCabal <<< Cabal.simpleParsec
 
 toCabal :: Version -> Cabal.Version
 toCabal (Version cabal) = cabal
 
 toString :: Version -> String
-toString = List.intercalate "." . fmap show . Cabal.versionNumbers . toCabal
+toString =
+  List.intercalate "." <<< fmap show <<< Cabal.versionNumbers <<< toCabal

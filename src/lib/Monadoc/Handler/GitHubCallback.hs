@@ -39,9 +39,9 @@ handle = do
   redirect <- getRedirect
   config <- Reader.asks Context.config
   pure
-    . Common.statusResponse Http.found302
-    . Map.insert Http.hLocation redirect
-    . Map.insert Http.hSetCookie (Common.renderCookie cookie)
+    <<< Common.statusResponse Http.found302
+    <<< Map.insert Http.hLocation redirect
+    <<< Map.insert Http.hSetCookie (Common.renderCookie cookie)
     $ Common.defaultHeaders config
 
 getCode :: App.App Wai.Request ByteString.ByteString
@@ -70,11 +70,11 @@ getToken code = do
       , ("code", code)
       ]
       initialRequest
-  response <- Trans.lift . Client.httpLbs request $ Context.manager context
+  response <- Trans.lift <<< Client.httpLbs request $ Context.manager context
   case
       lookup "access_token"
-      . Http.parseQueryText
-      . LazyByteString.toStrict
+      <<< Http.parseQueryText
+      <<< LazyByteString.toStrict
       $ Client.responseBody response
     of
       Just (Just token) -> pure token
@@ -97,7 +97,7 @@ getUser token = do
         , (Http.hUserAgent, Settings.serverName)
         ]
       }
-  response <- Trans.lift . Client.httpLbs request $ Context.manager context
+  response <- Trans.lift <<< Client.httpLbs request $ Context.manager context
   case Aeson.eitherDecode $ Client.responseBody response of
     Right user -> pure user
     Left message ->
@@ -139,7 +139,7 @@ getRedirect :: App.App Wai.Request ByteString.ByteString
 getRedirect =
   Reader.asks
     $ Maybe.fromMaybe "/"
-    . Monad.join
-    . lookup "redirect"
-    . Wai.queryString
-    . Context.request
+    <<< Monad.join
+    <<< lookup "redirect"
+    <<< Wai.queryString
+    <<< Context.request

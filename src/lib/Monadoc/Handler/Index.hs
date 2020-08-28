@@ -18,6 +18,6 @@ handle = do
   let config = Context.config context
   loginUrl <- Common.makeLoginUrl
   pure
-    . Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
-    . Template.makeHtmlWith config maybeUser loginUrl
+    <<< Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
+    <<< Template.makeHtmlWith config maybeUser loginUrl
     $ H.p_ "\x1f516 Better Haskell documentation."

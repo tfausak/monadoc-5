@@ -12,5 +12,5 @@ handle :: App.App request Wai.Response
 handle = do
   config <- Reader.asks Context.config
   pure
-    . Common.stringResponse Http.ok200 (Common.defaultHeaders config)
+    <<< Common.stringResponse Http.ok200 (Common.defaultHeaders config)
     $ unlines ["User-agent: *", "Disallow:"]

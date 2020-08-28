@@ -13,13 +13,13 @@ newtype Login
   deriving (Eq, Show)
 
 instance Sql.FromField Login where
-  fromField = fmap fromText . Sql.fromField
+  fromField = fmap fromText <<< Sql.fromField
 
 instance Aeson.FromJSON Login where
-  parseJSON = fmap fromText . Aeson.parseJSON
+  parseJSON = fmap fromText <<< Aeson.parseJSON
 
 instance Sql.ToField Login where
-  toField = Sql.toField . toText
+  toField = Sql.toField <<< toText
 
 fromText :: Text.Text -> Login
 fromText = Login

@@ -40,7 +40,7 @@ monadoc = do
     ]
   context <- configToContext config
   Exception.finally (App.run context Main.run)
-    . Pool.destroyAllResources
+    <<< Pool.destroyAllResources
     $ Context.pool context
 
 getConfig :: IO Config.Config
@@ -85,7 +85,7 @@ argumentsToConfigResult name arguments =
   in case NonEmpty.nonEmpty errs of
     Just es -> ConfigResult.Failure $ fmap ("ERROR: " <>) es
     Nothing -> case Monad.foldM (flip ($)) Config.initial funs of
-      Left err -> ConfigResult.Failure . pure $ "ERROR: " <> err <> "\n"
+      Left err -> ConfigResult.Failure <<< pure $ "ERROR: " <> err <> "\n"
       Right config -> if Config.help config
         then ConfigResult.ExitWith help
         else if Config.version config

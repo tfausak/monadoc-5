@@ -12,4 +12,4 @@ spec = describe "Monadoc.Data.Commit" $ do
     it "is not null if set" $ do
       case Commit.hash of
         Nothing -> pure ()
-        Just hash -> hash `shouldSatisfy` not . null
+        Just hash -> hash `shouldSatisfy` (not <<< null)

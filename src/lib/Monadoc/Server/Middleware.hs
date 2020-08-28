@@ -22,7 +22,7 @@ import qualified Text.Printf as Printf
 
 middleware :: Context.Context request -> Wai.Middleware
 middleware context =
-  logRequests . handleExceptions context . handleEtag . compress
+  logRequests <<< handleExceptions context <<< handleEtag <<< compress
 
 logRequests :: Wai.Middleware
 logRequests handle request respond = do
@@ -66,10 +66,10 @@ handleEtag handle request respond = handle request $ \response ->
     else response
 
 isContentLength :: Http.Header -> Bool
-isContentLength = (== Http.hContentLength) . fst
+isContentLength = (== Http.hContentLength) <<< fst
 
 isETag :: Http.Header -> Bool
-isETag = (== Http.hETag) . fst
+isETag = (== Http.hETag) <<< fst
 
 compress :: Wai.Middleware
 compress handle request respond = handle request $ \response ->
@@ -78,12 +78,12 @@ compress handle request respond = handle request $ \response ->
       let
         expanded = Builder.toLazyByteString builder
         compressed = Gzip.compress expanded
-        size = Utf8.fromString . show $ LazyByteString.length compressed
+        size = Utf8.fromString <<< show $ LazyByteString.length compressed
         etag =
           Utf8.fromString
-            . show
-            . show
-            . Crypto.hashWith Crypto.SHA256
+            <<< show
+            <<< show
+            <<< Crypto.hashWith Crypto.SHA256
             $ LazyByteString.toStrict compressed
         newHeaders =
           (Http.hContentEncoding, "gzip")
@@ -102,17 +102,18 @@ compress handle request respond = handle request $ \response ->
     _ -> response
 
 isEncoded :: Wai.Response -> Bool
-isEncoded = Maybe.isJust . lookup Http.hContentEncoding . Wai.responseHeaders
+isEncoded =
+  Maybe.isJust <<< lookup Http.hContentEncoding <<< Wai.responseHeaders
 
 acceptsGzip :: Wai.Request -> Bool
 acceptsGzip =
   elem "gzip"
-    . fmap Text.strip
-    . Text.splitOn ","
-    . Utf8.toText
-    . Maybe.fromMaybe ""
-    . lookup Http.hAcceptEncoding
-    . Wai.requestHeaders
+    <<< fmap Text.strip
+    <<< Text.splitOn ","
+    <<< Utf8.toText
+    <<< Maybe.fromMaybe ""
+    <<< lookup Http.hAcceptEncoding
+    <<< Wai.requestHeaders
 
 longEnough :: LazyByteString.ByteString -> Bool
-longEnough = (> 1024) . LazyByteString.length
+longEnough = (> 1024) <<< LazyByteString.length

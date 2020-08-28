@@ -82,7 +82,7 @@ import qualified Text.Printf as Printf
 run :: App.App request ()
 run = do
   Console.info "Starting worker ..."
-  Exception.handle sendExceptionToDiscord . Monad.forever $ do
+  Exception.handle sendExceptionToDiscord <<< Monad.forever $ do
     withLogging "worker-loop" $ do
       withLogging "prune-blobs" pruneBlobs
       withLogging "update-index" updateIndex
@@ -104,7 +104,8 @@ withLogging label action = do
   pure result
 
 withCommas :: Show a => a -> String
-withCommas = reverse . List.intercalate "," . chunksOf 3 . reverse . show
+withCommas =
+  reverse <<< List.intercalate "," <<< chunksOf 3 <<< reverse <<< show
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf n xs = case splitAt n xs of
@@ -171,7 +172,7 @@ updateIndex = do
 
 getIndexUrl :: App.App request String
 getIndexUrl = do
-  hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
+  hackageUrl <- Reader.asks $ Config.hackageUrl <<< Context.config
   pure $ hackageUrl <> "/01-index.tar.gz"
 
 getEtag :: App.App request Etag.Etag
@@ -203,8 +204,8 @@ handle200 response = do
   let
     etag =
       Etag.fromByteString
-        . Maybe.fromMaybe ByteString.empty
-        . lookup Http.hETag
+        <<< Maybe.fromMaybe ByteString.empty
+        <<< lookup Http.hETag
         $ Client.responseHeaders response
   Console.info $ fold ["Hackage index has changed to ", show etag, "."]
   let
@@ -235,9 +236,9 @@ handleOther
   -> App.App request a
 handleOther request response =
   WithCallStack.throw
-    . Client.HttpExceptionRequest request
-    . Client.StatusCodeException (response { Client.responseBody = () })
-    . LazyByteString.toStrict
+    <<< Client.HttpExceptionRequest request
+    <<< Client.StatusCodeException (response { Client.responseBody = () })
+    <<< LazyByteString.toStrict
     $ Client.responseBody response
 
 processIndex :: App.App request ()
@@ -281,12 +282,12 @@ processIndexWith binary = do
   revisionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
   versionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
   traverse_ (processIndexEntry countVar revisionsVar versionsVar)
-    . Tar.foldEntries (:) [] handleFormatError
-    . Tar.read
-    . Gzip.decompress
-    . LazyByteString.fromStrict
+    <<< Tar.foldEntries (:) [] handleFormatError
+    <<< Tar.read
+    <<< Gzip.decompress
+    <<< LazyByteString.fromStrict
     $ Binary.toByteString binary
-  versions <- Trans.lift . Stm.atomically $ Stm.readTVar versionsVar
+  versions <- Trans.lift <<< Stm.atomically $ Stm.readTVar versionsVar
   Console.info $ unwords
     ["Updating", pluralize "preferred version" $ Map.size versions, "..."]
   Monad.forM_ (Map.toList versions) $ \(packageName, versionRange) -> App.sql_
@@ -307,13 +308,13 @@ processIndexEntry
   -> Tar.Entry
   -> App.App request ()
 processIndexEntry countVar revisionsVar versionsVar entry = do
-  count <- Trans.lift . Stm.atomically $ do
+  count <- Trans.lift <<< Stm.atomically $ do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
   Monad.when (rem count 1000 == 0)
-    . Console.info
-    . unwords
+    <<< Console.info
+    <<< unwords
     $ ["Processing entry number", show count, "..."]
   case Tar.entryContent entry of
     Tar.NormalFile lazyContents _size ->
@@ -346,7 +347,7 @@ processPreferredVersion versionsVar path strictContents = do
         if pn == PackageName.toCabal packageName
           then pure $ VersionRange.fromCabal vr
           else WithCallStack.throw $ PackageNameMismatch packageName pn
-  Trans.lift . Stm.atomically . Stm.modifyTVar versionsVar $ Map.insert
+  Trans.lift <<< Stm.atomically <<< Stm.modifyTVar versionsVar $ Map.insert
     packageName
     versionRange
 
@@ -375,12 +376,12 @@ processPackageDescription revisionsVar path strictContents digest = do
       pure (packageName, version)
     strings -> WithCallStack.throw $ UnexpectedPath strings
   -- Get the revision number and update the map.
-  revision <- Trans.lift . Stm.atomically $ do
+  revision <- Trans.lift <<< Stm.atomically $ do
     allRevisions <- Stm.readTVar revisionsVar
     case Map.lookup packageName allRevisions of
       Nothing -> do
         let revision = Revision.zero
-        Stm.modifyTVar revisionsVar . Map.insert packageName $ Map.singleton
+        Stm.modifyTVar revisionsVar <<< Map.insert packageName $ Map.singleton
           version
           revision
         pure revision
@@ -409,7 +410,7 @@ processPackageDescription revisionsVar path strictContents digest = do
   case rows of
     [] -> pure ()
     Sql.Only expected : _ ->
-      Monad.when (digest /= expected) . Console.warn $ fold
+      Monad.when (digest /= expected) <<< Console.warn $ fold
         [ "Digest of "
         , show newPath
         , " changed from "
@@ -470,7 +471,7 @@ processPackageSignature path strictContents digest = do
   case rows of
     [] -> pure ()
     Sql.Only expected : _ ->
-      Monad.when (digest /= expected) . Console.warn $ fold
+      Monad.when (digest /= expected) <<< Console.warn $ fold
         [ "Digest of "
         , show newPath
         , " changed from "
@@ -516,7 +517,7 @@ data PackageNameMismatch
 instance Exception.Exception PackageNameMismatch
 
 upsertBlob_ :: ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
-upsertBlob_ contents = Monad.void . upsertBlob contents
+upsertBlob_ contents = Monad.void <<< upsertBlob contents
 
 upsertBlob :: ByteString.ByteString -> Sha256.Sha256 -> App.App request Bool
 upsertBlob contents sha256 = do
@@ -546,10 +547,10 @@ newtype UnknownEntry
 instance Exception.Exception UnknownEntry
 
 unsafeThrow :: Exception.Exception e => e -> a
-unsafeThrow = Unsafe.unsafePerformIO . WithCallStack.throw
+unsafeThrow = Unsafe.unsafePerformIO <<< WithCallStack.throw
 
 sleep :: IO.MonadIO m => Double -> m ()
-sleep = IO.liftIO . Concurrent.threadDelay . round . (* 1000000)
+sleep = IO.liftIO <<< Concurrent.threadDelay <<< round <<< (* 1000000)
 
 addRequestHeader
   :: Http.HeaderName
@@ -565,7 +566,7 @@ fetchTarballs = do
   names <- App.sql
     "select name from files where name like 'd/%/%/0/.cabal' order by name asc"
     ()
-  traverse_ (fetchTarball . Sql.fromOnly) names
+  traverse_ (fetchTarball <<< Sql.fromOnly) names
 
 fetchTarball :: Path.Path -> App.App request ()
 fetchTarball path = do
@@ -587,7 +588,7 @@ fetchTarball path = do
         case oldFileRows of
           Sql.Only sha256 : _ -> pure sha256
           _ -> do
-            hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
+            hackageUrl <- Reader.asks $ Config.hackageUrl <<< Context.config
             let
               pkg = fold [package, "-", version]
               url = fold [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
@@ -605,7 +606,7 @@ fetchTarball path = do
             body <- case Http.statusCode $ Client.responseStatus response of
               200 -> do
                 Console.info $ unwords ["Downloaded", pkg, "tarball."]
-                pure . LazyByteString.toStrict $ Client.responseBody response
+                pure <<< LazyByteString.toStrict $ Client.responseBody response
               410 -> do
                 Console.warn $ unwords ["Tarball", pkg, "gone!"]
                 pure emptyTarball
@@ -616,8 +617,8 @@ fetchTarball path = do
             let
               newEtag =
                 Etag.fromByteString
-                  . Maybe.fromMaybe ByteString.empty
-                  . lookup Http.hETag
+                  <<< Maybe.fromMaybe ByteString.empty
+                  <<< lookup Http.hETag
                   $ Client.responseHeaders response
               sha256 = Sha256.fromDigest $ Crypto.hash body
             upsertBlob_ body sha256
@@ -642,7 +643,7 @@ fetchTarball path = do
 --   removed "for legal reasons" and returns an HTTP 451.
 --   <https://github.com/haskell/hackage-server/issues/436>
 emptyTarball :: ByteString.ByteString
-emptyTarball = LazyByteString.toStrict . Gzip.compress $ Tar.write []
+emptyTarball = LazyByteString.toStrict <<< Gzip.compress $ Tar.write []
 
 processTarballs :: App.App request ()
 processTarballs = do
@@ -658,13 +659,13 @@ processTarballs = do
 processTarball
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
 processTarball countVar path sha256 = maybeProcess_ path sha256 $ do
-  count <- Trans.lift . Stm.atomically $ do
+  count <- Trans.lift <<< Stm.atomically $ do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
   Monad.when (rem count 1000 == 0)
-    . Console.info
-    . unwords
+    <<< Console.info
+    <<< unwords
     $ ["Processing tarball number", show count, "..."]
   (package, version) <- case Path.toStrings path of
     ["t", rawPackage, rawVersion, ".tar.gz"] -> do
@@ -679,10 +680,10 @@ processTarball countVar path sha256 = maybeProcess_ path sha256 $ do
       Just binary -> pure binary
   linkVar <- Trans.lift Stm.newEmptyTMVarIO
   traverse_ (processTarballEntry package version linkVar)
-    . Tar.foldEntries (:) [] handleFormatError
-    . Tar.read
-    . Gzip.decompress
-    . LazyByteString.fromStrict
+    <<< Tar.foldEntries (:) [] handleFormatError
+    <<< Tar.read
+    <<< Gzip.decompress
+    <<< LazyByteString.fromStrict
     $ Binary.toByteString binary
 
 -- https://github.com/haskell/hackage-server/issues/851
@@ -706,12 +707,12 @@ processTarballEntry package version linkVar entry =
         actual = Path.fromFilePath $ Tar.entryPath entry
         link =
           Path.fromFilePath
-            . Utf8.toString
-            . stripTrailingNullBytes
+            <<< Utf8.toString
+            <<< stripTrailingNullBytes
             $ LazyByteString.toStrict byteString
-      Monad.when (actual /= expected) . WithCallStack.throw $ InvalidLongLink
+      Monad.when (actual /= expected) <<< WithCallStack.throw $ InvalidLongLink
         entry
-      Trans.lift . Stm.atomically $ do
+      Trans.lift <<< Stm.atomically $ do
         maybeLink <- Stm.tryTakeTMVar linkVar
         case maybeLink of
           Just oldLink -> WithCallStack.throw $ LongLinkOverwrite oldLink link
@@ -719,7 +720,7 @@ processTarballEntry package version linkVar entry =
 
     Tar.NormalFile byteString _ -> do
       let entryPath = Tar.entryPath entry
-      maybeLink <- Trans.lift . Stm.atomically $ Stm.tryTakeTMVar linkVar
+      maybeLink <- Trans.lift <<< Stm.atomically $ Stm.tryTakeTMVar linkVar
       partialPath <- case maybeLink of
         Nothing -> pure $ Path.fromFilePath entryPath
         Just link -> do
@@ -727,7 +728,7 @@ processTarballEntry package version linkVar entry =
             prefix = Path.toFilePath $ Path.fromFilePath entryPath
             string = Path.toFilePath link
           Monad.unless (prefix `List.isPrefixOf` string)
-            . WithCallStack.throw
+            <<< WithCallStack.throw
             $ InvalidPrefix prefix string
           pure link
       let
@@ -742,10 +743,10 @@ processTarballEntry package version linkVar entry =
           let
             fullPath =
               Path.fromStrings
-                . ("c" :)
-                . (PackageName.toString package :)
-                . (Version.toString version :)
-                . drop 1
+                <<< ("c" :)
+                <<< (PackageName.toString package :)
+                <<< (Version.toString version :)
+                <<< drop 1
                 $ Path.toStrings partialPath
           App.sql_
             "insert into files (digest, name) values (?, ?) \
@@ -753,7 +754,7 @@ processTarballEntry package version linkVar entry =
             (sha256, fullPath)
         else
           Monad.when (Set.notMember entryPath ignoredPaths)
-          . WithCallStack.throw
+          <<< WithCallStack.throw
           $ InvalidPrefix prefix string
 
     Tar.Directory -> pure ()
@@ -782,7 +783,7 @@ ignoredPaths = Set.fromList $ fmap
   ]
 
 stripTrailingNullBytes :: ByteString.ByteString -> ByteString.ByteString
-stripTrailingNullBytes = fst . ByteString.spanEnd (== 0x00)
+stripTrailingNullBytes = fst <<< ByteString.spanEnd (== 0x00)
 
 newtype MissingBinary
   = MissingBinary Sha256.Sha256
@@ -822,13 +823,13 @@ parsePackageDescriptions = do
 parsePackageDescription
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
 parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
-  count <- Trans.lift . Stm.atomically $ do
+  count <- Trans.lift <<< Stm.atomically $ do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
   Monad.when (rem count 1000 == 0)
-    . Console.info
-    . unwords
+    <<< Console.info
+    <<< unwords
     $ ["Parsing package description number", show count, "..."]
   (pkg, ver, rev) <- case Path.toStrings path of
     ["d", rawPackage, rawVersion, rawRevision, ".cabal"] -> do
@@ -843,25 +844,26 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
       Nothing -> WithCallStack.throw $ MissingBinary sha256
       Just binary -> pure binary
   case Monadoc.Utility.Cabal.parse $ Binary.toByteString binary of
-    Left errs -> WithCallStack.throw . userError $ show (pkg, ver, rev, errs)
+    Left errs ->
+      WithCallStack.throw <<< userError $ show (pkg, ver, rev, errs)
     Right package -> do
       let
         packageName =
           Cabal.pkgName
-            . Cabal.package
-            . Cabal.packageDescription
+            <<< Cabal.package
+            <<< Cabal.packageDescription
             $ Monadoc.Utility.Cabal.unwrapPackage package
         versionNumber =
           Version.fromCabal
-            . Cabal.pkgVersion
-            . Cabal.package
-            . Cabal.packageDescription
+            <<< Cabal.pkgVersion
+            <<< Cabal.package
+            <<< Cabal.packageDescription
             $ Monadoc.Utility.Cabal.unwrapPackage package
       Monad.when (packageName /= PackageName.toCabal pkg)
-        . WithCallStack.throw
+        <<< WithCallStack.throw
         $ PackageNameMismatch pkg packageName
       Monad.when (versionNumber /= ver)
-        . WithCallStack.throw
+        <<< WithCallStack.throw
         $ VersionNumberMismatch ver versionNumber
       -- We don't bother checking the revision against the x-revision field
       -- because it's often wrong. See these Hackage issues for details:
@@ -872,7 +874,7 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
       -- this feature isn't well supported yet. See this issue for details:
       -- <https://github.com/haskell/cabal/issues/5660>.
       case toPackageDescription package of
-        Left _ -> WithCallStack.throw . userError $ show (pkg, ver, rev)
+        Left _ -> WithCallStack.throw <<< userError $ show (pkg, ver, rev)
         Right (pacdes, _) -> case Cabal.library pacdes of
           Nothing -> pure ()
           Just library -> do
@@ -944,8 +946,9 @@ getModuleExports module_ =
     ghcmod = Monadoc.Utility.Ghc.unwrapModule module_
     modnam :: String
     modnam =
-      maybe "?" (Ghc.moduleNameString . Ghc.unLoc) . Ghc.hsmodName $ Ghc.unLoc
-        ghcmod
+      maybe "?" (Ghc.moduleNameString <<< Ghc.unLoc)
+        <<< Ghc.hsmodName
+        $ Ghc.unLoc ghcmod
     maybeExports = Ghc.hsmodExports $ Ghc.unLoc ghcmod
     crash label x =
       error $ modnam <> " [" <> label <> "] " <> Ghc.showSDocUnsafe (Ghc.ppr x)
@@ -1095,8 +1098,8 @@ getModuleExports module_ =
       Ghc.XHsDecl{} -> crash "XHsDecl" hsDecl
   in case maybeExports of
     Nothing ->
-      foldMap (convertDecl . Ghc.unLoc) . Ghc.hsmodDecls $ Ghc.unLoc ghcmod
-    Just exports -> fmap (convertIE . Ghc.unLoc) $ Ghc.unLoc exports
+      foldMap (convertDecl <<< Ghc.unLoc) <<< Ghc.hsmodDecls $ Ghc.unLoc ghcmod
+    Just exports -> fmap (convertIE <<< Ghc.unLoc) $ Ghc.unLoc exports
 
 convertExtension :: C.KnownExtension -> Maybe G.Extension
 convertExtension x = case x of
@@ -1317,7 +1320,7 @@ toPackageDescription =
         platform
         compilerInfo
         additionalConstraints
-      . Monadoc.Utility.Cabal.unwrapPackage
+      <<< Monadoc.Utility.Cabal.unwrapPackage
 
 data VersionNumberMismatch
   = VersionNumberMismatch Version.Version Version.Version
@@ -1338,7 +1341,7 @@ instance Exception.Exception InvalidRevision
 
 maybeProcess_
   :: Path.Path -> Sha256.Sha256 -> App.App request () -> App.App request ()
-maybeProcess_ path sha256 = Monad.void . maybeProcess path sha256
+maybeProcess_ path sha256 = Monad.void <<< maybeProcess path sha256
 
 maybeProcess
   :: Path.Path

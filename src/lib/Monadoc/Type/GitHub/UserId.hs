@@ -13,13 +13,13 @@ newtype UserId
   deriving (Eq, Show)
 
 instance Sql.FromField UserId where
-  fromField = fmap fromInt . Sql.fromField
+  fromField = fmap fromInt <<< Sql.fromField
 
 instance Aeson.FromJSON UserId where
-  parseJSON = fmap fromInt . Aeson.parseJSON
+  parseJSON = fmap fromInt <<< Aeson.parseJSON
 
 instance Sql.ToField UserId where
-  toField = Sql.toField . toInt
+  toField = Sql.toField <<< toInt
 
 fromInt :: Int -> UserId
 fromInt = UserId

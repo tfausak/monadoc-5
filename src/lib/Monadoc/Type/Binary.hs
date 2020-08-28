@@ -12,10 +12,10 @@ newtype Binary
   deriving (Eq, Show)
 
 instance Sql.FromField Binary where
-  fromField = fmap fromByteString . Sql.fromField
+  fromField = fmap fromByteString <<< Sql.fromField
 
 instance Sql.ToField Binary where
-  toField = Sql.toField . toByteString
+  toField = Sql.toField <<< toByteString
 
 fromByteString :: ByteString.ByteString -> Binary
 fromByteString = Binary

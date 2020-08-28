@@ -27,8 +27,8 @@ run = do
   runMigrations
   context <- Reader.ask
   Trans.lift
-    . Async.mapConcurrently_ (App.run context . runService)
-    . Config.services
+    <<< Async.mapConcurrently_ (App.run context <<< runService)
+    <<< Config.services
     $ Context.config context
 
 runService :: Service.Service -> App.App request ()
@@ -66,7 +66,7 @@ runMigration migration = do
   Console.info $ unwords
     [ "Running migration"
     , Time.format "%Y-%m-%dT%H:%M:%S%3QZ"
-    . Timestamp.toUtcTime
+    <<< Timestamp.toUtcTime
     $ Migration.timestamp migration
     , "..."
     ]

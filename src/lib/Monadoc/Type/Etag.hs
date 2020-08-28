@@ -16,10 +16,10 @@ newtype Etag
   deriving (Eq, Show)
 
 instance Sql.FromField Etag where
-  fromField = Sql.fromFieldVia $ fmap fromByteString . Read.readMaybe
+  fromField = Sql.fromFieldVia $ fmap fromByteString <<< Read.readMaybe
 
 instance Sql.ToField Etag where
-  toField = Sql.toField . show . toByteString
+  toField = Sql.toField <<< show <<< toByteString
 
 fromByteString :: ByteString.ByteString -> Etag
 fromByteString = Etag

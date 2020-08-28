@@ -16,16 +16,17 @@ handle = do
   context <- Reader.ask
   maybeUser <- Common.getCookieUser
   let
-    query = case lookup "query" . Wai.queryString $ Context.request context of
-      Just (Just byteString) -> Utf8.toText byteString
-      _ -> ""
+    query =
+      case lookup "query" <<< Wai.queryString $ Context.request context of
+        Just (Just byteString) -> Utf8.toText byteString
+        _ -> ""
 
   let config = Context.config context
   loginUrl <- Common.makeLoginUrl
   pure
-    . Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
-    . Template.makeHtmlWith config maybeUser loginUrl
-    . H.p_
+    <<< Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
+    <<< Template.makeHtmlWith config maybeUser loginUrl
+    <<< H.p_
     $ do
         "Your query was "
         H.code_ $ H.toHtml query

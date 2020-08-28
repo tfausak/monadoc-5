@@ -26,10 +26,10 @@ fromContext context =
   let config = Context.config context
   in
     Warp.setBeforeMainLoop (beforeMainLoop config)
-    . Warp.setHost (Config.host config)
-    . Warp.setOnException (onException context)
-    . Warp.setOnExceptionResponse (onExceptionResponse config)
-    . Warp.setPort (Config.port config)
+    <<< Warp.setHost (Config.host config)
+    <<< Warp.setOnException (onException context)
+    <<< Warp.setOnExceptionResponse (onExceptionResponse config)
+    <<< Warp.setPort (Config.port config)
     $ Warp.setServerName serverName Warp.defaultSettings
 
 beforeMainLoop :: Config.Config -> IO ()
@@ -57,7 +57,7 @@ onException context _ exception
 sendExceptionToDiscord
   :: Context.Context request -> Exception.SomeException -> IO ()
 sendExceptionToDiscord context exception =
-  case Client.parseRequest . Config.discordUrl $ Context.config context of
+  case Client.parseRequest <<< Config.discordUrl $ Context.config context of
     Left someException -> case Exception.fromException someException of
       Just (Client.InvalidUrlException url reason) ->
         Console.warn $ "invalid Discord URL (" <> reason <> "): " <> show url
@@ -87,9 +87,9 @@ testException = Proxy.Proxy
 isType
   :: Exception.Exception e => Proxy.Proxy e -> Exception.SomeException -> Bool
 isType proxy =
-  maybe False (const True . asType proxy)
-    . Exception.fromException
-    . WithCallStack.withoutCallStack
+  maybe False (const True <<< asType proxy)
+    <<< Exception.fromException
+    <<< WithCallStack.withoutCallStack
 
 asType :: Proxy.Proxy a -> a -> a
 asType _ = id

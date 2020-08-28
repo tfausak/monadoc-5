@@ -21,6 +21,6 @@ spec = describe "Monadoc.Type.App" $ do
 
     it "works" $ do
       ctx <- Monadoc.configToContext Config.test
-      result <- App.run ctx . App.withConnection $ \connection ->
+      result <- App.run ctx <<< App.withConnection $ \connection ->
         IO.liftIO $ Sql.query_ connection "select 1"
       result `shouldBe` [Sql.Only (1 :: Int)]

@@ -34,8 +34,9 @@ byteStringResponse
   :: Http.Status -> Headers -> ByteString.ByteString -> Wai.Response
 byteStringResponse status headers body =
   let
-    contentLength = Utf8.fromString . show $ ByteString.length body
-    etag = Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
+    contentLength = Utf8.fromString <<< show $ ByteString.length body
+    etag =
+      Utf8.fromString <<< show <<< show $ Crypto.hashWith Crypto.SHA256 body
     extraHeaders =
       Map.fromList [(Http.hContentLength, contentLength), (Http.hETag, etag)]
   in Wai.responseLBS
@@ -78,7 +79,7 @@ fileResponse status headers name = Trans.lift $ do
 getCookieUser :: App.App Wai.Request (Maybe User.User)
 getCookieUser = do
   context <- Reader.ask
-  case lookup Http.hCookie . Wai.requestHeaders $ Context.request context of
+  case lookup Http.hCookie <<< Wai.requestHeaders $ Context.request context of
     Nothing -> pure Nothing
     Just cookie -> case lookup "guid" $ Cookie.parseCookiesText cookie of
       Nothing -> pure Nothing
@@ -92,11 +93,11 @@ htmlResponse status headers =
   byteStringResponse
       status
       (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
-    . LazyByteString.toStrict
-    . H.renderBS
+    <<< LazyByteString.toStrict
+    <<< H.renderBS
 
 isSecure :: Config.Config -> Bool
-isSecure = List.isPrefixOf "https:" . Config.url
+isSecure = List.isPrefixOf "https:" <<< Config.url
 
 makeCookie :: Guid.Guid -> App.App request Cookie.SetCookie
 makeCookie guid = do
@@ -125,15 +126,17 @@ makeLoginUrl = do
       True
       [("client_id", Just clientId), ("redirect_uri", Just redirectUri)]
   pure
-    . Utf8.toText
-    . LazyByteString.toStrict
-    . Builder.toLazyByteString
+    <<< Utf8.toText
+    <<< LazyByteString.toStrict
+    <<< Builder.toLazyByteString
     $ "https://github.com/login/oauth/authorize"
     <> query
 
 renderCookie :: Cookie.SetCookie -> ByteString.ByteString
 renderCookie =
-  LazyByteString.toStrict . Builder.toLazyByteString . Cookie.renderSetCookie
+  LazyByteString.toStrict
+    <<< Builder.toLazyByteString
+    <<< Cookie.renderSetCookie
 
 simpleFileResponse
   :: FilePath -> ByteString.ByteString -> App.App request Wai.Response
@@ -153,4 +156,4 @@ stringResponse status headers =
   byteStringResponse
       status
       (Map.insert Http.hContentType "text/plain;charset=utf-8" headers)
-    . Utf8.fromString
+    <<< Utf8.fromString

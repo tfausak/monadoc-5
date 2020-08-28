@@ -1,6 +1,7 @@
 module Monadoc.Prelude
   ( Control.Applicative.Applicative
   , Control.Applicative.pure
+  , (Control.Category.<<<) -- TODO: Monomorphize to functions.
   , (Control.Category.>>>) -- TODO: Monomorphize to functions.
   , Control.Exception.Exception
   , Control.Exception.displayException
@@ -38,7 +39,6 @@ module Monadoc.Prelude
   , Data.Function.const
   , Data.Function.flip
   , Data.Function.id
-  , (Data.Function..) -- TODO: Rename to `(<<<)`.
   , (Data.Function.&) -- TODO: Rename to `(|>)`.
   , (Data.Function.$) -- TODO: Rename to `(<|)`.
   , Data.Functor.Functor

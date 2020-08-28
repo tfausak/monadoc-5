@@ -28,4 +28,8 @@ instance Sql.ToRow Migration where
 -- that the migration hasn't changed since it was ran.
 sha256 :: Migration -> Sha256.Sha256
 sha256 =
-  Sha256.fromDigest . Crypto.hash . Utf8.fromText . Sql.fromQuery . query
+  Sha256.fromDigest
+    <<< Crypto.hash
+    <<< Utf8.fromText
+    <<< Sql.fromQuery
+    <<< query

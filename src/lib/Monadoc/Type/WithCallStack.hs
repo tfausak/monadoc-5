@@ -14,7 +14,7 @@ data WithCallStack a = WithCallStack
 
 instance Eq a => Eq (WithCallStack a) where
   x == y =
-    Function.on (==) (Stack.getCallStack . callStack) x y
+    Function.on (==) (Stack.getCallStack <<< callStack) x y
       && Function.on (==) value x y
 
 instance Exception.Exception e => Exception.Exception (WithCallStack e) where
@@ -49,7 +49,7 @@ throw
   :: (Stack.HasCallStack, Exception.Exception e, Exception.MonadThrow m)
   => e
   -> m a
-throw = Exception.throwM . withCallStack . Exception.toException
+throw = Exception.throwM <<< withCallStack <<< Exception.toException
 
 -- | Adds a call stack if there isn't one already. Whatever calls this function
 -- should probably have a 'Stack.HasCallStack' constraint. Instead of calling

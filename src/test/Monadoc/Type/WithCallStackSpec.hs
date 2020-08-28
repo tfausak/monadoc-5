@@ -27,9 +27,10 @@ spec = describe "Monadoc.Type.WithCallStack" $ do
 
     it "adds a call stack" $ do
       WithCallStack.throw TestException.TestException
-        `shouldThrow` (== Just TestException.TestException)
-        . Exception.fromException
-        . WithCallStack.value
+        `shouldThrow` ((== Just TestException.TestException)
+                      <<< Exception.fromException
+                      <<< WithCallStack.value
+                      )
 
   describe "withCallStack" $ do
 
@@ -38,9 +39,9 @@ spec = describe "Monadoc.Type.WithCallStack" $ do
         x :: Maybe TestException.TestException
         x =
           Monad.join
-            . fmap (Exception.fromException . WithCallStack.value)
-            . Exception.fromException
-            . WithCallStack.withCallStack
+            <<< fmap (Exception.fromException <<< WithCallStack.value)
+            <<< Exception.fromException
+            <<< WithCallStack.withCallStack
             $ Exception.toException TestException.TestException
       x `shouldSatisfy` Maybe.isJust
 
@@ -49,10 +50,10 @@ spec = describe "Monadoc.Type.WithCallStack" $ do
         x :: Maybe TestException.TestException
         x =
           Monad.join
-            . fmap (Exception.fromException . WithCallStack.value)
-            . Exception.fromException
-            . WithCallStack.withCallStack
-            . WithCallStack.withCallStack
+            <<< fmap (Exception.fromException <<< WithCallStack.value)
+            <<< Exception.fromException
+            <<< WithCallStack.withCallStack
+            <<< WithCallStack.withCallStack
             $ Exception.toException TestException.TestException
       x `shouldSatisfy` Maybe.isJust
 

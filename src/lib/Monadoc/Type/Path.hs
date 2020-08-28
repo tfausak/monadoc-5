@@ -17,24 +17,24 @@ instance Monoid Path where
   mempty = fromStrings mempty
 
 instance Sql.FromField Path where
-  fromField = fmap fromFilePath . Sql.fromField
+  fromField = fmap fromFilePath <<< Sql.fromField
 
 instance Semigroup Path where
   x <> y = fromStrings $ toStrings x <> toStrings y
 
 instance Sql.ToField Path where
-  toField = Sql.toField . toFilePath
+  toField = Sql.toField <<< toFilePath
 
 -- | Converts from a file path by splitting on both @/@ and @\\@.
 fromFilePath :: FilePath -> Path
-fromFilePath = fromStrings . Windows.splitDirectories
+fromFilePath = fromStrings <<< Windows.splitDirectories
 
 fromStrings :: [String] -> Path
 fromStrings = Path
 
 -- | Converts to a file path by joining with @/@.
 toFilePath :: Path -> String
-toFilePath = Posix.joinPath . toStrings
+toFilePath = Posix.joinPath <<< toStrings
 
 toStrings :: Path -> [String]
 toStrings (Path strings) = strings

@@ -38,7 +38,7 @@ makeHtmlWith config maybeUser loginUrl content = do
       H.title_ "Monadoc"
     H.body_ $ do
       H.header_ [H.class_ "bg-purple white"]
-        . H.div_ [H.class_ "center mw8 pa3"]
+        <<< H.div_ [H.class_ "center mw8 pa3"]
         $ do
             H.div_ [H.class_ "flex items-center justify-between"] $ do
               H.h1_ [H.class_ "f2 lh-solid ma0 tracked-tight"] $ H.a_
@@ -55,15 +55,15 @@ makeHtmlWith config maybeUser loginUrl content = do
                       [ H.class_ "color-inherit no-underline"
                       , H.href_ $ route Route.Account
                       ]
-                    . H.toHtml
-                    . Text.cons '@'
-                    . Login.toText
+                    <<< H.toHtml
+                    <<< Text.cons '@'
+                    <<< Login.toText
                     $ User.login user
       H.div_ [H.class_ "center mw8 pa3"]
-        . H.form_
-            [ H.action_ $ route Route.Search
-            , H.class_ "b--inherit ba bg-white flex items-center"
-            ]
+        <<< H.form_
+              [ H.action_ $ route Route.Search
+              , H.class_ "b--inherit ba bg-white flex items-center"
+              ]
         $ do
             H.input_
               [ H.class_ "bn pa2 w-100"
@@ -90,5 +90,5 @@ makeHtmlWith config maybeUser loginUrl content = do
           Nothing -> pure ()
           Just commit -> do
             " commit "
-            H.code_ . H.toHtml $ take 7 commit
+            H.code_ <<< H.toHtml $ take 7 commit
         "."

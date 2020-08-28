@@ -11,16 +11,16 @@ newtype VersionRange
   deriving (Eq, Show)
 
 instance Sql.ToField VersionRange where
-  toField = Sql.toField . toString
+  toField = Sql.toField <<< toString
 
 fromCabal :: Cabal.VersionRange -> VersionRange
 fromCabal = VersionRange
 
 fromString :: String -> Maybe VersionRange
-fromString = fmap fromCabal . Cabal.simpleParsec
+fromString = fmap fromCabal <<< Cabal.simpleParsec
 
 toCabal :: VersionRange -> Cabal.VersionRange
 toCabal (VersionRange cabal) = cabal
 
 toString :: VersionRange -> String
-toString = Cabal.prettyShow . toCabal
+toString = Cabal.prettyShow <<< toCabal

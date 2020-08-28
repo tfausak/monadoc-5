@@ -27,17 +27,17 @@ handle = do
       $ Map.insert Http.hLocation (Utf8.fromText loginUrl) headers
     Just _ ->
       Common.htmlResponse Http.ok200 headers
-        . Template.makeHtmlWith config maybeUser loginUrl
-        . H.form_
-            [ H.method_ "post"
-            , H.action_ $ Router.renderAbsoluteRoute config Route.LogOut
-            ]
-        . H.p_
+        <<< Template.makeHtmlWith config maybeUser loginUrl
+        <<< H.form_
+              [ H.method_ "post"
+              , H.action_ $ Router.renderAbsoluteRoute config Route.LogOut
+              ]
+        <<< H.p_
         $ do
             "You are logged in. You can manage your "
             H.a_
               [ H.href_
-                . Text.pack
+                <<< Text.pack
                 $ "https://github.com/settings/connections/applications/"
                 <> Config.clientId config
               ]

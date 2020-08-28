@@ -23,10 +23,10 @@ logOn :: IO.MonadIO m => IO.Handle -> String -> m ()
 logOn handle message = do
   now <- IO.liftIO Time.getCurrentTime
   IO.liftIO
-    . Exception.bracket
-        (Stm.atomically $ Stm.takeTMVar logVar)
-        (Stm.atomically . Stm.putTMVar logVar)
-    $ \() -> IO.liftIO . IO.hPutStrLn handle $ unwords
+    <<< Exception.bracket
+          (Stm.atomically $ Stm.takeTMVar logVar)
+          (Stm.atomically <<< Stm.putTMVar logVar)
+    $ \() -> IO.liftIO <<< IO.hPutStrLn handle $ unwords
         [Time.format "%Y-%m-%dT%H:%M:%S%3QZ" now, message]
 
 logVar :: Stm.TMVar ()

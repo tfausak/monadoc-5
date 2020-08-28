@@ -27,5 +27,5 @@ spec = describe "Monadoc.Handler.Throw" $ do
 aTestException :: Exception.SomeException -> Bool
 aTestException =
   (== Just TestException.TestException)
-    . Exception.fromException
-    . WithCallStack.withoutCallStack
+    <<< Exception.fromException
+    <<< WithCallStack.withoutCallStack

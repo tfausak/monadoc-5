@@ -17,9 +17,9 @@ data MigrationMismatch = MigrationMismatch
 instance Exception.Exception MigrationMismatch where
   displayException migrationMismatch = unwords
     [ "migration"
-    , show . Timestamp.toUtcTime $ timestamp migrationMismatch
+    , show <<< Timestamp.toUtcTime $ timestamp migrationMismatch
     , "expected"
-    , show . Sha256.toDigest $ expected migrationMismatch
+    , show <<< Sha256.toDigest $ expected migrationMismatch
     , "but got"
-    , show . Sha256.toDigest $ actual migrationMismatch
+    , show <<< Sha256.toDigest $ actual migrationMismatch
     ]

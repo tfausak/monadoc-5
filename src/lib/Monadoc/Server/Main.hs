@@ -15,6 +15,6 @@ run = do
   Console.info "Starting server ..."
   context <- Reader.ask
   Trans.lift
-    . Warp.runSettings (Settings.fromContext context)
-    . Middleware.middleware context
+    <<< Warp.runSettings (Settings.fromContext context)
+    <<< Middleware.middleware context
     $ Application.application context
