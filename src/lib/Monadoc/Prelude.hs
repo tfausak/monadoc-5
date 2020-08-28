@@ -16,6 +16,8 @@ module Monadoc.Prelude
   , (Data.Bool.&&)
   , (Data.Bool.||)
   , Data.ByteString.ByteString
+  , Data.Char.Char
+  , Data.Data.Data
   , Data.Either.Either(Left, Right)
   , Data.Either.either
   , Data.Eq.Eq
@@ -86,12 +88,18 @@ module Monadoc.Prelude
   , Data.Tuple.fst
   , Data.Tuple.snd
   , Data.Tuple.uncurry
+  , Data.Typeable.Proxy(Proxy)
+  , Data.Typeable.Typeable
+  , Data.Typeable.cast
   , Data.UUID.UUID
   , Data.Word.Word
   , Data.Word.Word8
   , Data.Word.Word16
   , Data.Word.Word32
   , Data.Word.Word64
+  , GHC.Enum.Bounded
+  , GHC.Enum.maxBound
+  , GHC.Enum.minBound
   , GHC.Err.error
   , GHC.Float.Float
   , GHC.Float.Floating
@@ -99,6 +107,7 @@ module Monadoc.Prelude
   , GHC.Float.sqrt
   , (GHC.Float.**)
   , GHC.Float.Double
+  , GHC.Generics.Generic
   , GHC.Integer.Integer
   , GHC.Num.Num
   , GHC.Num.fromInteger
@@ -148,6 +157,8 @@ import qualified Control.Monad
 import qualified Control.Monad.Fail
 import qualified Data.Bool
 import qualified Data.ByteString
+import qualified Data.Char
+import qualified Data.Data
 import qualified Data.Either
 import qualified Data.Eq
 import qualified Data.Foldable
@@ -166,10 +177,13 @@ import qualified Data.String
 import qualified Data.Text
 import qualified Data.Traversable
 import qualified Data.Tuple
+import qualified Data.Typeable
 import qualified Data.UUID
 import qualified Data.Word
+import qualified GHC.Enum
 import qualified GHC.Err
 import qualified GHC.Float
+import qualified GHC.Generics
 import qualified GHC.Integer
 import qualified GHC.Num
 import qualified GHC.Real
