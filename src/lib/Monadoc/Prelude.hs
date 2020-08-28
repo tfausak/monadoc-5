@@ -7,7 +7,6 @@ module Monadoc.Prelude
   , Control.Monad.Monad
   , Control.Monad.forever
   , Control.Monad.join
-  , Control.Monad.mapM -- TODO: Replace with `traverse`.
   , Control.Monad.unless
   , Control.Monad.when
   , Control.Monad.Fail.MonadFail
