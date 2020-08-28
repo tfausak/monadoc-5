@@ -18,6 +18,7 @@ import qualified Monadoc.Type.NotFoundException as NotFoundException
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
+import Monadoc.Prelude
 
 application :: Context.Context request -> Wai.Application
 application context request respond = do

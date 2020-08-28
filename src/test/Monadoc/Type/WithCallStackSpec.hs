@@ -6,6 +6,7 @@ import qualified Data.Maybe as Maybe
 import qualified Monadoc.Type.TestException as TestException
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.WithCallStack" $ do

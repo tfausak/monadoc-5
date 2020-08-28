@@ -21,6 +21,7 @@ import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
 import qualified System.IO as IO
+import Monadoc.Prelude
 
 -- | The main app entrypoint. This is what the executable runs.
 monadoc :: IO ()

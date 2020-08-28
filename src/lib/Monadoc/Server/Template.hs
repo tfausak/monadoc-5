@@ -9,6 +9,7 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.User as User
+import Monadoc.Prelude
 
 makeHtmlWith
   :: Config.Config -> Maybe User.User -> Text.Text -> H.Html () -> H.Html ()

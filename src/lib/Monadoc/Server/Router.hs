@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
+import Monadoc.Prelude
 
 parseRoute :: Http.Method -> [Text.Text] -> Maybe Route.Route
 parseRoute method path = do

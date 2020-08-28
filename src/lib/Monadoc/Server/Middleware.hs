@@ -18,6 +18,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Internal as Wai
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
+import Monadoc.Prelude
 
 middleware :: Context.Context request -> Wai.Middleware
 middleware context =

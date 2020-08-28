@@ -26,6 +26,7 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified System.Random as Random
+import Monadoc.Prelude
 
 handle :: App.App Wai.Request Wai.Response
 handle = do

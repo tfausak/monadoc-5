@@ -2,6 +2,7 @@ module Monadoc.Type.RevisionSpec where
 
 import qualified Monadoc.Type.Revision as Revision
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Revision" $ do

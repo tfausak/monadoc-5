@@ -4,6 +4,7 @@ import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified System.FilePath.Posix as Posix
 import qualified System.FilePath.Windows as Windows
+import Monadoc.Prelude
 
 -- | A relative file path. Typically these come from tar entries. We store each
 -- path segment separately to avoid directory separator problems between Linux

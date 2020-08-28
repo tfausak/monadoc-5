@@ -3,6 +3,7 @@ module Monadoc.Type.WithCallStack where
 import qualified Control.Monad.Catch as Exception
 import qualified Data.Function as Function
 import qualified GHC.Stack as Stack
+import Monadoc.Prelude
 
 -- | Some value with a 'Stack.CallStack' attached. Typically this is used with
 -- 'Exception.SomeException' to attach call stacks to exceptions.

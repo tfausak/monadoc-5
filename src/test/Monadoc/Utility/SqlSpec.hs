@@ -6,6 +6,7 @@ import qualified Database.SQLite.Simple.Ok as Sql
 import qualified Monadoc.Utility.Sql as Sql
 import Test.Hspec
 import qualified Text.Read as Read
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Utility.Sql" $ do

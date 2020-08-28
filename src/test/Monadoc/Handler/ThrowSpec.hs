@@ -10,6 +10,7 @@ import qualified Monadoc.Type.TestException as TestException
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Handler.Throw" $ do

@@ -77,6 +77,7 @@ import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
+import Monadoc.Prelude
 
 run :: App.App request ()
 run = do

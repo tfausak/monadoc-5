@@ -5,6 +5,7 @@ import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Utility.Sql as Sql
 import qualified Text.Read as Read
+import Monadoc.Prelude
 
 -- | A 256-bit digest from the Secure Hash Algorithm 2 (SHA-2). This is backed
 -- by a 'Crypto.Digest', specifically 'Crypto.SHA256'. Use 'fromDigest' and

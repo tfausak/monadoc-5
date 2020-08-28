@@ -1,4 +1,5 @@
 module Monadoc.Type.Service where
+import Monadoc.Prelude
 
 data Service
   = Server

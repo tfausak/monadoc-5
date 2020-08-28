@@ -5,6 +5,7 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.ConfigResult as ConfigResult
 import qualified Monadoc.Type.Context as Context
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc" $ do

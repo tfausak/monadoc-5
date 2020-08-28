@@ -10,6 +10,7 @@ import qualified Monadoc.Type.Service as Service
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Console.GetOpt as GetOpt
 import qualified Text.Read as Read
+import Monadoc.Prelude
 
 type Option = GetOpt.OptDescr (Config.Config -> Either String Config.Config)
 

@@ -20,6 +20,7 @@ import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Console as Console
 import qualified Monadoc.Utility.Time as Time
 import qualified Monadoc.Worker.Main as Worker
+import Monadoc.Prelude
 
 run :: App.App request ()
 run = do

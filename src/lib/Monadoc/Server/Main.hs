@@ -8,6 +8,7 @@ import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Utility.Console as Console
 import qualified Network.Wai.Handler.Warp as Warp
+import Monadoc.Prelude
 
 run :: App.App request ()
 run = do

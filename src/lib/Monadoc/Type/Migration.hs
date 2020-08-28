@@ -7,6 +7,7 @@ import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Utility.Utf8 as Utf8
+import Monadoc.Prelude
 
 -- | A database migration. This is a single SQL statement along with a
 -- timestamp. The timestamp is used both to order the migrations and as a

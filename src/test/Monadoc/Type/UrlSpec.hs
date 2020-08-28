@@ -8,6 +8,7 @@ import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Url as Url
 import qualified Network.URI as Uri
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Url" $ do

@@ -4,6 +4,7 @@ import qualified Data.ByteString as ByteString
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
+import Monadoc.Prelude
 
 -- | Converts a string into a UTF-8 encoded byte string. See 'fromText'.
 fromString :: String -> ByteString.ByteString

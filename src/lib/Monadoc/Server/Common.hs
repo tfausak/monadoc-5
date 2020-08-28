@@ -26,6 +26,7 @@ import qualified Network.Wai as Wai
 import qualified Paths_monadoc as Package
 import qualified System.FilePath as FilePath
 import qualified Web.Cookie as Cookie
+import Monadoc.Prelude
 
 type Headers = Map.Map Http.HeaderName ByteString.ByteString
 

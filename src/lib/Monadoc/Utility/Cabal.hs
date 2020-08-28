@@ -6,6 +6,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Distribution.PackageDescription.Parsec as Cabal
 import qualified Distribution.Parsec.Error as Cabal
 import qualified Distribution.Types.GenericPackageDescription as Cabal
+import Monadoc.Prelude
 
 newtype Errors = Errors
   { unwrapErrors :: NonEmpty.NonEmpty Cabal.PError

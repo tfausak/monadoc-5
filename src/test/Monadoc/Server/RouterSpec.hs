@@ -4,6 +4,7 @@ import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Server.Router" $ do

@@ -18,6 +18,7 @@ import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
+import Monadoc.Prelude
 
 -- | Builds Warp server settings from a context.
 fromContext :: Context.Context request -> Warp.Settings

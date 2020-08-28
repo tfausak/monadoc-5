@@ -3,6 +3,7 @@ module Monadoc.Utility.TimeSpec where
 import qualified Data.Time as Time
 import qualified Monadoc.Utility.Time as Time
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Utility.Time" $ do

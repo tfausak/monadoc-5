@@ -2,6 +2,7 @@ module Monadoc.Utility.Time where
 
 import qualified Data.Fixed as Fixed
 import qualified Data.Time as Time
+import Monadoc.Prelude
 
 -- | Uses a format string to format a time value. Uses the
 -- 'Time.defaultTimeLocale'.

@@ -8,6 +8,7 @@ import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Timestamp as Timestamp
 import qualified Monadoc.Utility.Time as Time
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Timestamp" $ do

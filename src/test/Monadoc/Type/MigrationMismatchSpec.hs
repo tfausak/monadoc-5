@@ -6,6 +6,7 @@ import qualified Monadoc.Type.MigrationMismatch as MigrationMismatch
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.MigrationMismatch" $ do

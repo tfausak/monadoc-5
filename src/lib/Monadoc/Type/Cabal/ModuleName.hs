@@ -3,6 +3,7 @@ module Monadoc.Type.Cabal.ModuleName where
 import qualified Data.List as List
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.ModuleName as Cabal
+import Monadoc.Prelude
 
 newtype ModuleName = ModuleName Cabal.ModuleName deriving (Eq, Ord, Show)
 

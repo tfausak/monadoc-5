@@ -8,6 +8,7 @@ import qualified Monadoc.Type.Context as Context
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Handler.Logo" $ do

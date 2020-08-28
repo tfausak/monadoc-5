@@ -9,6 +9,7 @@ import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
+import Monadoc.Prelude
 
 handle :: App.App Wai.Request Wai.Response
 handle = do

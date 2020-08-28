@@ -21,6 +21,7 @@ import qualified Outputable
 import qualified Parser
 import qualified SrcLoc
 import qualified StringBuffer
+import Monadoc.Prelude
 
 newtype Errors = Errors
   { unwrapErrors :: Bag.Bag ErrUtils.ErrMsg

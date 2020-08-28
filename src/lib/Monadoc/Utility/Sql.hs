@@ -4,6 +4,7 @@ import qualified Data.Typeable as Typeable
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.Ok as Sql
+import Monadoc.Prelude
 
 -- | Converts from a SQL field into a value using the given function. This is
 -- mostly used to avoid all the boilerplate.

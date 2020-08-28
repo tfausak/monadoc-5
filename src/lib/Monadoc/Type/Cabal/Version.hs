@@ -4,6 +4,7 @@ import qualified Data.List as List
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Types.Version as Cabal
+import Monadoc.Prelude
 
 newtype Version = Version Cabal.Version deriving (Eq, Ord, Show)
 

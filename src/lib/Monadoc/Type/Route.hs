@@ -1,4 +1,5 @@
 module Monadoc.Type.Route where
+import Monadoc.Prelude
 
 -- | All of the routes that are reachable from the server. Unless otherwise
 -- noted, routes probably respond to HTTP GET requests. It is expected that

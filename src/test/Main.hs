@@ -58,6 +58,7 @@ import qualified Monadoc.Utility.Utf8Spec
 import qualified Monadoc.Worker.MainSpec
 import qualified MonadocSpec
 import Test.Hspec
+import Monadoc.Prelude
 
 main :: IO ()
 main = hspec $ do

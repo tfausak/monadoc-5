@@ -5,6 +5,7 @@ import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Utility.Sql as Sql
 import qualified Monadoc.Utility.Time as Time
+import Monadoc.Prelude
 
 -- | A moment in time. This is a wrapper around 'Time.UTCTime'. Use
 -- 'fromUtcTime' and 'toUtcTime' to wrap and unwrap these values. Since this

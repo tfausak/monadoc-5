@@ -5,6 +5,9 @@ import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc.Type.Config as Config
 import qualified Network.HTTP.Client as Client
 
+import Prelude ()
+-- import Monadoc.Prelude
+
 -- | The run-time application context. This will be available in most places
 -- and is basically a grab bag of global state.
 data Context request = Context

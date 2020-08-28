@@ -8,6 +8,7 @@ import qualified Database.SQLite.Simple.Ok as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Monadoc.Type.Etag as Etag
 import Test.Hspec
+import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Etag" $ do

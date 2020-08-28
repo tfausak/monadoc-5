@@ -3,6 +3,7 @@ module Monadoc.Type.Config where
 import qualified Data.Set as Set
 import qualified Monadoc.Type.Service as Service
 import qualified Network.Wai.Handler.Warp as Warp
+import Monadoc.Prelude
 
 -- | Application configuration. This contains all the stuff necessary to start
 -- things up. Descriptions and defaults are available by running the executable
