@@ -1,7 +1,7 @@
 cabal-version: 2.2
 
 name: monadoc
-version: 0.2020.8.21
+version: 0.2020.8.28
 synopsis: Better Haskell documentation.
 description: Monadoc provides better Haskell documentation.
 
@@ -29,7 +29,7 @@ common library
     , containers >= 0.6.2 && < 0.7
     , cookie >= 0.4.5 && < 0.5
     , cpphs >= 1.20.9 && < 1.21
-    , cryptonite >= 0.26 && < 0.27
+    , cryptonite >= 0.27 && < 0.28
     , exceptions >= 0.10.4 && < 0.11
     , filepath >= 1.4.2 && < 1.5
     , ghc >= 8.10.1 && < 8.11
