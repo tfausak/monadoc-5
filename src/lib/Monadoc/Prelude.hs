@@ -51,7 +51,6 @@ module Monadoc.Prelude
   , Data.List.drop
   , Data.List.dropWhile
   , Data.List.filter
-  , Data.List.lookup
   , Data.List.repeat
   , Data.List.replicate
   , Data.List.reverse
@@ -175,6 +174,7 @@ module Monadoc.Prelude
   , Text.Show.show
   , always
   , identity
+  , lookup
   , read
   , toEnum
   , (*)
@@ -234,6 +234,13 @@ always = Data.Function.const
 
 identity :: a -> a
 identity = Data.Function.id
+
+lookup
+  :: (Data.Foldable.Foldable t, Data.Eq.Eq k)
+  => k
+  -> t (k, v)
+  -> Data.Maybe.Maybe v
+lookup k xs = Data.List.lookup k (Data.Foldable.toList xs)
 
 read :: Text.Read.Read a => Data.String.String -> Data.Maybe.Maybe a
 read = Text.Read.readMaybe
