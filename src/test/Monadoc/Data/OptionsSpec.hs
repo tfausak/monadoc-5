@@ -14,4 +14,4 @@ spec = describe "Monadoc.Data.Options" $ do
       let
         f :: GetOpt.OptDescr a -> [String]
         f (GetOpt.Option _ x _ _) = x
-      concatMap f Options.options `shouldSatisfy` elem "help"
+      foldMap f Options.options `shouldSatisfy` elem "help"

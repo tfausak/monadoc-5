@@ -1095,7 +1095,7 @@ getModuleExports module_ =
       Ghc.XHsDecl{} -> crash "XHsDecl" hsDecl
   in case maybeExports of
     Nothing ->
-      concatMap (convertDecl . Ghc.unLoc) . Ghc.hsmodDecls $ Ghc.unLoc ghcmod
+      foldMap (convertDecl . Ghc.unLoc) . Ghc.hsmodDecls $ Ghc.unLoc ghcmod
     Just exports -> fmap (convertIE . Ghc.unLoc) $ Ghc.unLoc exports
 
 convertExtension :: C.KnownExtension -> Maybe G.Extension

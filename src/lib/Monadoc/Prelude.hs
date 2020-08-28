@@ -50,7 +50,6 @@ module Monadoc.Prelude
   , Data.Int.Int16
   , Data.Int.Int32
   , Data.Int.Int64
-  , Data.List.concatMap -- TODO: Replace with `foldMap`.
   , Data.List.drop
   , Data.List.filter
   , Data.List.lookup
