@@ -65,7 +65,7 @@ sendExceptionToDiscord context exception =
     Right initialRequest -> do
       let
         content = Utf8.fromString
-          $ mconcat ["```\n", Exception.displayException exception, "```"]
+          $ fold ["```\n", Exception.displayException exception, "```"]
         request = Client.urlEncodedBody [("content", content)] initialRequest
         manager = Context.manager context
       Monad.void $ Client.httpLbs request manager

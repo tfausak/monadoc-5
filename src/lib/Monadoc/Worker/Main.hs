@@ -206,7 +206,7 @@ handle200 response = do
         . Maybe.fromMaybe ByteString.empty
         . lookup Http.hETag
         $ Client.responseHeaders response
-  Console.info $ mconcat ["Hackage index has changed to ", show etag, "."]
+  Console.info $ fold ["Hackage index has changed to ", show etag, "."]
   let
     body = LazyByteString.toStrict $ Client.responseBody response
     sha256 = Sha256.fromDigest $ Crypto.hash body
@@ -246,13 +246,13 @@ processIndex = do
   case maybeSha256 of
     Nothing -> do
       indexUrl <- getIndexUrl
-      Console.info $ mconcat ["Missing SHA256 for ", show indexUrl, "."]
+      Console.info $ fold ["Missing SHA256 for ", show indexUrl, "."]
       removeCache
     Just sha256 -> maybeProcess_ indexPath sha256 $ do
       maybeBinary <- getBinary sha256
       case maybeBinary of
         Nothing -> do
-          Console.info $ mconcat ["Missing binary for ", show sha256, "."]
+          Console.info $ fold ["Missing binary for ", show sha256, "."]
           removeCache
         Just binary -> processIndexWith binary
 
@@ -409,7 +409,7 @@ processPackageDescription revisionsVar path strictContents digest = do
   case rows of
     [] -> pure ()
     Sql.Only expected : _ ->
-      Monad.when (digest /= expected) . Console.warn $ mconcat
+      Monad.when (digest /= expected) . Console.warn $ fold
         [ "Digest of "
         , show newPath
         , " changed from "
@@ -470,7 +470,7 @@ processPackageSignature path strictContents digest = do
   case rows of
     [] -> pure ()
     Sql.Only expected : _ ->
-      Monad.when (digest /= expected) . Console.warn $ mconcat
+      Monad.when (digest /= expected) . Console.warn $ fold
         [ "Digest of "
         , show newPath
         , " changed from "
@@ -589,9 +589,8 @@ fetchTarball path = do
           _ -> do
             hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
             let
-              pkg = mconcat [package, "-", version]
-              url =
-                mconcat [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
+              pkg = fold [package, "-", version]
+              url = fold [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
             initialRequest <- Client.parseRequest url
             cacheRows <- App.sql "select etag from cache where url = ?" [url]
             let
@@ -734,7 +733,7 @@ processTarballEntry package version linkVar entry =
       let
         contents = LazyByteString.toStrict byteString
         sha256 = Sha256.fromDigest $ Crypto.hash contents
-        prefix = mconcat
+        prefix = fold
           [PackageName.toString package, "-", Version.toString version, "/"]
         string = Path.toFilePath partialPath
       if prefix `List.isPrefixOf` string
@@ -1274,7 +1273,7 @@ findSourceFileWith
   -> App.App request (Maybe Path.Path)
 findSourceFileWith pkg ver dir mdl ext = do
   let
-    path = mconcat
+    path = fold
       [ Path.fromStrings ["c", PackageName.toString pkg, Version.toString ver]
       , case dir of
         "." -> mempty

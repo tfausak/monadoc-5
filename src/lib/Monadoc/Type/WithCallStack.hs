@@ -23,7 +23,7 @@ instance Exception.Exception e => Exception.Exception (WithCallStack e) where
     in
       case Stack.prettyCallStack $ callStack x of
         "" -> string
-        stack -> mconcat [string, "\n", stack]
+        stack -> fold [string, "\n", stack]
 
 -- | Catches an exception, removing call stacks as necessary. This wraps
 -- 'withoutCallStack' to make it easy to catch an exception without a call

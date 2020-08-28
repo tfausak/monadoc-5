@@ -23,7 +23,7 @@ spec = describe "Monadoc.Type.MigrationMismatch" $ do
           , MigrationMismatch.timestamp = Timestamp.fromUtcTime
             $ Time.posixSecondsToUTCTime 0
           }
-        string = mconcat
+        string = fold
           [ "migration 1970-01-01 00:00:00 UTC expected "
           , expected
           , " but got "

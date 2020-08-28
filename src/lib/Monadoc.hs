@@ -30,7 +30,7 @@ monadoc = do
     IO.hSetBuffering handle IO.LineBuffering
     IO.hSetEncoding handle IO.utf8
   config <- getConfig
-  Console.info $ mconcat
+  Console.info $ fold
     [ "\x1f516 Starting Monadoc version "
     , Version.string
     , case Commit.hash of

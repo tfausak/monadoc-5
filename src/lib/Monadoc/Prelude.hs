@@ -62,7 +62,6 @@ module Monadoc.Prelude
   , Data.Maybe.Maybe(Nothing, Just)
   , Data.Maybe.maybe
   , Data.Monoid.Monoid
-  , Data.Monoid.mconcat -- TODO: Replace with `fold`.
   , Data.Monoid.mempty
   , Data.Ord.Ord
   , Data.Ord.Ordering(LT, EQ, GT)
