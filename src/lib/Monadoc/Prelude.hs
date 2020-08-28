@@ -133,18 +133,12 @@ module Monadoc.Prelude
   , GHC.Real.Integral
   , GHC.Real.RealFrac
   , GHC.Real.ceiling
-  , GHC.Real.div
-  , GHC.Real.divMod
   , GHC.Real.even
   , GHC.Real.floor
   , GHC.Real.fromIntegral
   , GHC.Real.fromRational
-  , GHC.Real.mod
   , GHC.Real.odd
-  , GHC.Real.quot
-  , GHC.Real.quotRem
   , GHC.Real.realToFrac
-  , GHC.Real.rem
   , GHC.Real.round
   , GHC.Real.toInteger
   , GHC.Real.toRational
@@ -179,6 +173,8 @@ module Monadoc.Prelude
   , read
   , toEnum
   , (*)
+  , (//)
+  , (%)
   , (<<<)
   , (<|)
   , (>>>)
@@ -269,6 +265,14 @@ toEnum n =
 (*) :: GHC.Num.Num a => a -> a -> a
 (*) = (GHC.Num.*)
 infixl 7 *
+
+(//) :: GHC.Real.Integral a => a -> a -> a
+(//) = GHC.Real.div
+infixl 7 //
+
+(%) :: GHC.Real.Integral a => a -> a -> a
+(%) = GHC.Real.mod
+infixl 7 %
 
 (<<<) :: (b -> c) -> (a -> b) -> (a -> c)
 (<<<) = (Control.Category.<<<)

@@ -38,7 +38,7 @@ logRequests handle request respond = do
       (Utf8.toString <| Wai.rawPathInfo request)
       (Utf8.toString <| Wai.rawQueryString request)
       (timeAfter - timeBefore)
-      (div (allocationsBefore - allocationsAfter) 1024)
+      ((allocationsBefore - allocationsAfter) // 1024)
     respond response
 
 handleExceptions :: Context.Context request -> Wai.Middleware

@@ -313,7 +313,7 @@ processIndexEntry countVar revisionsVar versionsVar entry = do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
-  Monad.when (rem count 1000 == 0)
+  Monad.when (count % 1000 == 0)
     <<< Console.info
     <<< unwords
     <| ["Processing entry number", show count, "..."]
@@ -667,7 +667,7 @@ processTarball countVar path sha256 = maybeProcess_ path sha256 <| do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
-  Monad.when (rem count 1000 == 0)
+  Monad.when (count % 1000 == 0)
     <<< Console.info
     <<< unwords
     <| ["Processing tarball number", show count, "..."]
@@ -833,7 +833,7 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 <| do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
-  Monad.when (rem count 1000 == 0)
+  Monad.when (count % 1000 == 0)
     <<< Console.info
     <<< unwords
     <| ["Parsing package description number", show count, "..."]
