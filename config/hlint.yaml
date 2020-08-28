@@ -1,7 +1,13 @@
 - arguments:
     - -XApplicativeDo
+    - -XBangPatterns
+    - -XBlockArguments
     - -XFlexibleContexts
+    - -XNamedFieldPuns
+    - -XNegativeLiterals
     - -XNoImplicitPrelude
+    - -XNumDecimals
+    - -XNumericUnderscores
     - -XOverloadedStrings
     - -XScopedTypeVariables
     - -XTypeApplications

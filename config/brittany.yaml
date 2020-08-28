@@ -1,8 +1,14 @@
 conf_forward:
   options_ghc:
     - -XApplicativeDo
+    - -XBangPatterns
+    - -XBlockArguments
     - -XFlexibleContexts
+    - -XNamedFieldPuns
+    - -XNegativeLiterals
     - -XNoImplicitPrelude
+    - -XNumDecimals
+    - -XNumericUnderscores
     - -XOverloadedStrings
     - -XScopedTypeVariables
     - -XTypeApplications

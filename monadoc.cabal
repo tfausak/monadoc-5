@@ -64,8 +64,14 @@ common library
   default-extensions:
     -- Keep this in sync with Brittany, HLint, and Stylish Haskell configs.
     ApplicativeDo
+    BangPatterns
+    BlockArguments
     FlexibleContexts
+    NamedFieldPuns
+    NegativeLiterals
     NoImplicitPrelude
+    NumDecimals
+    NumericUnderscores
     OverloadedStrings
     ScopedTypeVariables
     TypeApplications

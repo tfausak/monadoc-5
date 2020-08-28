@@ -2,8 +2,14 @@ columns: 79
 indent: 2
 language_extensions:
   - ApplicativeDo
+  - BangPatterns
+  - BlockArguments
   - FlexibleContexts
+  - NamedFieldPuns
+  - NegativeLiterals
   - NoImplicitPrelude
+  - NumDecimals
+  - NumericUnderscores
   - OverloadedStrings
   - ScopedTypeVariables
   - TypeApplications
