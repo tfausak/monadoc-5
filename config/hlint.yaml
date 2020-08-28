@@ -2,6 +2,7 @@
     - -XApplicativeDo
     - -XBangPatterns
     - -XBlockArguments
+    - -XDataKinds
     - -XFlexibleContexts
     - -XNamedFieldPuns
     - -XNegativeLiterals

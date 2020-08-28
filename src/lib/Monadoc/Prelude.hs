@@ -9,6 +9,7 @@ module Monadoc.Prelude
   , Control.Exception.toException
   , Control.Monad.Monad
   , Control.Monad.forever
+  , Control.Monad.guard
   , Control.Monad.join
   , Control.Monad.unless
   , Control.Monad.when
@@ -60,6 +61,7 @@ module Monadoc.Prelude
   , Data.Foldable.length
   , Data.Foldable.notElem
   , Data.Foldable.sequence_
+  , Data.Foldable.toList
   , Data.Foldable.traverse_
   , Data.Function.flip
   , Data.Functor.Functor
@@ -109,7 +111,9 @@ module Monadoc.Prelude
   , Data.Semigroup.Semigroup
   , (Data.Semigroup.<>)
   , Data.Set.Set
+  , Data.String.IsString
   , Data.String.String
+  , Data.String.fromString
   , Data.String.lines
   , Data.String.unlines
   , Data.String.unwords
@@ -142,6 +146,8 @@ module Monadoc.Prelude
   , GHC.Enum.minBound
   , GHC.Err.error
   , GHC.Err.undefined
+  , GHC.Exts.IsList
+  , GHC.Exts.fromList
   , GHC.Float.Float
   , GHC.Float.Floating
   , GHC.Float.isInfinite
@@ -262,6 +268,7 @@ import qualified Data.Void
 import qualified Data.Word
 import qualified GHC.Enum
 import qualified GHC.Err
+import qualified GHC.Exts
 import qualified GHC.Float
 import qualified GHC.Generics
 import qualified GHC.Integer

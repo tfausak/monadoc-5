@@ -1,16 +1,12 @@
 module Monadoc.Data.Options where
 
-import qualified Control.Monad as Monad
 import qualified Data.List as List
-import qualified Data.Set as Set
-import qualified Data.String as String
 import qualified Data.Text as Text
 import Monadoc.Prelude
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Service as Service
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Console.GetOpt as GetOpt
-import qualified Text.Read as Read
 
 type Option = GetOpt.OptDescr (Config.Config -> Either String Config.Config)
 
@@ -110,7 +106,7 @@ hostOption =
       <> "."
       )
     <<< argument "STRING"
-    <| \host config -> Right config { Config.host = String.fromString host }
+    <| \host config -> Right config { Config.host = fromString host }
 
 showHost :: Warp.HostPreference -> String
 showHost host = case host of
@@ -131,7 +127,7 @@ portOption =
       <> "."
       )
     <<< argument "NUMBER"
-    <| \rawPort config -> case Read.readMaybe rawPort of
+    <| \rawPort config -> case read rawPort of
          Nothing -> Left <| "invalid port: " <> show rawPort
          Just port -> Right config { Config.port = port }
 
@@ -152,23 +148,22 @@ servicesOption =
          Nothing -> Left <| "invalid services: " <> show rawServices
          Just services -> Right config { Config.services = services }
 
-readServices :: String -> Maybe (Set.Set Service.Service)
+readServices :: String -> Maybe (Set Service.Service)
 readServices string = do
-  list <- traverse readService <<< Text.splitOn "," <| Text.pack string
-  Monad.guard <| present list
-  let set = Set.fromList list
-  Monad.guard <| length set == length list
+  list <- traverse readService <<< Text.splitOn "," <| fromString string
+  guard <| present list
+  let set = fromList list
+  guard <| length set == length list
   pure set
 
-readService :: Text.Text -> Maybe Service.Service
+readService :: Text -> Maybe Service.Service
 readService text = case text of
   "server" -> Just Service.Server
   "worker" -> Just Service.Worker
   _ -> Nothing
 
-showServices :: Set.Set Service.Service -> String
-showServices =
-  show <<< List.intercalate "," <<< map showService <<< Set.toList
+showServices :: Set Service.Service -> String
+showServices = show <<< List.intercalate "," <<< map showService <<< toList
 
 showService :: Service.Service -> String
 showService service = case service of

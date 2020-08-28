@@ -1,4 +1,5 @@
 module Monadoc.Data.Commit where
+
 import Monadoc.Prelude
 
 -- | The Git commit hash this package was built at, if available. Like the

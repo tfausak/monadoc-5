@@ -1,7 +1,6 @@
 module Monadoc.Data.Migrations where
 
 import qualified Data.Fixed as Fixed
-import qualified Data.Set as Set
 import qualified Database.SQLite.Simple as Sql
 import Monadoc.Prelude
 import qualified Monadoc.Type.Migration as Migration
@@ -14,8 +13,8 @@ import qualified Monadoc.Utility.Time as Time
 -- Because an old version of the app may be running when a new version
 -- launches, migrations needs to be compatible. Both old and new code must be
 -- able to deal with both old and new databases.
-migrations :: Set.Set Migration.Migration
-migrations = Set.fromList
+migrations :: Set Migration.Migration
+migrations = fromList
   [ makeMigration (2020, 5, 31, 13, 38, 0) "select 1"
   , makeMigration
     (2020, 6, 2, 13, 43, 0)

@@ -4,6 +4,7 @@ language_extensions:
   - ApplicativeDo
   - BangPatterns
   - BlockArguments
+  - DataKinds
   - FlexibleContexts
   - NamedFieldPuns
   - NegativeLiterals

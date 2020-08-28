@@ -66,6 +66,7 @@ common library
     ApplicativeDo
     BangPatterns
     BlockArguments
+    DataKinds
     FlexibleContexts
     NamedFieldPuns
     NegativeLiterals
