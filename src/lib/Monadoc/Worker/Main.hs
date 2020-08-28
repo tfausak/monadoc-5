@@ -777,7 +777,7 @@ processTarballEntry package version linkVar entry =
 -- with the wrong prefix. Since these paths already exist, we don't want to
 -- throw and exception for them.
 ignoredPaths :: Set.Set FilePath
-ignoredPaths = Set.fromList <| fmap
+ignoredPaths = Set.fromList <| map
   FilePath.joinPath
   [ [".", "._BirdPP-1.1"]
   , [".", "._ParserFunction-0.0.4"]
@@ -901,7 +901,7 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 <| do
                   <| Cabal.defaultExtensions buildInfo
                   <> Cabal.oldExtensions buildInfo
             Monad.forM_
-                (fmap ModuleName.fromCabal <| Cabal.exposedModules library)
+                (map ModuleName.fromCabal <| Cabal.exposedModules library)
               <| \moduleName -> do
                    maybeFile <- findSourceFile pkg ver sourceDirs moduleName
                    App.sql_
@@ -1052,14 +1052,14 @@ getModuleExports module_ =
 
       Ghc.SigD _ sig -> case sig of
         -- type X = ...
-        Ghc.TypeSig _ lrns _ -> fmap convertLRN lrns
+        Ghc.TypeSig _ lrns _ -> map convertLRN lrns
         -- pattern X = ...
-        Ghc.PatSynSig _ lrns _ -> fmap convertLRN lrns
+        Ghc.PatSynSig _ lrns _ -> map convertLRN lrns
         Ghc.ClassOpSig{} -> crash "SigD/ClassOpSig" sig
         Ghc.IdSig{} -> crash "SigD/IdSig" sig
         Ghc.FixSig _ fixitySig -> case fixitySig of
           -- infix 4 ==
-          Ghc.FixitySig _ lrns _ -> fmap convertLRN lrns
+          Ghc.FixitySig _ lrns _ -> map convertLRN lrns
           Ghc.XFixitySig{} -> crash "SigD/FixSig/XFixitySig" fixitySig
         -- {-# INLINE ... #-}
         Ghc.InlineSig{} -> []
@@ -1108,7 +1108,7 @@ getModuleExports module_ =
       foldMap (convertDecl <<< Ghc.unLoc)
         <<< Ghc.hsmodDecls
         <| Ghc.unLoc ghcmod
-    Just exports -> fmap (convertIE <<< Ghc.unLoc) <| Ghc.unLoc exports
+    Just exports -> map (convertIE <<< Ghc.unLoc) <| Ghc.unLoc exports
 
 convertExtension :: C.KnownExtension -> Maybe G.Extension
 convertExtension x = case x of
@@ -1363,7 +1363,7 @@ maybeProcess path sha256 process = do
     Sql.Only actual : _ | actual == sha256 -> pure Nothing
     _ -> do
       result <- process
-      timestamp <- IO.liftIO <| fmap Timestamp.fromUtcTime Time.getCurrentTime
+      timestamp <- IO.liftIO <| map Timestamp.fromUtcTime Time.getCurrentTime
       App.sql_
         "insert into processed_files (path, sha256, timestamp) \
         \values (?, ?, ?) on conflict (path) do update set \

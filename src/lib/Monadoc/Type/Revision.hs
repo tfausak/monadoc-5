@@ -12,7 +12,7 @@ instance Sql.ToField Revision where
   toField = Sql.toField <<< toWord
 
 fromString :: String -> Maybe Revision
-fromString = fmap Revision <<< Read.readMaybe
+fromString = map Revision <<< Read.readMaybe
 
 fromWord :: Word -> Revision
 fromWord = Revision

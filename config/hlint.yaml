@@ -14,4 +14,5 @@
 - ignore: { name: Redundant id }
 - ignore: { name: Use <$> }
 - ignore: { name: Use =<< }
+- ignore: { name: Use fmap }
 - ignore: { name: Use lambda-case }

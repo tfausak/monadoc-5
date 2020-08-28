@@ -14,7 +14,7 @@ newtype Url
   deriving (Eq, Show)
 
 instance Sql.FromField Url where
-  fromField = Sql.fromFieldVia <| fmap fromUri <<< Uri.parseURI
+  fromField = Sql.fromFieldVia <| map fromUri <<< Uri.parseURI
 
 instance Sql.ToField Url where
   toField = Sql.toField <<< (<| "") <<< Uri.uriToString identity <<< toUri

@@ -13,7 +13,7 @@ newtype Size
   deriving (Eq, Show)
 
 instance Sql.FromField Size where
-  fromField = fmap fromInt <<< Sql.fromField
+  fromField = map fromInt <<< Sql.fromField
 
 instance Sql.ToField Size where
   toField = Sql.toField <<< toInt

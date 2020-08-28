@@ -17,7 +17,7 @@ fromCabal :: Cabal.VersionRange -> VersionRange
 fromCabal = VersionRange
 
 fromString :: String -> Maybe VersionRange
-fromString = fmap fromCabal <<< Cabal.simpleParsec
+fromString = map fromCabal <<< Cabal.simpleParsec
 
 toCabal :: VersionRange -> Cabal.VersionRange
 toCabal (VersionRange cabal) = cabal

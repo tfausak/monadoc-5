@@ -81,9 +81,9 @@ argumentsToConfigResult name arguments =
     version = Version.string <> versionHash <> "\n"
     formatArg arg = "WARNING: argument `" <> arg <> "' not expected\n"
     formatOpt opt = "WARNING: option `" <> opt <> "' not recognized\n"
-    warnings = fmap formatArg args <> fmap formatOpt opts
+    warnings = map formatArg args <> map formatOpt opts
   in case NonEmpty.nonEmpty errs of
-    Just es -> ConfigResult.Failure <| fmap ("ERROR: " <>) es
+    Just es -> ConfigResult.Failure <| map ("ERROR: " <>) es
     Nothing -> case Monad.foldM (|>) Config.initial funs of
       Left err -> ConfigResult.Failure <<< pure <| "ERROR: " <> err <> "\n"
       Right config -> if Config.help config
@@ -119,7 +119,7 @@ idleTime :: Time.NominalDiffTime
 idleTime = 60
 
 getMaxResources :: IO Int
-getMaxResources = fmap (max 1) Concurrent.getNumCapabilities
+getMaxResources = map (max 1) Concurrent.getNumCapabilities
 
 isInMemory :: FilePath -> Bool
 isInMemory database = case database of

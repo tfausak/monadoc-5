@@ -108,7 +108,7 @@ isEncoded =
 acceptsGzip :: Wai.Request -> Bool
 acceptsGzip =
   elem "gzip"
-    <<< fmap Text.strip
+    <<< map Text.strip
     <<< Text.splitOn ","
     <<< Utf8.toText
     <<< Maybe.fromMaybe ""

@@ -39,7 +39,7 @@ spec = describe "Monadoc.Type.WithCallStack" <| do
         x :: Maybe TestException.TestException
         x =
           Monad.join
-            <<< fmap (Exception.fromException <<< WithCallStack.value)
+            <<< map (Exception.fromException <<< WithCallStack.value)
             <<< Exception.fromException
             <<< WithCallStack.withCallStack
             <| Exception.toException TestException.TestException
@@ -50,7 +50,7 @@ spec = describe "Monadoc.Type.WithCallStack" <| do
         x :: Maybe TestException.TestException
         x =
           Monad.join
-            <<< fmap (Exception.fromException <<< WithCallStack.value)
+            <<< map (Exception.fromException <<< WithCallStack.value)
             <<< Exception.fromException
             <<< WithCallStack.withCallStack
             <<< WithCallStack.withCallStack

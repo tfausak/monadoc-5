@@ -26,7 +26,7 @@ fromDigest :: Crypto.Digest Crypto.SHA256 -> Sha256
 fromDigest = Sha256
 
 fromString :: String -> Maybe Sha256
-fromString = fmap fromDigest <<< Read.readMaybe
+fromString = map fromDigest <<< Read.readMaybe
 
 toDigest :: Sha256 -> Crypto.Digest Crypto.SHA256
 toDigest (Sha256 digest) = digest

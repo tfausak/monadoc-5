@@ -39,7 +39,6 @@ module Monadoc.Prelude
   , Data.Foldable.traverse_
   , Data.Function.flip
   , Data.Functor.Functor
-  , Data.Functor.fmap
   , Data.Functor.void
   , Data.Int.Int
   , Data.Int.Int8
@@ -175,6 +174,7 @@ module Monadoc.Prelude
   , always
   , identity
   , lookup
+  , map
   , notNull
   , read
   , toEnum
@@ -242,6 +242,9 @@ lookup
   -> t (k, v)
   -> Data.Maybe.Maybe v
 lookup k xs = Data.List.lookup k (Data.Foldable.toList xs)
+
+map :: Data.Functor.Functor f => (a -> b) -> f a -> f b
+map = Data.Functor.fmap
 
 notNull :: Data.Foldable.Foldable t => t a -> Data.Bool.Bool
 notNull = Data.Bool.not Data.Function.. Data.Foldable.null

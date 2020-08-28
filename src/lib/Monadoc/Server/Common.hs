@@ -83,9 +83,9 @@ getCookieUser = do
     Nothing -> pure Nothing
     Just cookie -> case lookup "guid" <| Cookie.parseCookiesText cookie of
       Nothing -> pure Nothing
-      Just text -> case fmap Guid.fromUuid <| Uuid.fromText text of
+      Just text -> case map Guid.fromUuid <| Uuid.fromText text of
         Nothing -> pure Nothing
-        Just guid -> fmap Maybe.listToMaybe
+        Just guid -> map Maybe.listToMaybe
           <| App.sql "select * from users where guid = ?" [guid]
 
 htmlResponse :: Http.Status -> Headers -> H.Html a -> Wai.Response

@@ -168,7 +168,7 @@ readService text = case text of
 
 showServices :: Set.Set Service.Service -> String
 showServices =
-  show <<< List.intercalate "," <<< fmap showService <<< Set.toList
+  show <<< List.intercalate "," <<< map showService <<< Set.toList
 
 showService :: Service.Service -> String
 showService service = case service of

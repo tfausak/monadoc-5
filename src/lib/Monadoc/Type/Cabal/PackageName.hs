@@ -17,7 +17,7 @@ fromCabal :: Cabal.PackageName -> PackageName
 fromCabal = PackageName
 
 fromString :: String -> Maybe PackageName
-fromString = fmap fromCabal <<< Cabal.simpleParsec
+fromString = map fromCabal <<< Cabal.simpleParsec
 
 toCabal :: PackageName -> Cabal.PackageName
 toCabal (PackageName cabal) = cabal
