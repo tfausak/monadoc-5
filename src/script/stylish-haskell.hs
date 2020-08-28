@@ -9,4 +9,4 @@ main = do
   Process.callProcess "stylish-haskell"
     $ "--config=config/stylish-haskell.yaml"
     : "--inplace"
-    : filter (/= "src/lib/Monadoc/Prelude.hs") files
+    : files

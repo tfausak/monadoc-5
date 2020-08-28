@@ -65,6 +65,10 @@ module Monadoc.Prelude
   , (Data.Ord.<=)
   , (Data.Ord.>)
   , (Data.Ord.>=)
+  , Data.Ratio.Ratio
+  , Data.Ratio.Rational
+  , Data.Ratio.denominator
+  , Data.Ratio.numerator
   , Data.Semigroup.Semigroup
   , (Data.Semigroup.<>)
   , Data.Set.Set
@@ -90,13 +94,19 @@ module Monadoc.Prelude
   , Data.Word.Word64
   , GHC.Err.error
   , GHC.Float.Float
+  , GHC.Float.Floating
+  , GHC.Float.logBase
+  , GHC.Float.sqrt
+  , (GHC.Float.**)
   , GHC.Float.Double
   , GHC.Integer.Integer
   , GHC.Num.Num
+  , GHC.Num.fromInteger
   , (GHC.Num.+)
   , (GHC.Num.-)
-  , (GHC.Num.*)
+  , GHC.Real.Fractional
   , GHC.Real.Integral
+  , GHC.Real.RealFrac
   , GHC.Real.ceiling
   , GHC.Real.div
   , GHC.Real.divMod
@@ -107,8 +117,12 @@ module Monadoc.Prelude
   , GHC.Real.quotRem
   , GHC.Real.rem
   , GHC.Real.round
+  , GHC.Real.toInteger
   , GHC.Real.truncate
   , (GHC.Real./)
+  , (GHC.Real.^)
+  , (GHC.Real.^^)
+  , Numeric.Natural.Natural
   , System.IO.FilePath
   , System.IO.IO
   , System.IO.putStr
@@ -119,6 +133,7 @@ module Monadoc.Prelude
   , always
   , identity
   , read
+  , (*)
   , (<<<)
   , (<|)
   , (>>>)
@@ -144,6 +159,7 @@ import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Monoid
 import qualified Data.Ord
+import qualified Data.Ratio
 import qualified Data.Semigroup
 import qualified Data.Set
 import qualified Data.String
@@ -157,6 +173,7 @@ import qualified GHC.Float
 import qualified GHC.Integer
 import qualified GHC.Num
 import qualified GHC.Real
+import qualified Numeric.Natural
 import qualified System.IO
 import qualified System.IO.Error
 import qualified Text.Read
@@ -171,9 +188,18 @@ identity = Data.Function.id
 read :: Text.Read.Read a => Data.String.String -> Data.Maybe.Maybe a
 read = Text.Read.readMaybe
 
+-- Redefined here to avoid a stylish-haskell bug.
+(*) :: GHC.Num.Num a => a -> a -> a
+(*) = (GHC.Num.*)
+infixl 7 *
+
 (<<<) :: (b -> c) -> (a -> b) -> (a -> c)
 (<<<) = (Control.Category.<<<)
 infixr 9 <<<
+
+(<|) :: (a -> b) -> a -> b
+(<|) = (Data.Function.$)
+infixr 0 <|
 
 (>>>) :: (a -> b) -> (b -> c) -> (a -> c)
 (>>>) = (Control.Category.>>>)
@@ -182,7 +208,3 @@ infixl 9 >>>
 (|>) :: a -> (a -> b) -> b
 (|>) = (Data.Function.&)
 infixl 0 |>
-
-(<|) :: (a -> b) -> a -> b
-(<|) = (Data.Function.$)
-infixr 0 <|
