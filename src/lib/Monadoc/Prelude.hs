@@ -33,6 +33,7 @@ module Monadoc.Prelude
   , Data.Foldable.foldr
   , Data.Foldable.for_
   , Data.Foldable.length
+  , Data.Foldable.notElem
   , Data.Foldable.null
   , Data.Foldable.sequence_
   , Data.Foldable.traverse_
@@ -45,13 +46,22 @@ module Monadoc.Prelude
   , Data.Int.Int16
   , Data.Int.Int32
   , Data.Int.Int64
+  , Data.List.break
+  , Data.List.cycle
   , Data.List.drop
+  , Data.List.dropWhile
   , Data.List.filter
   , Data.List.lookup
+  , Data.List.repeat
   , Data.List.replicate
   , Data.List.reverse
+  , Data.List.span
   , Data.List.splitAt
   , Data.List.take
+  , Data.List.takeWhile
+  , Data.List.unzip
+  , Data.List.zip
+  , Data.List.zipWith
   , Data.Map.Map
   , Data.Maybe.Maybe(Nothing, Just)
   , Data.Maybe.maybe
@@ -103,8 +113,11 @@ module Monadoc.Prelude
   , GHC.Enum.maxBound
   , GHC.Enum.minBound
   , GHC.Err.error
+  , GHC.Err.undefined
   , GHC.Float.Float
   , GHC.Float.Floating
+  , GHC.Float.isInfinite
+  , GHC.Float.isNaN
   , GHC.Float.logBase
   , GHC.Float.sqrt
   , (GHC.Float.**)
@@ -112,23 +125,31 @@ module Monadoc.Prelude
   , GHC.Generics.Generic
   , GHC.Integer.Integer
   , GHC.Num.Num
+  , GHC.Num.abs
   , GHC.Num.fromInteger
+  , GHC.Num.negate
   , (GHC.Num.+)
   , (GHC.Num.-)
+  , GHC.Prim.seq
   , GHC.Real.Fractional
   , GHC.Real.Integral
   , GHC.Real.RealFrac
   , GHC.Real.ceiling
   , GHC.Real.div
   , GHC.Real.divMod
+  , GHC.Real.even
   , GHC.Real.floor
   , GHC.Real.fromIntegral
+  , GHC.Real.fromRational
   , GHC.Real.mod
+  , GHC.Real.odd
   , GHC.Real.quot
   , GHC.Real.quotRem
+  , GHC.Real.realToFrac
   , GHC.Real.rem
   , GHC.Real.round
   , GHC.Real.toInteger
+  , GHC.Real.toRational
   , GHC.Real.truncate
   , (GHC.Real./)
   , (GHC.Real.^)
@@ -136,7 +157,18 @@ module Monadoc.Prelude
   , Numeric.Natural.Natural
   , System.IO.FilePath
   , System.IO.IO
+  , System.IO.appendFile
+  , System.IO.getChar
+  , System.IO.getContents
+  , System.IO.getLine
+  , System.IO.interact
+  , System.IO.print
+  , System.IO.putChar
   , System.IO.putStr
+  , System.IO.putStrLn
+  , System.IO.readFile
+  , System.IO.writeFile
+  , System.IO.Error.IOError
   , System.IO.Error.userError
   , Text.Read.Read
   , Text.Show.Show
@@ -189,6 +221,7 @@ import qualified GHC.Float
 import qualified GHC.Generics
 import qualified GHC.Integer
 import qualified GHC.Num
+import qualified GHC.Prim
 import qualified GHC.Real
 import qualified Numeric.Natural
 import qualified System.IO

@@ -1,4 +1,5 @@
 - arguments:
+    - -XApplicativeDo
     - -XFlexibleContexts
     - -XNoImplicitPrelude
     - -XOverloadedStrings

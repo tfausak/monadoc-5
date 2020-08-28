@@ -10,7 +10,14 @@ data-files:
   data/favicon.ico
   data/logo.png
   data/tachyons-4-12-0.css
-extra-source-files: README.markdown
+extra-source-files:
+  config/brittany.yaml
+  config/hlint.yaml
+  config/stylish-haskell.yaml
+  src/script/brittany.hs
+  src/script/hlint.hs
+  src/script/stylish-haskell.hs
+  README.markdown
 license-file: LICENSE.markdown
 license: ISC
 maintainer: Taylor Fausak
@@ -35,6 +42,7 @@ common library
     , ghc >= 8.10.1 && < 8.11
     , ghc-boot-th >= 8.10.1 && < 8.11
     , ghc-paths >= 0.1.0 && < 0.2
+    , ghc-prim >= 0.6.1 && < 0.7
     , http-client >= 0.6.4 && < 0.8
     , http-client-tls >= 0.3.5 && < 0.4
     , http-types >= 0.12.3 && < 0.13
@@ -55,6 +63,7 @@ common library
     , zlib >= 0.6.2 && < 0.7
   default-extensions:
     -- Keep this in sync with Brittany, HLint, and Stylish Haskell configs.
+    ApplicativeDo
     FlexibleContexts
     NoImplicitPrelude
     OverloadedStrings

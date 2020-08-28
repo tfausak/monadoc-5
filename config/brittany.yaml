@@ -1,5 +1,6 @@
 conf_forward:
   options_ghc:
+    - -XApplicativeDo
     - -XFlexibleContexts
     - -XNoImplicitPrelude
     - -XOverloadedStrings

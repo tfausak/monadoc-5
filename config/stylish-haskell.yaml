@@ -1,6 +1,7 @@
 columns: 79
 indent: 2
 language_extensions:
+  - ApplicativeDo
   - FlexibleContexts
   - NoImplicitPrelude
   - OverloadedStrings
