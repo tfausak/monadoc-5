@@ -7,6 +7,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Database.SQLite.Simple as Sql
 import qualified Monadoc.Data.Migrations as Migrations
+import Monadoc.Prelude
 import qualified Monadoc.Server.Main as Server
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
@@ -20,7 +21,6 @@ import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Monadoc.Utility.Console as Console
 import qualified Monadoc.Utility.Time as Time
 import qualified Monadoc.Worker.Main as Worker
-import Monadoc.Prelude
 
 run :: App.App request ()
 run = do

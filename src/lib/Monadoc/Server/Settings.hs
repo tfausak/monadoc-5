@@ -6,6 +6,7 @@ import qualified Data.ByteString as ByteString
 import qualified Data.Proxy as Proxy
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
+import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
@@ -18,7 +19,6 @@ import qualified Network.HTTP.Client as Client
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
-import Monadoc.Prelude
 
 -- | Builds Warp server settings from a context.
 fromContext :: Context.Context request -> Warp.Settings

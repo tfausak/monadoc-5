@@ -3,6 +3,7 @@ module Monadoc.Handler.ThrowSpec where
 import qualified Control.Monad.Catch as Exception
 import qualified Monadoc
 import qualified Monadoc.Handler.Throw as Throw
+import Monadoc.Prelude
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
@@ -10,7 +11,6 @@ import qualified Monadoc.Type.TestException as TestException
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Handler.Throw" $ do

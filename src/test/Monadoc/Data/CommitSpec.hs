@@ -1,8 +1,8 @@
 module Monadoc.Data.CommitSpec where
 
 import qualified Monadoc.Data.Commit as Commit
-import Test.Hspec
 import Monadoc.Prelude
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Data.Commit" $ do

@@ -4,6 +4,7 @@ import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.Text as Text
 import qualified Lucid as H
+import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Server.Template as Template
@@ -14,7 +15,6 @@ import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import Monadoc.Prelude
 
 handle :: App.App Wai.Request Wai.Response
 handle = do

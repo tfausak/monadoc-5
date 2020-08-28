@@ -11,6 +11,7 @@ import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Database.SQLite.Simple as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
@@ -26,7 +27,6 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified System.Random as Random
-import Monadoc.Prelude
 
 handle :: App.App Wai.Request Wai.Response
 handle = do

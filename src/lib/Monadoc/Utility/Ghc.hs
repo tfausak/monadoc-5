@@ -16,12 +16,12 @@ import qualified GHC.Paths
 import qualified HeaderInfo
 import qualified Language.Preprocessor.Cpphs as Cpp
 import qualified Lexer
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Outputable
 import qualified Parser
 import qualified SrcLoc
 import qualified StringBuffer
-import Monadoc.Prelude
 
 newtype Errors = Errors
   { unwrapErrors :: Bag.Bag ErrUtils.ErrMsg

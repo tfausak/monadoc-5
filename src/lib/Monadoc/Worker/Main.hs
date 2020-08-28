@@ -46,6 +46,7 @@ import qualified GHC.Hs as Ghc
 import qualified GHC.LanguageExtensions.Type as G
 import qualified Language.Haskell.Extension as C
 import qualified Module as Ghc
+import Monadoc.Prelude
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -77,7 +78,6 @@ import qualified System.FilePath as FilePath
 import qualified System.IO.Unsafe as Unsafe
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
-import Monadoc.Prelude
 
 run :: App.App request ()
 run = do

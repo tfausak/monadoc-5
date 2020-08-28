@@ -5,10 +5,10 @@ import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.Internal as Sql
 import qualified Database.SQLite.Simple.Ok as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Type.Url as Url
 import qualified Network.URI as Uri
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Url" $ do

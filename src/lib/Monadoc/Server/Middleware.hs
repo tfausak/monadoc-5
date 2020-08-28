@@ -8,6 +8,7 @@ import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified GHC.Clock as Clock
+import Monadoc.Prelude
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Utility.Console as Console
@@ -18,7 +19,6 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Internal as Wai
 import qualified System.Mem as Mem
 import qualified Text.Printf as Printf
-import Monadoc.Prelude
 
 middleware :: Context.Context request -> Wai.Middleware
 middleware context =

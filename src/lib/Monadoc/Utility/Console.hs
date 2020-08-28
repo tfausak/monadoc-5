@@ -4,10 +4,10 @@ import qualified Control.Concurrent.STM as Stm
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.Time as Time
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Time as Time
 import qualified System.IO as IO
 import qualified System.IO.Unsafe as Unsafe
-import Monadoc.Prelude
 
 -- | Puts a timestamp in front of the given message and logs it to STDOUT.
 -- Ensures that only one thread outputs at a time, so output won't be garbled

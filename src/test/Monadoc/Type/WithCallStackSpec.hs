@@ -3,10 +3,10 @@ module Monadoc.Type.WithCallStackSpec where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Data.Maybe as Maybe
+import Monadoc.Prelude
 import qualified Monadoc.Type.TestException as TestException
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.WithCallStack" $ do

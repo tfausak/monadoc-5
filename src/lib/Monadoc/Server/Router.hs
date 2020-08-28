@@ -1,10 +1,10 @@
 module Monadoc.Server.Router where
 
 import qualified Data.Text as Text
+import Monadoc.Prelude
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
-import Monadoc.Prelude
 
 parseRoute :: Http.Method -> [Text.Text] -> Maybe Route.Route
 parseRoute method path = do

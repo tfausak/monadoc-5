@@ -14,6 +14,7 @@ import qualified Monadoc.Handler.SearchSpec
 import qualified Monadoc.Handler.TachyonsSpec
 import qualified Monadoc.Handler.ThrowSpec
 import qualified Monadoc.MainSpec
+import Monadoc.Prelude
 import qualified Monadoc.Server.ApplicationSpec
 import qualified Monadoc.Server.CommonSpec
 import qualified Monadoc.Server.MainSpec
@@ -58,7 +59,6 @@ import qualified Monadoc.Utility.Utf8Spec
 import qualified Monadoc.Worker.MainSpec
 import qualified MonadocSpec
 import Test.Hspec
-import Monadoc.Prelude
 
 main :: IO ()
 main = hspec $ do

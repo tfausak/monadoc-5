@@ -4,9 +4,9 @@ import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.Internal as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Type.Size as Size
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Size" $ do

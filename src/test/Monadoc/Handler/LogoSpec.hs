@@ -2,13 +2,13 @@ module Monadoc.Handler.LogoSpec where
 
 import qualified Monadoc
 import qualified Monadoc.Handler.Logo as Logo
+import Monadoc.Prelude
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Context as Context
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Handler.Logo" $ do

@@ -2,11 +2,11 @@ module Monadoc.Type.MigrationSpec where
 
 import qualified Data.Time.Clock.POSIX as Time
 import qualified Database.SQLite.Simple as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Type.Migration as Migration
 import qualified Monadoc.Type.Sha256 as Sha256
 import qualified Monadoc.Type.Timestamp as Timestamp
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Migration" $ do

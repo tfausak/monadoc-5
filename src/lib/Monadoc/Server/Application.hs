@@ -11,6 +11,7 @@ import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Search as Handler.Search
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
 import qualified Monadoc.Handler.Throw as Handler.Throw
+import Monadoc.Prelude
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
@@ -18,7 +19,6 @@ import qualified Monadoc.Type.NotFoundException as NotFoundException
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.WithCallStack as WithCallStack
 import qualified Network.Wai as Wai
-import Monadoc.Prelude
 
 application :: Context.Context request -> Wai.Application
 application context request respond = do

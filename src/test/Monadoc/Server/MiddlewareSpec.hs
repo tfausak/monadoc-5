@@ -1,7 +1,7 @@
 module Monadoc.Server.MiddlewareSpec where
 
-import Test.Hspec
 import Monadoc.Prelude
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Server.Middleware" $ do

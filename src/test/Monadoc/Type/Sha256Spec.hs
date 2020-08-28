@@ -7,9 +7,9 @@ import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.Internal as Sql
 import qualified Database.SQLite.Simple.Ok as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Type.Sha256 as Sha256
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Sha256" $ do

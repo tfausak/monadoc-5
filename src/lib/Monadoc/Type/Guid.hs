@@ -4,9 +4,9 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.UUID as Uuid
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Sql as Sql
 import qualified System.Random as Random
-import Monadoc.Prelude
 
 -- | A thin wrapper around a UUID. This is called "GUID" because it's easier to
 -- say as a word. It rhymes with "squid".

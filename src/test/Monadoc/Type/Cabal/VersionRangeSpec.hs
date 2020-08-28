@@ -1,9 +1,9 @@
 module Monadoc.Type.Cabal.VersionRangeSpec where
 
 import qualified Data.Maybe as Maybe
+import Monadoc.Prelude
 import qualified Monadoc.Type.Cabal.VersionRange as VersionRange
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Type.Cabal.VersionRange" $ do

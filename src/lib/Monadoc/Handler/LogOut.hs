@@ -3,6 +3,7 @@ module Monadoc.Handler.LogOut where
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.UUID as Uuid
+import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
@@ -15,7 +16,6 @@ import qualified Network.HTTP.Types as Http
 import qualified Network.HTTP.Types.Header as Http
 import qualified Network.Wai as Wai
 import qualified Web.Cookie as Cookie
-import Monadoc.Prelude
 
 handle :: App.App Wai.Request Wai.Response
 handle = do

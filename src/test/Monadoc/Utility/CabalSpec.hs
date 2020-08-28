@@ -1,9 +1,9 @@
 module Monadoc.Utility.CabalSpec where
 
 import qualified Data.Either as Either
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Cabal as Cabal
 import Test.Hspec
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Utility.Cabal" $ do

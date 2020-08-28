@@ -1,8 +1,8 @@
 module Monadoc.Type.Revision where
 
 import qualified Database.SQLite.Simple.ToField as Sql
-import qualified Text.Read as Read
 import Monadoc.Prelude
+import qualified Text.Read as Read
 
 newtype Revision
   = Revision Word

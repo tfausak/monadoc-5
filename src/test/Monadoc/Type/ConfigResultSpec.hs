@@ -1,7 +1,7 @@
 module Monadoc.Type.ConfigResultSpec where
 
-import Test.Hspec
 import Monadoc.Prelude
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Monadoc.Type.ConfigResult" $ do

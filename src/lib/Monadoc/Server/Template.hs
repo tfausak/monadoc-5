@@ -4,12 +4,12 @@ import qualified Data.Text as Text
 import qualified Lucid as H
 import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Version as Version
+import Monadoc.Prelude
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.Route as Route
 import qualified Monadoc.Type.User as User
-import Monadoc.Prelude
 
 makeHtmlWith
   :: Config.Config -> Maybe User.User -> Text.Text -> H.Html () -> H.Html ()

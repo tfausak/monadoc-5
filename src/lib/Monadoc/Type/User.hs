@@ -3,10 +3,10 @@ module Monadoc.Type.User where
 import qualified Data.Text as Text
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.GitHub.UserId as UserId
 import qualified Monadoc.Type.Guid as Guid
-import Monadoc.Prelude
 
 data User = User
   { guid :: Guid.Guid

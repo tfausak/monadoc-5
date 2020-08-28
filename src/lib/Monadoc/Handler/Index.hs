@@ -2,13 +2,13 @@ module Monadoc.Handler.Index where
 
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Lucid as H
+import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Template as Template
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
-import Monadoc.Prelude
 
 handle :: App.App Wai.Request Wai.Response
 handle = do

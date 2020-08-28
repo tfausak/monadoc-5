@@ -1,9 +1,9 @@
 module Monadoc.Type.GitHub.User where
 
 import qualified Data.Aeson as Aeson
+import Monadoc.Prelude
 import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.GitHub.UserId as UserId
-import Monadoc.Prelude
 
 -- | A GitHub user, as described by their v3 REST API. We only care about a
 -- subset of the fields. For a list of all the fields, see

@@ -3,10 +3,10 @@ module Monadoc.Utility.SqlSpec where
 import qualified Database.SQLite.Simple as Sql
 import qualified Database.SQLite.Simple.Internal as Sql
 import qualified Database.SQLite.Simple.Ok as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Sql as Sql
 import Test.Hspec
 import qualified Text.Read as Read
-import Monadoc.Prelude
 
 spec :: Spec
 spec = describe "Monadoc.Utility.Sql" $ do
