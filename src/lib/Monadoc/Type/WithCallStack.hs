@@ -19,9 +19,9 @@ instance Eq a => Eq (WithCallStack a) where
 
 instance Exception.Exception e => Exception.Exception (WithCallStack e) where
   displayException x =
-    let string = Exception.displayException $ value x
+    let string = Exception.displayException <| value x
     in
-      case Stack.prettyCallStack $ callStack x of
+      case Stack.prettyCallStack <| callStack x of
         "" -> string
         stack -> fold [string, "\n", stack]
 
@@ -37,8 +37,8 @@ catch
 catch x f = Exception.catches
   x
   [ Exception.Handler f
-  , Exception.Handler $ \se ->
-    case Exception.fromException $ withoutCallStack se of
+  , Exception.Handler <| \se ->
+    case Exception.fromException <| withoutCallStack se of
       Just e -> f e
       Nothing -> Exception.throwM se
   ]

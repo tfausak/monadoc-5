@@ -23,8 +23,9 @@ import qualified Network.Wai as Wai
 application :: Context.Context request -> Wai.Application
 application context request respond = do
   response <-
-    App.run context { Context.request = request } <<< runRoute $ parseRoute
-      request
+    App.run context { Context.request = request }
+    <<< runRoute
+    <| parseRoute request
   respond response
 
 parseRoute :: Wai.Request -> Maybe Route.Route

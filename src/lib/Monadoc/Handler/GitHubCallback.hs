@@ -42,14 +42,14 @@ handle = do
     <<< Common.statusResponse Http.found302
     <<< Map.insert Http.hLocation redirect
     <<< Map.insert Http.hSetCookie (Common.renderCookie cookie)
-    $ Common.defaultHeaders config
+    <| Common.defaultHeaders config
 
 getCode :: App.App Wai.Request ByteString.ByteString
 getCode = do
   request <- Reader.asks Context.request
-  case lookup "code" $ Wai.queryString request of
+  case lookup "code" <| Wai.queryString request of
     Just (Just code) -> pure code
-    _ -> WithCallStack.throw $ NoCodeProvided request
+    _ -> WithCallStack.throw <| NoCodeProvided request
 
 newtype NoCodeProvided
   = NoCodeProvided Wai.Request
@@ -65,20 +65,20 @@ getToken code = do
   let
     config = Context.config context
     request = Client.urlEncodedBody
-      [ ("client_id", Utf8.fromString $ Config.clientId config)
-      , ("client_secret", Utf8.fromString $ Config.clientSecret config)
+      [ ("client_id", Utf8.fromString <| Config.clientId config)
+      , ("client_secret", Utf8.fromString <| Config.clientSecret config)
       , ("code", code)
       ]
       initialRequest
-  response <- Trans.lift <<< Client.httpLbs request $ Context.manager context
+  response <- Trans.lift <<< Client.httpLbs request <| Context.manager context
   case
       lookup "access_token"
       <<< Http.parseQueryText
       <<< LazyByteString.toStrict
-      $ Client.responseBody response
+      <| Client.responseBody response
     of
       Just (Just token) -> pure token
-      _ -> WithCallStack.throw $ TokenRequestFailed request response
+      _ -> WithCallStack.throw <| TokenRequestFailed request response
 
 data TokenRequestFailed
   = TokenRequestFailed Client.Request (Client.Response LazyByteString.ByteString)
@@ -97,11 +97,11 @@ getUser token = do
         , (Http.hUserAgent, Settings.serverName)
         ]
       }
-  response <- Trans.lift <<< Client.httpLbs request $ Context.manager context
-  case Aeson.eitherDecode $ Client.responseBody response of
+  response <- Trans.lift <<< Client.httpLbs request <| Context.manager context
+  case Aeson.eitherDecode <| Client.responseBody response of
     Right user -> pure user
     Left message ->
-      WithCallStack.throw $ UserRequestFailed request response message
+      WithCallStack.throw <| UserRequestFailed request response message
 
 data UserRequestFailed
   = UserRequestFailed Client.Request (Client.Response LazyByteString.ByteString) String
@@ -111,7 +111,7 @@ instance Exception.Exception UserRequestFailed
 
 upsertUser :: Text.Text -> GHUser.User -> App.App request Guid.Guid
 upsertUser token ghUser = do
-  guid <- Trans.lift $ Random.getStdRandom Guid.random
+  guid <- Trans.lift <| Random.getStdRandom Guid.random
   let
     user = User.User
       { User.guid = guid
@@ -126,8 +126,8 @@ upsertUser token ghUser = do
     user
   rows <- App.sql "select guid from users where id = ?" [User.id user]
   case rows of
-    only : _ -> pure $ Sql.fromOnly only
-    _ -> WithCallStack.throw $ UserUpsertFailed user
+    only : _ -> pure <| Sql.fromOnly only
+    _ -> WithCallStack.throw <| UserUpsertFailed user
 
 newtype UserUpsertFailed
   = UserUpsertFailed User.User
@@ -138,7 +138,7 @@ instance Exception.Exception UserUpsertFailed
 getRedirect :: App.App Wai.Request ByteString.ByteString
 getRedirect =
   Reader.asks
-    $ Maybe.fromMaybe "/"
+    <| Maybe.fromMaybe "/"
     <<< Monad.join
     <<< lookup "redirect"
     <<< Wai.queryString

@@ -17,4 +17,4 @@ run = do
   Trans.lift
     <<< Warp.runSettings (Settings.fromContext context)
     <<< Middleware.middleware context
-    $ Application.application context
+    <| Application.application context

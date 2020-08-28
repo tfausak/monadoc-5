@@ -17,5 +17,5 @@ fromFieldVia f x = do
   y <- Sql.fromField x
   case f y of
     Nothing ->
-      Sql.returnError Sql.ConversionFailed x $ "failed to convert " <> show y
+      Sql.returnError Sql.ConversionFailed x <| "failed to convert " <> show y
     Just z -> pure z

@@ -48,7 +48,7 @@ parse
   -> FilePath
   -> Data.ByteString.ByteString
   -> IO (Either Errors Module)
-parse extensions filePath byteString = Control.Exception.handle handler $ do
+parse extensions filePath byteString = Control.Exception.handle handler <| do
   dynFlags1 <- GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags
   let
     dynFlags2 = foldr
@@ -63,20 +63,20 @@ parse extensions filePath byteString = Control.Exception.handle handler $ do
   string2 <- if DynFlags.xopt X.Cpp dynFlags3
     then Cpp.runCpphs cpphsOptions filePath string1
     else pure string1
-  Control.Monad.void <<< Control.Exception.evaluate $ length string2
+  Control.Monad.void <<< Control.Exception.evaluate <| length string2
   let stringBuffer2 = StringBuffer.stringToStringBuffer string2
   let fastString = FastString.mkFastString filePath
   let realSrcLoc = SrcLoc.mkRealSrcLoc fastString 1 1
   let pState1 = Lexer.mkPState dynFlags3 stringBuffer2 realSrcLoc
-  pure $ case Lexer.unP Parser.parseModule pState1 of
+  pure <| case Lexer.unP Parser.parseModule pState1 of
     Lexer.PFailed pState2 ->
-      Left <<< Errors <<< snd $ Lexer.getMessages pState2 dynFlags3
+      Left <<< Errors <<< snd <| Lexer.getMessages pState2 dynFlags3
     Lexer.POk pState2 locatedHsModuleGhcPs ->
-      let bagErrMsg = snd $ Lexer.getMessages pState2 dynFlags3
+      let bagErrMsg = snd <| Lexer.getMessages pState2 dynFlags3
       in
         if null bagErrMsg
-          then Right $ Module locatedHsModuleGhcPs
-          else Left $ Errors bagErrMsg
+          then Right <| Module locatedHsModuleGhcPs
+          else Left <| Errors bagErrMsg
 
 cpphsOptions :: Cpp.CpphsOptions
 cpphsOptions = Cpp.defaultCpphsOptions
@@ -93,7 +93,7 @@ handler e = do
     <<< Bag.unitBag
     <<< ErrUtils.mkPlainErrMsg f SrcLoc.noSrcSpan
     <<< Outputable.text
-    $ show e
+    <| show e
 
 toggleExtension
   :: (Bool, X.Extension) -> DynFlags.DynFlags -> DynFlags.DynFlags
@@ -103,7 +103,7 @@ toggleExtension (enable, extension) =
 enableExtension :: X.Extension -> DynFlags.DynFlags -> DynFlags.DynFlags
 enableExtension extension oldFlags =
   foldr toggleExtension (DynFlags.xopt_set oldFlags extension)
-    $ impliedExtensions extension
+    <| impliedExtensions extension
 
 disableExtension :: X.Extension -> DynFlags.DynFlags -> DynFlags.DynFlags
 disableExtension = flip DynFlags.xopt_unset

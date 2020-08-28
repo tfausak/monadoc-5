@@ -41,7 +41,7 @@ clientIdOption =
       <> " which is appropriate for development."
       )
     <<< argument "STRING"
-    $ \clientId config -> Right config { Config.clientId = clientId }
+    <| \clientId config -> Right config { Config.clientId = clientId }
 
 clientSecretOption :: Option
 clientSecretOption =
@@ -53,8 +53,8 @@ clientSecretOption =
       <> "."
       )
     <<< argument "STRING"
-    $ \clientSecret config ->
-        Right config { Config.clientSecret = clientSecret }
+    <| \clientSecret config ->
+         Right config { Config.clientSecret = clientSecret }
 
 databaseOption :: Option
 databaseOption =
@@ -67,7 +67,7 @@ databaseOption =
       <> "."
       )
     <<< argument "FILE"
-    $ \database config -> Right config { Config.database = database }
+    <| \database config -> Right config { Config.database = database }
 
 discordUrlOption :: Option
 discordUrlOption =
@@ -79,7 +79,7 @@ discordUrlOption =
       <> " which will disable exception reporting."
       )
     <<< argument "URL"
-    $ \discordUrl config -> Right config { Config.discordUrl = discordUrl }
+    <| \discordUrl config -> Right config { Config.discordUrl = discordUrl }
 
 hackageUrlOption :: Option
 hackageUrlOption =
@@ -91,13 +91,13 @@ hackageUrlOption =
       <> "."
       )
     <<< argument "URL"
-    $ \hackageUrl config -> Right config { Config.hackageUrl = hackageUrl }
+    <| \hackageUrl config -> Right config { Config.hackageUrl = hackageUrl }
 
 helpOption :: Option
 helpOption =
   option ['h'] ["help"] "Shows this help message and exits."
     <<< GetOpt.NoArg
-    $ \config -> Right config { Config.help = True }
+    <| \config -> Right config { Config.help = True }
 
 hostOption :: Option
 hostOption =
@@ -110,7 +110,7 @@ hostOption =
       <> "."
       )
     <<< argument "STRING"
-    $ \host config -> Right config { Config.host = String.fromString host }
+    <| \host config -> Right config { Config.host = String.fromString host }
 
 showHost :: Warp.HostPreference -> String
 showHost host = case host of
@@ -119,7 +119,7 @@ showHost host = case host of
   "!4" -> "\"!4\""
   "*6" -> "\"*6\""
   "!6" -> "\"!6\""
-  _ -> drop 5 $ show host
+  _ -> drop 5 <| show host
 
 portOption :: Option
 portOption =
@@ -131,9 +131,9 @@ portOption =
       <> "."
       )
     <<< argument "NUMBER"
-    $ \rawPort config -> case Read.readMaybe rawPort of
-        Nothing -> Left $ "invalid port: " <> show rawPort
-        Just port -> Right config { Config.port = port }
+    <| \rawPort config -> case Read.readMaybe rawPort of
+         Nothing -> Left <| "invalid port: " <> show rawPort
+         Just port -> Right config { Config.port = port }
 
 showPort :: Warp.Port -> String
 showPort = show <<< show
@@ -148,16 +148,16 @@ servicesOption =
       <> " which is all the services."
       )
     <<< argument "STRING"
-    $ \rawServices config -> case readServices rawServices of
-        Nothing -> Left $ "invalid services: " <> show rawServices
-        Just services -> Right config { Config.services = services }
+    <| \rawServices config -> case readServices rawServices of
+         Nothing -> Left <| "invalid services: " <> show rawServices
+         Just services -> Right config { Config.services = services }
 
 readServices :: String -> Maybe (Set.Set Service.Service)
 readServices string = do
-  list <- traverse readService <<< Text.splitOn "," $ Text.pack string
-  Monad.guard <<< not $ null list
+  list <- traverse readService <<< Text.splitOn "," <| Text.pack string
+  Monad.guard <<< not <| null list
   let set = Set.fromList list
-  Monad.guard $ length set == length list
+  Monad.guard <| length set == length list
   pure set
 
 readService :: Text.Text -> Maybe Service.Service
@@ -185,17 +185,17 @@ urlOption =
       <> "."
       )
     <<< argument "URL"
-    $ \url config -> Right config { Config.url = url }
+    <| \url config -> Right config { Config.url = url }
 
 versionOption :: Option
 versionOption =
   option ['v'] ["version"] "Shows the version number and exits."
     <<< GetOpt.NoArg
-    $ \config -> Right config { Config.version = True }
+    <| \config -> Right config { Config.version = True }
 
 option
   :: String -> [String] -> String -> GetOpt.ArgDescr a -> GetOpt.OptDescr a
-option c s = flip $ GetOpt.Option c s
+option c s = flip <| GetOpt.Option c s
 
 argument :: String -> (String -> a) -> GetOpt.ArgDescr a
 argument = flip GetOpt.ReqArg

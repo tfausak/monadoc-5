@@ -17,7 +17,7 @@ handle = do
   maybeUser <- Common.getCookieUser
   let
     query =
-      case lookup "query" <<< Wai.queryString $ Context.request context of
+      case lookup "query" <<< Wai.queryString <| Context.request context of
         Just (Just byteString) -> Utf8.toText byteString
         _ -> ""
 
@@ -27,7 +27,7 @@ handle = do
     <<< Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
     <<< Template.makeHtmlWith config maybeUser loginUrl
     <<< H.p_
-    $ do
-        "Your query was "
-        H.code_ $ H.toHtml query
-        " but search is not implemented yet."
+    <| do
+         "Your query was "
+         H.code_ <| H.toHtml query
+         " but search is not implemented yet."

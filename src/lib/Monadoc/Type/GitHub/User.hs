@@ -14,7 +14,7 @@ data User = User
   } deriving (Eq, Show)
 
 instance Aeson.FromJSON User where
-  parseJSON = Aeson.withObject "User" $ \object -> do
+  parseJSON = Aeson.withObject "User" <| \object -> do
     id_ <- object Aeson..: "id"
     login_ <- object Aeson..: "login"
     pure User { Monadoc.Type.GitHub.User.id = id_, login = login_ }

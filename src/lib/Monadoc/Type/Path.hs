@@ -20,7 +20,7 @@ instance Sql.FromField Path where
   fromField = fmap fromFilePath <<< Sql.fromField
 
 instance Semigroup Path where
-  x <> y = fromStrings $ toStrings x <> toStrings y
+  x <> y = fromStrings <| toStrings x <> toStrings y
 
 instance Sql.ToField Path where
   toField = Sql.toField <<< toFilePath

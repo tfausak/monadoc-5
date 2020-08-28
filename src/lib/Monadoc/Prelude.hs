@@ -37,7 +37,6 @@ module Monadoc.Prelude
   , Data.Function.const
   , Data.Function.flip
   , Data.Function.id
-  , (Data.Function.$) -- TODO: Rename to `(<|)`.
   , Data.Functor.Functor
   , Data.Functor.fmap
   , Data.Functor.void
@@ -121,6 +120,7 @@ module Monadoc.Prelude
   , Text.Show.Show
   , Text.Show.show
   , (<<<)
+  , (<|)
   , (>>>)
   , (|>)
   )
@@ -173,3 +173,7 @@ infixl 9 >>>
 (|>) :: a -> (a -> b) -> b
 (|>) = (Data.Function.&)
 infixl 0 |>
+
+(<|) :: (a -> b) -> a -> b
+(<|) = (Data.Function.$)
+infixr 0 <|

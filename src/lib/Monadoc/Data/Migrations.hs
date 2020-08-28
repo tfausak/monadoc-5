@@ -105,6 +105,6 @@ makeMigration
 makeMigration (year, month, day, hour, minute, second) query =
   Migration.Migration
     { Migration.query = query
-    , Migration.timestamp = Timestamp.fromUtcTime
-      $ Time.utcTime year month day hour minute second
+    , Migration.timestamp =
+      Timestamp.fromUtcTime <| Time.utcTime year month day hour minute second
     }

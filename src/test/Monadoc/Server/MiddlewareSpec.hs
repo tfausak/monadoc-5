@@ -4,6 +4,6 @@ import Monadoc.Prelude
 import Test.Hspec
 
 spec :: Spec
-spec = describe "Monadoc.Server.Middleware" $ do
+spec = describe "Monadoc.Server.Middleware" <| do
 
   it "needs tests" pending

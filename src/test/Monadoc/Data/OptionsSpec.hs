@@ -6,11 +6,11 @@ import qualified System.Console.GetOpt as GetOpt
 import Test.Hspec
 
 spec :: Spec
-spec = describe "Monadoc.Data.Options" $ do
+spec = describe "Monadoc.Data.Options" <| do
 
-  describe "options" $ do
+  describe "options" <| do
 
-    it "has a --help option" $ do
+    it "has a --help option" <| do
       let
         f :: GetOpt.OptDescr a -> [String]
         f (GetOpt.Option _ x _ _) = x

@@ -20,4 +20,4 @@ handle = do
   pure
     <<< Common.htmlResponse Http.ok200 (Common.defaultHeaders config)
     <<< Template.makeHtmlWith config maybeUser loginUrl
-    $ H.p_ "\x1f516 Better Haskell documentation."
+    <| H.p_ "\x1f516 Better Haskell documentation."

@@ -30,8 +30,8 @@ instance Sql.FromRow User where
 
 instance Sql.ToRow User where
   toRow user =
-    [ Sql.toField $ guid user
-    , Sql.toField $ Monadoc.Type.User.id user
-    , Sql.toField $ login user
-    , Sql.toField $ token user
+    [ Sql.toField <| guid user
+    , Sql.toField <| Monadoc.Type.User.id user
+    , Sql.toField <| login user
+    , Sql.toField <| token user
     ]

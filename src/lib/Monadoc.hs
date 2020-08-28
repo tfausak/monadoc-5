@@ -26,11 +26,11 @@ import qualified System.IO as IO
 -- | The main app entrypoint. This is what the executable runs.
 monadoc :: IO ()
 monadoc = do
-  Monad.forM_ [IO.stderr, IO.stdout] $ \handle -> do
+  Monad.forM_ [IO.stderr, IO.stdout] <| \handle -> do
     IO.hSetBuffering handle IO.LineBuffering
     IO.hSetEncoding handle IO.utf8
   config <- getConfig
-  Console.info $ fold
+  Console.info <| fold
     [ "\x1f516 Starting Monadoc version "
     , Version.string
     , case Commit.hash of
@@ -41,7 +41,7 @@ monadoc = do
   context <- configToContext config
   Exception.finally (App.run context Main.run)
     <<< Pool.destroyAllResources
-    $ Context.pool context
+    <| Context.pool context
 
 getConfig :: IO Config.Config
 getConfig = do
@@ -73,7 +73,7 @@ argumentsToConfigResult name arguments =
       Nothing -> []
       Just hash -> ["commit", hash]
     help = GetOpt.usageInfo
-      (unwords $ [name, "version", Version.string] <> helpHash)
+      (unwords <| [name, "version", Version.string] <> helpHash)
       Options.options
     versionHash = case Commit.hash of
       Nothing -> ""
@@ -83,9 +83,9 @@ argumentsToConfigResult name arguments =
     formatOpt opt = "WARNING: option `" <> opt <> "' not recognized\n"
     warnings = fmap formatArg args <> fmap formatOpt opts
   in case NonEmpty.nonEmpty errs of
-    Just es -> ConfigResult.Failure $ fmap ("ERROR: " <>) es
-    Nothing -> case Monad.foldM (flip ($)) Config.initial funs of
-      Left err -> ConfigResult.Failure <<< pure $ "ERROR: " <> err <> "\n"
+    Just es -> ConfigResult.Failure <| fmap ("ERROR: " <>) es
+    Nothing -> case Monad.foldM (|>) Config.initial funs of
+      Left err -> ConfigResult.Failure <<< pure <| "ERROR: " <> err <> "\n"
       Right config -> if Config.help config
         then ConfigResult.ExitWith help
         else if Config.version config

@@ -61,7 +61,7 @@ import qualified MonadocSpec
 import Test.Hspec
 
 main :: IO ()
-main = hspec $ do
+main = hspec <| do
   Monadoc.Data.CommitSpec.spec
   Monadoc.Data.MigrationsSpec.spec
   Monadoc.Data.OptionsSpec.spec

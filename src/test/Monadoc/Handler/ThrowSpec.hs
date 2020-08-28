@@ -13,11 +13,11 @@ import qualified Network.Wai as Wai
 import Test.Hspec
 
 spec :: Spec
-spec = describe "Monadoc.Handler.Throw" $ do
+spec = describe "Monadoc.Handler.Throw" <| do
 
-  describe "handle" $ do
+  describe "handle" <| do
 
-    it "works" $ do
+    it "works" <| do
       ctx <- Monadoc.configToContext Config.test
       let
         result =

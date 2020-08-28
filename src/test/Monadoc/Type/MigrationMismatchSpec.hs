@@ -9,19 +9,19 @@ import qualified Monadoc.Type.Timestamp as Timestamp
 import Test.Hspec
 
 spec :: Spec
-spec = describe "Monadoc.Type.MigrationMismatch" $ do
+spec = describe "Monadoc.Type.MigrationMismatch" <| do
 
-  describe "displayException" $ do
+  describe "displayException" <| do
 
-    it "looks nice" $ do
+    it "looks nice" <| do
       let
         expected = replicate 64 '0'
         actual = replicate 64 '1'
         migrationMismatch = MigrationMismatch.MigrationMismatch
-          { MigrationMismatch.actual = Sha256.fromDigest $ read actual
-          , MigrationMismatch.expected = Sha256.fromDigest $ read expected
+          { MigrationMismatch.actual = Sha256.fromDigest <| read actual
+          , MigrationMismatch.expected = Sha256.fromDigest <| read expected
           , MigrationMismatch.timestamp = Timestamp.fromUtcTime
-            $ Time.posixSecondsToUTCTime 0
+            <| Time.posixSecondsToUTCTime 0
           }
         string = fold
           [ "migration 1970-01-01 00:00:00 UTC expected "

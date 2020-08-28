@@ -19,7 +19,7 @@ run = flip Reader.runReaderT
 -- | Runs a SQL query and returns the results.
 sql :: (Sql.FromRow b, Sql.ToRow a) => Sql.Query -> a -> App request [b]
 sql query params = withConnection
-  $ \connection -> Trans.lift $ Sql.query connection query params
+  <| \connection -> Trans.lift <| Sql.query connection query params
 
 -- | Runs a SQL query and discards the results.
 sql_ :: Sql.ToRow a => Sql.Query -> a -> App request ()
