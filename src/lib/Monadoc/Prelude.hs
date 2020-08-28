@@ -35,7 +35,6 @@ module Monadoc.Prelude
   , Data.Foldable.sequence_
   , Data.Foldable.traverse_
   , Data.Function.flip
-  , Data.Function.id
   , Data.Functor.Functor
   , Data.Functor.fmap
   , Data.Functor.void
@@ -119,6 +118,7 @@ module Monadoc.Prelude
   , Text.Show.Show
   , Text.Show.show
   , always
+  , identity
   , (<<<)
   , (<|)
   , (>>>)
@@ -164,6 +164,9 @@ import qualified Text.Show
 
 always :: a -> b -> a
 always = Data.Function.const
+
+identity :: a -> a
+identity = Data.Function.id
 
 (<<<) :: (b -> c) -> (a -> b) -> (a -> c)
 (<<<) = (Control.Category.<<<)

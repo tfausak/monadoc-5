@@ -17,7 +17,7 @@ instance Sql.FromField Url where
   fromField = Sql.fromFieldVia <| fmap fromUri <<< Uri.parseURI
 
 instance Sql.ToField Url where
-  toField = Sql.toField <<< (<| "") <<< Uri.uriToString id <<< toUri
+  toField = Sql.toField <<< (<| "") <<< Uri.uriToString identity <<< toUri
 
 fromUri :: Uri.URI -> Url
 fromUri = Url

@@ -4,6 +4,7 @@
 - group: { name: generalise, enabled: true }
 - ignore: { name: Reduce duplication }
 - ignore: { name: Redundant do }
+- ignore: { name: Redundant id }
 - ignore: { name: Use <$> }
 - ignore: { name: Use =<< }
 - ignore: { name: Use lambda-case }

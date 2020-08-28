@@ -17,4 +17,4 @@ instance Aeson.FromJSON User where
   parseJSON = Aeson.withObject "User" <| \object -> do
     id_ <- object Aeson..: "id"
     login_ <- object Aeson..: "login"
-    pure User { Monadoc.Type.GitHub.User.id = id_, login = login_ }
+    pure User { id = id_, login = login_ }

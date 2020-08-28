@@ -92,7 +92,7 @@ isType proxy =
     <<< WithCallStack.withoutCallStack
 
 asType :: Proxy.Proxy a -> a -> a
-asType _ = id
+asType _ = identity
 
 serverName :: ByteString.ByteString
 serverName =
