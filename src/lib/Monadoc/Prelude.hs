@@ -1,8 +1,6 @@
 module Monadoc.Prelude
   ( Control.Applicative.Applicative
   , Control.Applicative.pure
-  , (Control.Category.<<<) -- TODO: Monomorphize to functions.
-  , (Control.Category.>>>) -- TODO: Monomorphize to functions.
   , Control.Exception.Exception
   , Control.Exception.displayException
   , Control.Monad.Monad
@@ -123,6 +121,8 @@ module Monadoc.Prelude
   , Text.Read.read
   , Text.Show.Show
   , Text.Show.show
+  , (<<<)
+  , (>>>)
   )
 where
 
@@ -161,3 +161,11 @@ import qualified System.IO
 import qualified System.IO.Error
 import qualified Text.Read
 import qualified Text.Show
+
+(<<<) :: (b -> c) -> (a -> b) -> (a -> c)
+(<<<) = (Control.Category.<<<)
+infixr 9 <<<
+
+(>>>) :: (a -> b) -> (b -> c) -> (a -> c)
+(>>>) = (Control.Category.>>>)
+infixl 9 >>>
