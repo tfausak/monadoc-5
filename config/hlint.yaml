@@ -1,3 +1,9 @@
+- arguments:
+    - -XFlexibleContexts
+    - -XNoImplicitPrelude
+    - -XOverloadedStrings
+    - -XScopedTypeVariables
+    - -XTypeApplications
 - extensions: [ { default: false } ]
 - flags: [ { default: false } ]
 - group: { name: dollar, enabled: true }

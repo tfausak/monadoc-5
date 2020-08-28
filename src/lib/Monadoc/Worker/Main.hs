@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE TypeFamilies #-}
 {- hlint ignore "Avoid restricted extensions" -}
 
 module Monadoc.Worker.Main where

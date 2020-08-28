@@ -98,6 +98,8 @@ module Monadoc.Prelude
   , Data.Word.Word32
   , Data.Word.Word64
   , GHC.Enum.Bounded
+  , GHC.Enum.Enum
+  , GHC.Enum.fromEnum
   , GHC.Enum.maxBound
   , GHC.Enum.minBound
   , GHC.Err.error
@@ -142,6 +144,7 @@ module Monadoc.Prelude
   , always
   , identity
   , read
+  , toEnum
   , (*)
   , (<<<)
   , (<|)
@@ -201,6 +204,19 @@ identity = Data.Function.id
 
 read :: Text.Read.Read a => Data.String.String -> Data.Maybe.Maybe a
 read = Text.Read.readMaybe
+
+toEnum
+  :: forall a
+   . (GHC.Enum.Bounded a, GHC.Enum.Enum a)
+  => Data.Int.Int
+  -> Data.Maybe.Maybe a
+toEnum n =
+  let
+    tooSmall = n Data.Ord.< GHC.Enum.fromEnum @a GHC.Enum.minBound
+    tooLarge = n Data.Ord.> GHC.Enum.fromEnum @a GHC.Enum.maxBound
+  in if tooSmall Data.Bool.|| tooLarge
+    then Data.Maybe.Nothing
+    else Data.Maybe.Just (GHC.Enum.toEnum n)
 
 -- Redefined here to avoid a stylish-haskell bug.
 (*) :: GHC.Num.Num a => a -> a -> a

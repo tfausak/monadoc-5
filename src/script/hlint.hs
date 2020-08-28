@@ -6,4 +6,4 @@ import qualified System.Process as Process
 main :: IO ()
 main = do
   files <- Glob.glob "src/**/*.hs"
-  Process.callProcess "hlint" $ "lint" : "--hint=config/hlint.yaml" : files
+  Process.callProcess "hlint" $ "--hint=config/hlint.yaml" : files
