@@ -26,9 +26,9 @@ import qualified System.IO as IO
 -- | The main app entrypoint. This is what the executable runs.
 monadoc :: IO ()
 monadoc = do
-  Monad.forM_ [IO.stderr, IO.stdout] <| \handle -> do
-    IO.hSetBuffering handle IO.LineBuffering
-    IO.hSetEncoding handle IO.utf8
+  Monad.forM_ [IO.stderr, IO.stdout] <| \h -> do
+    IO.hSetBuffering h IO.LineBuffering
+    IO.hSetEncoding h IO.utf8
   config <- getConfig
   Console.info <| fold
     [ "\x1f516 Starting Monadoc version "

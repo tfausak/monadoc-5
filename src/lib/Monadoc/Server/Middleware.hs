@@ -25,10 +25,10 @@ middleware context =
   logRequests <<< handleExceptions context <<< handleEtag <<< compress
 
 logRequests :: Wai.Middleware
-logRequests handle request respond = do
+logRequests process request respond = do
   timeBefore <- Clock.getMonotonicTime
   allocationsBefore <- Mem.getAllocationCounter
-  handle request <| \response -> do
+  process request <| \response -> do
     allocationsAfter <- Mem.getAllocationCounter
     timeAfter <- Clock.getMonotonicTime
     Console.info <| Printf.printf
@@ -42,14 +42,14 @@ logRequests handle request respond = do
     respond response
 
 handleExceptions :: Context.Context request -> Wai.Middleware
-handleExceptions context handle request respond =
-  Exception.catch (handle request respond) <| \someException -> do
+handleExceptions context process request respond =
+  Exception.catch (process request respond) <| \someException -> do
     Settings.onException context (Just request) someException
     respond
       <| Settings.onExceptionResponse (Context.config context) someException
 
 handleEtag :: Wai.Middleware
-handleEtag handle request respond = handle request <| \response ->
+handleEtag process request respond = process request <| \response ->
   let
     isGet = Wai.requestMethod request == Http.methodGet
     isSuccessful = Http.statusIsSuccessful <| Wai.responseStatus response
@@ -72,7 +72,7 @@ isETag :: Http.Header -> Bool
 isETag = (== Http.hETag) <<< fst
 
 compress :: Wai.Middleware
-compress handle request respond = handle request <| \response ->
+compress process request respond = process request <| \response ->
   respond <| case response of
     Wai.ResponseBuilder status headers builder ->
       let
