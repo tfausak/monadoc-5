@@ -114,11 +114,11 @@ module Monadoc.Prelude
   , System.IO.putStr
   , System.IO.Error.userError
   , Text.Read.Read
-  , Text.Read.read
   , Text.Show.Show
   , Text.Show.show
   , always
   , identity
+  , read
   , (<<<)
   , (<|)
   , (>>>)
@@ -167,6 +167,9 @@ always = Data.Function.const
 
 identity :: a -> a
 identity = Data.Function.id
+
+read :: Text.Read.Read a => Data.String.String -> Data.Maybe.Maybe a
+read = Text.Read.readMaybe
 
 (<<<) :: (b -> c) -> (a -> b) -> (a -> c)
 (<<<) = (Control.Category.<<<)

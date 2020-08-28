@@ -20,10 +20,10 @@ spec = describe "Monadoc.Type.Migration" <| do
           , Migration.timestamp = Timestamp.fromUtcTime
             <| Time.posixSecondsToUTCTime 0
           }
-      Migration.sha256 migration `shouldBe` Sha256.fromDigest
-        (read
-          "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        )
+      expected <-
+        read "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          |> maybe (fail "invalid digest") (Sha256.fromDigest >>> pure)
+      Migration.sha256 migration `shouldBe` expected
 
   describe "toRow" <| do
 
