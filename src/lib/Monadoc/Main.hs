@@ -45,7 +45,7 @@ runMigrations = do
     \iso8601 text not null primary key, \
     \sha256 text not null)"
     ()
-  mapM_ ensureMigration Migrations.migrations
+  traverse_ ensureMigration Migrations.migrations
 
 ensureMigration :: Migration.Migration -> App.App request ()
 ensureMigration migration = do

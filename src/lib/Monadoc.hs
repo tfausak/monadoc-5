@@ -49,13 +49,13 @@ getConfig = do
   arguments <- Environment.getArgs
   case argumentsToConfigResult name arguments of
     ConfigResult.Failure errs -> do
-      mapM_ (IO.hPutStr IO.stderr) errs
+      traverse_ (IO.hPutStr IO.stderr) errs
       Exit.exitFailure
     ConfigResult.ExitWith msg -> do
       putStr msg
       Exit.exitSuccess
     ConfigResult.Success msgs config -> do
-      mapM_ (IO.hPutStr IO.stderr) msgs
+      traverse_ (IO.hPutStr IO.stderr) msgs
       pure config
 
 -- | Parses command-line arguments into a config.

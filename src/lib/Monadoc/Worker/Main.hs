@@ -150,7 +150,7 @@ pruneBlobs = doNot $ do
     then Console.info "Did not find any orphaned blobs."
     else do
       Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
-      mapM_
+      traverse_
         (App.sql_ "delete from blobs where sha256 = ?")
         (rows :: [Sql.Only Sha256.Sha256])
 
@@ -280,7 +280,7 @@ processIndexWith binary = do
   countVar <- Trans.lift $ Stm.newTVarIO 1
   revisionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
   versionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
-  mapM_ (processIndexEntry countVar revisionsVar versionsVar)
+  traverse_ (processIndexEntry countVar revisionsVar versionsVar)
     . Tar.foldEntries (:) [] handleFormatError
     . Tar.read
     . Gzip.decompress
@@ -565,7 +565,7 @@ fetchTarballs = do
   names <- App.sql
     "select name from files where name like 'd/%/%/0/.cabal' order by name asc"
     ()
-  mapM_ (fetchTarball . Sql.fromOnly) names
+  traverse_ (fetchTarball . Sql.fromOnly) names
 
 fetchTarball :: Path.Path -> App.App request ()
 fetchTarball path = do
@@ -654,7 +654,7 @@ processTarballs = do
     \where name like 't/%/%/.tar.gz' \
     \order by name asc"
     ()
-  mapM_ (uncurry $ processTarball countVar) rows
+  traverse_ (uncurry $ processTarball countVar) rows
 
 processTarball
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
@@ -679,7 +679,7 @@ processTarball countVar path sha256 = maybeProcess_ path sha256 $ do
       Nothing -> WithCallStack.throw $ MissingBinary sha256
       Just binary -> pure binary
   linkVar <- Trans.lift Stm.newEmptyTMVarIO
-  mapM_ (processTarballEntry package version linkVar)
+  traverse_ (processTarballEntry package version linkVar)
     . Tar.foldEntries (:) [] handleFormatError
     . Tar.read
     . Gzip.decompress
@@ -818,7 +818,7 @@ parsePackageDescriptions = do
     \where name like 'd/%/%/%/.cabal' \
     \order by name asc"
     ()
-  mapM_ (uncurry $ parsePackageDescription countVar) rows
+  traverse_ (uncurry $ parsePackageDescription countVar) rows
 
 parsePackageDescription
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()

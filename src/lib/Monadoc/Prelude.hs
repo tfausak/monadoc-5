@@ -13,7 +13,6 @@ module Monadoc.Prelude
   , Control.Monad.forever
   , Control.Monad.join
   , Control.Monad.mapM -- TODO: Replace with `traverse`.
-  , Control.Monad.mapM_ -- TODO: Replace with `traverse_`.
   , Control.Monad.unless
   , Control.Monad.when
 
