@@ -22,6 +22,18 @@ module Monadoc.Prelude
   , Control.Monad.Fail.MonadFail
   , Control.Monad.Fail.fail
   , Control.Monad.IO.Class.MonadIO
+  , Control.Monad.Trans.Class.MonadTrans
+  , Control.Monad.Trans.Class.lift
+  , Control.Monad.Trans.Except.ExceptT
+  , Control.Monad.Trans.Except.runExceptT
+  , Control.Monad.Trans.Maybe.MaybeT
+  , Control.Monad.Trans.Maybe.runMaybeT
+  , Control.Monad.Trans.Reader.ReaderT
+  , Control.Monad.Trans.Reader.runReaderT
+  , Control.Monad.Trans.State.StateT
+  , Control.Monad.Trans.State.runStateT
+  , Control.Monad.Trans.Writer.WriterT
+  , Control.Monad.Trans.Writer.runWriterT
   , Data.Bool.Bool(False, True)
   , Data.Bool.not
   , Data.Bool.otherwise
@@ -212,6 +224,12 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.Fail
 import qualified Control.Monad.IO.Class
+import qualified Control.Monad.Trans.Class
+import qualified Control.Monad.Trans.Except
+import qualified Control.Monad.Trans.Maybe
+import qualified Control.Monad.Trans.Reader
+import qualified Control.Monad.Trans.State
+import qualified Control.Monad.Trans.Writer
 import qualified Data.Bool
 import qualified Data.ByteString
 import qualified Data.Char
