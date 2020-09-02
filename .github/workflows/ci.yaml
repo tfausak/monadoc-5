@@ -59,7 +59,7 @@ jobs:
       - if: matrix.os == 'ubuntu-18.04'
         uses: docker/build-push-action@v1
         with:
-          username: taylorfausak
+          username: tfausak
           password: ${{ secrets.GHCRPAT }}
           repository: ghcr.io/tfausak/monadoc
           tags: ${{ github.sha }}
