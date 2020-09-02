@@ -1,13 +1,14 @@
 module Monadoc.Server.Router where
 
 import qualified Data.Text as Text
+import Monadoc.Prelude
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
 
 parseRoute :: Http.Method -> [Text.Text] -> Maybe Route.Route
 parseRoute method path = do
-  stdMethod <- either (const Nothing) Just $ Http.parseMethod method
+  stdMethod <- either (always Nothing) Just <| Http.parseMethod method
   case (stdMethod, path) of
     (Http.GET, []) -> Just Route.Index
     (Http.GET, ["account"]) -> Just Route.Account
@@ -38,4 +39,4 @@ renderRelativeRoute route = case route of
 
 renderAbsoluteRoute :: Config.Config -> Route.Route -> Text.Text
 renderAbsoluteRoute config =
-  mappend (Text.pack $ Config.url config) . renderRelativeRoute
+  (Text.pack (Config.url config) <>) <<< renderRelativeRoute

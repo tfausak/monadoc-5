@@ -3,6 +3,7 @@ module Monadoc.Type.Sha256 where
 import qualified Crypto.Hash as Crypto
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude hiding (fromString)
 import qualified Monadoc.Utility.Sql as Sql
 import qualified Text.Read as Read
 
@@ -19,16 +20,16 @@ instance Sql.FromField Sha256 where
   fromField = Sql.fromFieldVia fromString
 
 instance Sql.ToField Sha256 where
-  toField = Sql.toField . toString
+  toField = Sql.toField <<< toString
 
 fromDigest :: Crypto.Digest Crypto.SHA256 -> Sha256
 fromDigest = Sha256
 
 fromString :: String -> Maybe Sha256
-fromString = fmap fromDigest . Read.readMaybe
+fromString = map fromDigest <<< Read.readMaybe
 
 toDigest :: Sha256 -> Crypto.Digest Crypto.SHA256
 toDigest (Sha256 digest) = digest
 
 toString :: Sha256 -> String
-toString = show . toDigest
+toString = show <<< toDigest

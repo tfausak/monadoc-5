@@ -3,6 +3,7 @@ module Monadoc.Type.Timestamp where
 import qualified Data.Time as Time
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Sql as Sql
 import qualified Monadoc.Utility.Time as Time
 
@@ -15,10 +16,10 @@ newtype Timestamp
 
 instance Sql.FromField Timestamp where
   fromField =
-    Sql.fromFieldVia $ fmap fromUtcTime . Time.parse "%Y-%m-%dT%H:%M:%S%QZ"
+    Sql.fromFieldVia <| map fromUtcTime <<< Time.parse "%Y-%m-%dT%H:%M:%S%QZ"
 
 instance Sql.ToField Timestamp where
-  toField = Sql.toField . Time.format "%Y-%m-%dT%H:%M:%S%3QZ" . toUtcTime
+  toField = Sql.toField <<< Time.format "%Y-%m-%dT%H:%M:%S%3QZ" <<< toUtcTime
 
 fromUtcTime :: Time.UTCTime -> Timestamp
 fromUtcTime = Timestamp

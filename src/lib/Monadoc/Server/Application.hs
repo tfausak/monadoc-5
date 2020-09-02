@@ -11,6 +11,7 @@ import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Search as Handler.Search
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
 import qualified Monadoc.Handler.Throw as Handler.Throw
+import Monadoc.Prelude
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Context as Context
@@ -22,8 +23,9 @@ import qualified Network.Wai as Wai
 application :: Context.Context request -> Wai.Application
 application context request respond = do
   response <-
-    App.run context { Context.request = request } . runRoute $ parseRoute
-      request
+    App.run context { Context.request = request }
+    <<< runRoute
+    <| parseRoute request
   respond response
 
 parseRoute :: Wai.Request -> Maybe Route.Route

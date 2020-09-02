@@ -1,6 +1,19 @@
 columns: 79
 indent: 2
-language_extensions: [ FlexibleContexts ]
+language_extensions:
+  - ApplicativeDo
+  - BangPatterns
+  - BlockArguments
+  - DataKinds
+  - FlexibleContexts
+  - NamedFieldPuns
+  - NegativeLiterals
+  - NoImplicitPrelude
+  - NumDecimals
+  - NumericUnderscores
+  - OverloadedStrings
+  - ScopedTypeVariables
+  - TypeApplications
 steps:
   - imports: { align: none }
   - language_pragmas:

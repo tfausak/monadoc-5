@@ -4,6 +4,7 @@ import qualified Control.Concurrent.STM as Stm
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.Time as Time
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Time as Time
 import qualified System.IO as IO
 import qualified System.IO.Unsafe as Unsafe
@@ -19,15 +20,15 @@ warn :: IO.MonadIO m => String -> m ()
 warn = logOn IO.stderr
 
 logOn :: IO.MonadIO m => IO.Handle -> String -> m ()
-logOn handle message = do
+logOn h message = do
   now <- IO.liftIO Time.getCurrentTime
   IO.liftIO
-    . Exception.bracket
-        (Stm.atomically $ Stm.takeTMVar logVar)
-        (Stm.atomically . Stm.putTMVar logVar)
-    $ \() -> IO.liftIO . IO.hPutStrLn handle $ unwords
-        [Time.format "%Y-%m-%dT%H:%M:%S%3QZ" now, message]
+    <<< Exception.bracket
+          (Stm.atomically <| Stm.takeTMVar logVar)
+          (Stm.atomically <<< Stm.putTMVar logVar)
+    <| \() -> IO.liftIO <<< IO.hPutStrLn h <| unwords
+         [Time.format "%Y-%m-%dT%H:%M:%S%3QZ" now, message]
 
 logVar :: Stm.TMVar ()
-logVar = Unsafe.unsafePerformIO $ Stm.newTMVarIO ()
+logVar = Unsafe.unsafePerformIO <| Stm.newTMVarIO ()
 {-# NOINLINE logVar #-}

@@ -1,6 +1,7 @@
 module Monadoc.Type.ConfigResult where
 
 import qualified Data.List.NonEmpty as NonEmpty
+import Monadoc.Prelude
 import qualified Monadoc.Type.Config as Config
 
 -- | The result of attempting to get the config from the environment.

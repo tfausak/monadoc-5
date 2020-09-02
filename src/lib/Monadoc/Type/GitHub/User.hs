@@ -1,6 +1,7 @@
 module Monadoc.Type.GitHub.User where
 
 import qualified Data.Aeson as Aeson
+import Monadoc.Prelude
 import qualified Monadoc.Type.GitHub.Login as Login
 import qualified Monadoc.Type.GitHub.UserId as UserId
 
@@ -13,7 +14,7 @@ data User = User
   } deriving (Eq, Show)
 
 instance Aeson.FromJSON User where
-  parseJSON = Aeson.withObject "User" $ \object -> do
+  parseJSON = Aeson.withObject "User" <| \object -> do
     id_ <- object Aeson..: "id"
     login_ <- object Aeson..: "login"
-    pure User { Monadoc.Type.GitHub.User.id = id_, login = login_ }
+    pure User { id = id_, login = login_ }

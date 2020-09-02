@@ -2,6 +2,7 @@ module Monadoc.Server.Main where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
+import Monadoc.Prelude
 import qualified Monadoc.Server.Application as Application
 import qualified Monadoc.Server.Middleware as Middleware
 import qualified Monadoc.Server.Settings as Settings
@@ -14,6 +15,6 @@ run = do
   Console.info "Starting server ..."
   context <- Reader.ask
   Trans.lift
-    . Warp.runSettings (Settings.fromContext context)
-    . Middleware.middleware context
-    $ Application.application context
+    <<< Warp.runSettings (Settings.fromContext context)
+    <<< Middleware.middleware context
+    <| Application.application context

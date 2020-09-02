@@ -1,9 +1,25 @@
+- arguments:
+    - -XApplicativeDo
+    - -XBangPatterns
+    - -XBlockArguments
+    - -XDataKinds
+    - -XFlexibleContexts
+    - -XNamedFieldPuns
+    - -XNegativeLiterals
+    - -XNoImplicitPrelude
+    - -XNumDecimals
+    - -XNumericUnderscores
+    - -XOverloadedStrings
+    - -XScopedTypeVariables
+    - -XTypeApplications
 - extensions: [ { default: false } ]
 - flags: [ { default: false } ]
 - group: { name: dollar, enabled: true }
 - group: { name: generalise, enabled: true }
 - ignore: { name: Reduce duplication }
 - ignore: { name: Redundant do }
+- ignore: { name: Redundant id }
 - ignore: { name: Use <$> }
 - ignore: { name: Use =<< }
+- ignore: { name: Use fmap }
 - ignore: { name: Use lambda-case }

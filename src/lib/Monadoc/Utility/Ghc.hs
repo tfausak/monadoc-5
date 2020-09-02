@@ -16,6 +16,7 @@ import qualified GHC.Paths
 import qualified HeaderInfo
 import qualified Language.Preprocessor.Cpphs as Cpp
 import qualified Lexer
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Utf8 as Utf8
 import qualified Outputable
 import qualified Parser
@@ -30,7 +31,7 @@ instance Eq Errors where
   (==) = Data.Function.on (==) show
 
 instance Show Errors where
-  show = show . Bag.bagToList . unwrapErrors
+  show = show <<< Bag.bagToList <<< unwrapErrors
 
 newtype Module = Module
   { unwrapModule :: SrcLoc.Located (GHC.Hs.HsModule GHC.Hs.GhcPs)
@@ -40,14 +41,14 @@ instance Eq Module where
   (==) = Data.Function.on (==) show
 
 instance Show Module where
-  show = Outputable.showSDocUnsafe . Outputable.ppr . unwrapModule
+  show = Outputable.showSDocUnsafe <<< Outputable.ppr <<< unwrapModule
 
 parse
   :: [(Bool, X.Extension)]
   -> FilePath
   -> Data.ByteString.ByteString
   -> IO (Either Errors Module)
-parse extensions filePath byteString = Control.Exception.handle handler $ do
+parse extensions filePath byteString = Control.Exception.handle handler <| do
   dynFlags1 <- GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags
   let
     dynFlags2 = foldr
@@ -62,20 +63,20 @@ parse extensions filePath byteString = Control.Exception.handle handler $ do
   string2 <- if DynFlags.xopt X.Cpp dynFlags3
     then Cpp.runCpphs cpphsOptions filePath string1
     else pure string1
-  Control.Monad.void . Control.Exception.evaluate $ length string2
+  Control.Monad.void <<< Control.Exception.evaluate <| length string2
   let stringBuffer2 = StringBuffer.stringToStringBuffer string2
   let fastString = FastString.mkFastString filePath
   let realSrcLoc = SrcLoc.mkRealSrcLoc fastString 1 1
   let pState1 = Lexer.mkPState dynFlags3 stringBuffer2 realSrcLoc
-  pure $ case Lexer.unP Parser.parseModule pState1 of
+  pure <| case Lexer.unP Parser.parseModule pState1 of
     Lexer.PFailed pState2 ->
-      Left . Errors . snd $ Lexer.getMessages pState2 dynFlags3
+      Left <<< Errors <<< snd <| Lexer.getMessages pState2 dynFlags3
     Lexer.POk pState2 locatedHsModuleGhcPs ->
-      let bagErrMsg = snd $ Lexer.getMessages pState2 dynFlags3
+      let bagErrMsg = snd <| Lexer.getMessages pState2 dynFlags3
       in
-        if null bagErrMsg
-          then Right $ Module locatedHsModuleGhcPs
-          else Left $ Errors bagErrMsg
+        if blank bagErrMsg
+          then Right <| Module locatedHsModuleGhcPs
+          else Left <| Errors bagErrMsg
 
 cpphsOptions :: Cpp.CpphsOptions
 cpphsOptions = Cpp.defaultCpphsOptions
@@ -87,12 +88,12 @@ handler :: Control.Exception.SomeException -> IO (Either Errors Module)
 handler e = do
   f <- GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags
   pure
-    . Left
-    . Errors
-    . Bag.unitBag
-    . ErrUtils.mkPlainErrMsg f SrcLoc.noSrcSpan
-    . Outputable.text
-    $ show e
+    <<< Left
+    <<< Errors
+    <<< Bag.unitBag
+    <<< ErrUtils.mkPlainErrMsg f SrcLoc.noSrcSpan
+    <<< Outputable.text
+    <| show e
 
 toggleExtension
   :: (Bool, X.Extension) -> DynFlags.DynFlags -> DynFlags.DynFlags
@@ -102,7 +103,7 @@ toggleExtension (enable, extension) =
 enableExtension :: X.Extension -> DynFlags.DynFlags -> DynFlags.DynFlags
 enableExtension extension oldFlags =
   foldr toggleExtension (DynFlags.xopt_set oldFlags extension)
-    $ impliedExtensions extension
+    <| impliedExtensions extension
 
 disableExtension :: X.Extension -> DynFlags.DynFlags -> DynFlags.DynFlags
 disableExtension = flip DynFlags.xopt_unset

@@ -3,6 +3,7 @@ module Monadoc.Handler.LogOut where
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Map as Map
 import qualified Data.UUID as Uuid
+import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
@@ -19,16 +20,16 @@ import qualified Web.Cookie as Cookie
 handle :: App.App Wai.Request Wai.Response
 handle = do
   config <- Reader.asks Context.config
-  cookie <- Common.makeCookie $ Guid.fromUuid Uuid.nil
+  cookie <- Common.makeCookie <| Guid.fromUuid Uuid.nil
   let
-    headers = Map.union (Common.defaultHeaders config) $ Map.fromList
+    headers = Map.union (Common.defaultHeaders config) <| Map.fromList
       [ ( Http.hLocation
-        , Utf8.fromText $ Router.renderAbsoluteRoute config Route.Index
+        , Utf8.fromText <| Router.renderAbsoluteRoute config Route.Index
         )
       , ( Http.hSetCookie
         , Common.renderCookie cookie
-          { Cookie.setCookieExpires = Just $ Time.utcTime 2000 1 1 0 0 0
+          { Cookie.setCookieExpires = Just <| Time.utcTime 2000 1 1 0 0 0
           }
         )
       ]
-  pure $ Common.statusResponse Http.found302 headers
+  pure <| Common.statusResponse Http.found302 headers

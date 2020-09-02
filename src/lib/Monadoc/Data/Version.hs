@@ -1,6 +1,7 @@
 module Monadoc.Data.Version where
 
 import qualified Data.Version as Version
+import Monadoc.Prelude
 import qualified Paths_monadoc as Package
 
 -- | The canonical string representation of the 'version'.

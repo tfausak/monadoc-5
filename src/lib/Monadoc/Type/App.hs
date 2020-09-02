@@ -5,6 +5,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Pool as Pool
 import qualified Database.SQLite.Simple as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Type.Context as Context
 
 -- | The main application type. This simply provides the run-time context. Use
@@ -18,7 +19,7 @@ run = flip Reader.runReaderT
 -- | Runs a SQL query and returns the results.
 sql :: (Sql.FromRow b, Sql.ToRow a) => Sql.Query -> a -> App request [b]
 sql query params = withConnection
-  $ \connection -> Trans.lift $ Sql.query connection query params
+  <| \connection -> Trans.lift <| Sql.query connection query params
 
 -- | Runs a SQL query and discards the results.
 sql_ :: Sql.ToRow a => Sql.Query -> a -> App request ()

@@ -12,6 +12,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.UUID as Uuid
 import qualified Lucid as H
+import Monadoc.Prelude
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
@@ -33,19 +34,20 @@ byteStringResponse
   :: Http.Status -> Headers -> ByteString.ByteString -> Wai.Response
 byteStringResponse status headers body =
   let
-    contentLength = Utf8.fromString . show $ ByteString.length body
-    etag = Utf8.fromString . show . show $ Crypto.hashWith Crypto.SHA256 body
+    contentLength = Utf8.fromString <<< show <| ByteString.length body
+    etag =
+      Utf8.fromString <<< show <<< show <| Crypto.hashWith Crypto.SHA256 body
     extraHeaders =
       Map.fromList [(Http.hContentLength, contentLength), (Http.hETag, etag)]
   in Wai.responseLBS
     status
-    (Map.toList $ Map.union extraHeaders headers)
+    (Map.toList <| Map.union extraHeaders headers)
     (LazyByteString.fromStrict body)
 
 defaultHeaders :: Config.Config -> Headers
 defaultHeaders config =
   let
-    contentSecurityPolicy = Utf8.fromString $ List.intercalate
+    contentSecurityPolicy = Utf8.fromString <| List.intercalate
       "; "
       [ "base-uri 'none'"
       , "default-src 'none'"
@@ -56,7 +58,7 @@ defaultHeaders config =
       ]
     strictTransportSecurity =
       let maxAge = if isSecure config then 6 * 31 * 24 * 60 * 60 else 0 :: Int
-      in Utf8.fromString $ "max-age=" <> show maxAge
+      in Utf8.fromString <| "max-age=" <> show maxAge
   in Map.fromList
     [ ("Content-Security-Policy", contentSecurityPolicy)
     , ("Feature-Policy", "notifications 'none'")
@@ -68,34 +70,34 @@ defaultHeaders config =
 
 fileResponse
   :: Http.Status -> Headers -> FilePath -> App.App request Wai.Response
-fileResponse status headers name = Trans.lift $ do
+fileResponse status headers name = Trans.lift <| do
   let relative = FilePath.combine "data" name
   absolute <- Package.getDataFileName relative
   contents <- ByteString.readFile absolute
-  pure $ byteStringResponse status headers contents
+  pure <| byteStringResponse status headers contents
 
 getCookieUser :: App.App Wai.Request (Maybe User.User)
 getCookieUser = do
   context <- Reader.ask
-  case lookup Http.hCookie . Wai.requestHeaders $ Context.request context of
+  case lookup Http.hCookie <<< Wai.requestHeaders <| Context.request context of
     Nothing -> pure Nothing
-    Just cookie -> case lookup "guid" $ Cookie.parseCookiesText cookie of
+    Just cookie -> case lookup "guid" <| Cookie.parseCookiesText cookie of
       Nothing -> pure Nothing
-      Just text -> case fmap Guid.fromUuid $ Uuid.fromText text of
+      Just text -> case map Guid.fromUuid <| Uuid.fromText text of
         Nothing -> pure Nothing
-        Just guid -> fmap Maybe.listToMaybe
-          $ App.sql "select * from users where guid = ?" [guid]
+        Just guid -> map Maybe.listToMaybe
+          <| App.sql "select * from users where guid = ?" [guid]
 
 htmlResponse :: Http.Status -> Headers -> H.Html a -> Wai.Response
 htmlResponse status headers =
   byteStringResponse
       status
       (Map.insert Http.hContentType "text/html;charset=utf-8" headers)
-    . LazyByteString.toStrict
-    . H.renderBS
+    <<< LazyByteString.toStrict
+    <<< H.renderBS
 
 isSecure :: Config.Config -> Bool
-isSecure = List.isPrefixOf "https:" . Config.url
+isSecure = List.isPrefixOf "https:" <<< Config.url
 
 makeCookie :: Guid.Guid -> App.App request Cookie.SetCookie
 makeCookie guid = do
@@ -106,7 +108,7 @@ makeCookie guid = do
     , Cookie.setCookiePath = Just "/"
     , Cookie.setCookieSameSite = Just Cookie.sameSiteLax
     , Cookie.setCookieSecure = isSecure config
-    , Cookie.setCookieValue = Uuid.toASCIIBytes $ Guid.toUuid guid
+    , Cookie.setCookieValue = Uuid.toASCIIBytes <| Guid.toUuid guid
     }
 
 makeLoginUrl :: App.App Wai.Request Text.Text
@@ -114,7 +116,7 @@ makeLoginUrl = do
   context <- Reader.ask
   let
     config = Context.config context
-    clientId = Text.pack $ Config.clientId config
+    clientId = Text.pack <| Config.clientId config
     route = Router.renderAbsoluteRoute config Route.GitHubCallback
     request = Context.request context
     current = Wai.rawPathInfo request <> Wai.rawQueryString request
@@ -124,15 +126,17 @@ makeLoginUrl = do
       True
       [("client_id", Just clientId), ("redirect_uri", Just redirectUri)]
   pure
-    . Utf8.toText
-    . LazyByteString.toStrict
-    . Builder.toLazyByteString
-    $ "https://github.com/login/oauth/authorize"
+    <<< Utf8.toText
+    <<< LazyByteString.toStrict
+    <<< Builder.toLazyByteString
+    <| "https://github.com/login/oauth/authorize"
     <> query
 
 renderCookie :: Cookie.SetCookie -> ByteString.ByteString
 renderCookie =
-  LazyByteString.toStrict . Builder.toLazyByteString . Cookie.renderSetCookie
+  LazyByteString.toStrict
+    <<< Builder.toLazyByteString
+    <<< Cookie.renderSetCookie
 
 simpleFileResponse
   :: FilePath -> ByteString.ByteString -> App.App request Wai.Response
@@ -140,16 +144,16 @@ simpleFileResponse file mime = do
   config <- Reader.asks Context.config
   fileResponse
     Http.ok200
-    (Map.insert Http.hContentType mime $ defaultHeaders config)
+    (Map.insert Http.hContentType mime <| defaultHeaders config)
     file
 
 statusResponse :: Http.Status -> Headers -> Wai.Response
-statusResponse status headers = stringResponse status headers $ unwords
-  [show $ Http.statusCode status, Utf8.toString $ Http.statusMessage status]
+statusResponse status headers = stringResponse status headers <| unwords
+  [show <| Http.statusCode status, Utf8.toString <| Http.statusMessage status]
 
 stringResponse :: Http.Status -> Headers -> String -> Wai.Response
 stringResponse status headers =
   byteStringResponse
       status
       (Map.insert Http.hContentType "text/plain;charset=utf-8" headers)
-    . Utf8.fromString
+    <<< Utf8.fromString

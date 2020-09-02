@@ -11,6 +11,7 @@ import qualified Monadoc.Data.Commit as Commit
 import qualified Monadoc.Data.Options as Options
 import qualified Monadoc.Data.Version as Version
 import qualified Monadoc.Main as Main
+import Monadoc.Prelude
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.ConfigResult as ConfigResult
@@ -25,11 +26,11 @@ import qualified System.IO as IO
 -- | The main app entrypoint. This is what the executable runs.
 monadoc :: IO ()
 monadoc = do
-  Monad.forM_ [IO.stderr, IO.stdout] $ \handle -> do
-    IO.hSetBuffering handle IO.LineBuffering
-    IO.hSetEncoding handle IO.utf8
+  Monad.forM_ [IO.stderr, IO.stdout] <| \h -> do
+    IO.hSetBuffering h IO.LineBuffering
+    IO.hSetEncoding h IO.utf8
   config <- getConfig
-  Console.info $ mconcat
+  Console.info <| fold
     [ "\x1f516 Starting Monadoc version "
     , Version.string
     , case Commit.hash of
@@ -39,8 +40,8 @@ monadoc = do
     ]
   context <- configToContext config
   Exception.finally (App.run context Main.run)
-    . Pool.destroyAllResources
-    $ Context.pool context
+    <<< Pool.destroyAllResources
+    <| Context.pool context
 
 getConfig :: IO Config.Config
 getConfig = do
@@ -48,13 +49,13 @@ getConfig = do
   arguments <- Environment.getArgs
   case argumentsToConfigResult name arguments of
     ConfigResult.Failure errs -> do
-      mapM_ (IO.hPutStr IO.stderr) errs
+      traverse_ (IO.hPutStr IO.stderr) errs
       Exit.exitFailure
     ConfigResult.ExitWith msg -> do
       putStr msg
       Exit.exitSuccess
     ConfigResult.Success msgs config -> do
-      mapM_ (IO.hPutStr IO.stderr) msgs
+      traverse_ (IO.hPutStr IO.stderr) msgs
       pure config
 
 -- | Parses command-line arguments into a config.
@@ -72,7 +73,7 @@ argumentsToConfigResult name arguments =
       Nothing -> []
       Just hash -> ["commit", hash]
     help = GetOpt.usageInfo
-      (unwords $ [name, "version", Version.string] <> helpHash)
+      (unwords <| [name, "version", Version.string] <> helpHash)
       Options.options
     versionHash = case Commit.hash of
       Nothing -> ""
@@ -80,11 +81,11 @@ argumentsToConfigResult name arguments =
     version = Version.string <> versionHash <> "\n"
     formatArg arg = "WARNING: argument `" <> arg <> "' not expected\n"
     formatOpt opt = "WARNING: option `" <> opt <> "' not recognized\n"
-    warnings = fmap formatArg args <> fmap formatOpt opts
+    warnings = map formatArg args <> map formatOpt opts
   in case NonEmpty.nonEmpty errs of
-    Just es -> ConfigResult.Failure $ fmap ("ERROR: " <>) es
-    Nothing -> case Monad.foldM (flip ($)) Config.initial funs of
-      Left err -> ConfigResult.Failure . pure $ "ERROR: " <> err <> "\n"
+    Just es -> ConfigResult.Failure <| map ("ERROR: " <>) es
+    Nothing -> case Monad.foldM (|>) Config.initial funs of
+      Left err -> ConfigResult.Failure <<< pure <| "ERROR: " <> err <> "\n"
       Right config -> if Config.help config
         then ConfigResult.ExitWith help
         else if Config.version config
@@ -118,7 +119,7 @@ idleTime :: Time.NominalDiffTime
 idleTime = 60
 
 getMaxResources :: IO Int
-getMaxResources = fmap (max 1) Concurrent.getNumCapabilities
+getMaxResources = map (max 1) Concurrent.getNumCapabilities
 
 isInMemory :: FilePath -> Bool
 isInMemory database = case database of

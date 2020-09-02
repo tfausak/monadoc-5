@@ -1,6 +1,7 @@
 module Monadoc.Type.Config where
 
 import qualified Data.Set as Set
+import Monadoc.Prelude
 import qualified Monadoc.Type.Service as Service
 import qualified Network.Wai.Handler.Warp as Warp
 

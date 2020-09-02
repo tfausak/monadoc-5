@@ -3,6 +3,7 @@ module Monadoc.Type.Etag where
 import qualified Data.ByteString as ByteString
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Sql as Sql
 import qualified Text.Read as Read
 
@@ -15,10 +16,10 @@ newtype Etag
   deriving (Eq, Show)
 
 instance Sql.FromField Etag where
-  fromField = Sql.fromFieldVia $ fmap fromByteString . Read.readMaybe
+  fromField = Sql.fromFieldVia <| map fromByteString <<< Read.readMaybe
 
 instance Sql.ToField Etag where
-  toField = Sql.toField . show . toByteString
+  toField = Sql.toField <<< show <<< toByteString
 
 fromByteString :: ByteString.ByteString -> Etag
 fromByteString = Etag

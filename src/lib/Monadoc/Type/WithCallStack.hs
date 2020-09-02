@@ -3,6 +3,7 @@ module Monadoc.Type.WithCallStack where
 import qualified Control.Monad.Catch as Exception
 import qualified Data.Function as Function
 import qualified GHC.Stack as Stack
+import Monadoc.Prelude
 
 -- | Some value with a 'Stack.CallStack' attached. Typically this is used with
 -- 'Exception.SomeException' to attach call stacks to exceptions.
@@ -13,16 +14,16 @@ data WithCallStack a = WithCallStack
 
 instance Eq a => Eq (WithCallStack a) where
   x == y =
-    Function.on (==) (Stack.getCallStack . callStack) x y
+    Function.on (==) (Stack.getCallStack <<< callStack) x y
       && Function.on (==) value x y
 
 instance Exception.Exception e => Exception.Exception (WithCallStack e) where
   displayException x =
-    let string = Exception.displayException $ value x
+    let string = Exception.displayException <| value x
     in
-      case Stack.prettyCallStack $ callStack x of
+      case Stack.prettyCallStack <| callStack x of
         "" -> string
-        stack -> mconcat [string, "\n", stack]
+        stack -> fold [string, "\n", stack]
 
 -- | Catches an exception, removing call stacks as necessary. This wraps
 -- 'withoutCallStack' to make it easy to catch an exception without a call
@@ -36,8 +37,8 @@ catch
 catch x f = Exception.catches
   x
   [ Exception.Handler f
-  , Exception.Handler $ \se ->
-    case Exception.fromException $ withoutCallStack se of
+  , Exception.Handler <| \se ->
+    case Exception.fromException <| withoutCallStack se of
       Just e -> f e
       Nothing -> Exception.throwM se
   ]
@@ -48,7 +49,7 @@ throw
   :: (Stack.HasCallStack, Exception.Exception e, Exception.MonadThrow m)
   => e
   -> m a
-throw = Exception.throwM . withCallStack . Exception.toException
+throw = Exception.throwM <<< withCallStack <<< Exception.toException
 
 -- | Adds a call stack if there isn't one already. Whatever calls this function
 -- should probably have a 'Stack.HasCallStack' constraint. Instead of calling

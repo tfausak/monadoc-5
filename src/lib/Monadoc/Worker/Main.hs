@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE TypeFamilies #-}
 {- hlint ignore "Avoid restricted extensions" -}
 
 module Monadoc.Worker.Main where
@@ -46,6 +46,7 @@ import qualified GHC.Hs as Ghc
 import qualified GHC.LanguageExtensions.Type as G
 import qualified Language.Haskell.Extension as C
 import qualified Module as Ghc
+import Monadoc.Prelude
 import qualified Monadoc.Server.Settings as Settings
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Binary as Binary
@@ -81,21 +82,21 @@ import qualified Text.Printf as Printf
 run :: App.App request ()
 run = do
   Console.info "Starting worker ..."
-  Exception.handle sendExceptionToDiscord . Monad.forever $ do
-    withLogging "worker-loop" $ do
+  Exception.handle sendExceptionToDiscord <<< Monad.forever <| do
+    withLogging "worker-loop" <| do
       withLogging "prune-blobs" pruneBlobs
       withLogging "update-index" updateIndex
       withLogging "process-index" processIndex
       withLogging "fetch-tarballs" fetchTarballs
       withLogging "process-tarballs" processTarballs
       withLogging "parse-package-descriptions" parsePackageDescriptions
-    sleep $ 15 * 60
+    sleep <| 15 * 60
 
 withLogging :: String -> App.App request a -> App.App request a
 withLogging label action = do
-  Console.info $ "Starting " <> label <> " ..."
-  ((result, bytes), nanoseconds) <- withNanoseconds $ withBytes action
-  Console.info $ Printf.printf
+  Console.info <| "Starting " <> label <> " ..."
+  ((result, bytes), nanoseconds) <- withNanoseconds <| withBytes action
+  Console.info <| Printf.printf
     "Finished %s after %.3f seconds using %s bytes."
     label
     (fromIntegral nanoseconds / 1000000000 :: Double)
@@ -103,7 +104,8 @@ withLogging label action = do
   pure result
 
 withCommas :: Show a => a -> String
-withCommas = reverse . List.intercalate "," . chunksOf 3 . reverse . show
+withCommas =
+  reverse <<< List.intercalate "," <<< chunksOf 3 <<< reverse <<< show
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf n xs = case splitAt n xs of
@@ -126,17 +128,17 @@ withNanoseconds action = do
 
 sendExceptionToDiscord :: Exception.SomeException -> App.App request a
 sendExceptionToDiscord exception = do
-  Console.warn $ Exception.displayException exception
+  Console.warn <| Exception.displayException exception
   context <- Reader.ask
-  Trans.lift $ Settings.sendExceptionToDiscord context exception
+  Trans.lift <| Settings.sendExceptionToDiscord context exception
   Exception.throwM exception
 
 -- TODO: This method of pruning blobs is way too time consuming.
 doNot :: Applicative m => m a -> m ()
-doNot = const $ pure ()
+doNot = always <| pure ()
 
 pruneBlobs :: App.App request ()
-pruneBlobs = doNot $ do
+pruneBlobs = doNot <| do
   rows <- App.sql
     "select blobs.sha256 \
     \from blobs \
@@ -148,8 +150,8 @@ pruneBlobs = doNot $ do
   if count == 0
     then Console.info "Did not find any orphaned blobs."
     else do
-      Console.info $ unwords ["Pruning", pluralize "orphan blob" count, "..."]
-      mapM_
+      Console.info <| unwords ["Pruning", pluralize "orphan blob" count, "..."]
+      traverse_
         (App.sql_ "delete from blobs where sha256 = ?")
         (rows :: [Sql.Only Sha256.Sha256])
 
@@ -160,24 +162,24 @@ pluralize word count =
 updateIndex :: App.App request ()
 updateIndex = do
   etag <- getEtag
-  Console.info $ unwords ["Updating Hackage index with", show etag, "..."]
+  Console.info <| unwords ["Updating Hackage index with", show etag, "..."]
   request <- buildRequest etag
   response <- getResponse request
-  case Http.statusCode $ Client.responseStatus response of
+  case Http.statusCode <| Client.responseStatus response of
     200 -> handle200 response
     304 -> handle304
     _ -> handleOther request response
 
 getIndexUrl :: App.App request String
 getIndexUrl = do
-  hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
-  pure $ hackageUrl <> "/01-index.tar.gz"
+  hackageUrl <- Reader.asks <| Config.hackageUrl <<< Context.config
+  pure <| hackageUrl <> "/01-index.tar.gz"
 
 getEtag :: App.App request Etag.Etag
 getEtag = do
   indexUrl <- getIndexUrl
   rows <- App.sql "select etag from cache where url = ?" [indexUrl]
-  pure $ case rows of
+  pure <| case rows of
     [] -> Etag.fromByteString ByteString.empty
     Sql.Only etag : _ -> etag
 
@@ -185,30 +187,31 @@ buildRequest :: Etag.Etag -> App.App request Client.Request
 buildRequest etag = do
   indexUrl <- getIndexUrl
   initialRequest <- Client.parseRequest indexUrl
-  pure $ addRequestHeader
-    Http.hIfNoneMatch
-    (Etag.toByteString etag)
-    initialRequest
+  pure
+    <| addRequestHeader
+         Http.hIfNoneMatch
+         (Etag.toByteString etag)
+         initialRequest
 
 getResponse
   :: Client.Request
   -> App.App request (Client.Response LazyByteString.ByteString)
 getResponse request = do
   manager <- Reader.asks Context.manager
-  Trans.lift $ Client.httpLbs request manager
+  Trans.lift <| Client.httpLbs request manager
 
 handle200 :: Client.Response LazyByteString.ByteString -> App.App request ()
 handle200 response = do
   let
     etag =
       Etag.fromByteString
-        . Maybe.fromMaybe ByteString.empty
-        . lookup Http.hETag
-        $ Client.responseHeaders response
-  Console.info $ mconcat ["Hackage index has changed to ", show etag, "."]
+        <<< Maybe.fromMaybe ByteString.empty
+        <<< lookup Http.hETag
+        <| Client.responseHeaders response
+  Console.info <| fold ["Hackage index has changed to ", show etag, "."]
   let
-    body = LazyByteString.toStrict $ Client.responseBody response
-    sha256 = Sha256.fromDigest $ Crypto.hash body
+    body = LazyByteString.toStrict <| Client.responseBody response
+    sha256 = Sha256.fromDigest <| Crypto.hash body
   upsertBlob_ body sha256
   indexUrl <- getIndexUrl
   App.sql_
@@ -234,10 +237,10 @@ handleOther
   -> App.App request a
 handleOther request response =
   WithCallStack.throw
-    . Client.HttpExceptionRequest request
-    . Client.StatusCodeException (response { Client.responseBody = () })
-    . LazyByteString.toStrict
-    $ Client.responseBody response
+    <<< Client.HttpExceptionRequest request
+    <<< Client.StatusCodeException (response { Client.responseBody = () })
+    <<< LazyByteString.toStrict
+    <| Client.responseBody response
 
 processIndex :: App.App request ()
 processIndex = do
@@ -245,20 +248,20 @@ processIndex = do
   case maybeSha256 of
     Nothing -> do
       indexUrl <- getIndexUrl
-      Console.info $ mconcat ["Missing SHA256 for ", show indexUrl, "."]
+      Console.info <| fold ["Missing SHA256 for ", show indexUrl, "."]
       removeCache
-    Just sha256 -> maybeProcess_ indexPath sha256 $ do
+    Just sha256 -> maybeProcess_ indexPath sha256 <| do
       maybeBinary <- getBinary sha256
       case maybeBinary of
         Nothing -> do
-          Console.info $ mconcat ["Missing binary for ", show sha256, "."]
+          Console.info <| fold ["Missing binary for ", show sha256, "."]
           removeCache
         Just binary -> processIndexWith binary
 
 getSha256 :: App.App request (Maybe Sha256.Sha256)
 getSha256 = do
   rows <- App.sql "select digest from files where name = ?" [indexPath]
-  pure $ case rows of
+  pure <| case rows of
     [] -> Nothing
     Sql.Only sha256 : _ -> Just sha256
 
@@ -270,25 +273,25 @@ removeCache = do
 getBinary :: Sha256.Sha256 -> App.App request (Maybe Binary.Binary)
 getBinary sha256 = do
   rows <- App.sql "select octets from blobs where sha256 = ?" [sha256]
-  pure $ case rows of
+  pure <| case rows of
     [] -> Nothing
     Sql.Only binary : _ -> Just binary
 
 processIndexWith :: Binary.Binary -> App.App request ()
 processIndexWith binary = do
-  countVar <- Trans.lift $ Stm.newTVarIO 1
-  revisionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
-  versionsVar <- Trans.lift $ Stm.newTVarIO Map.empty
-  mapM_ (processIndexEntry countVar revisionsVar versionsVar)
-    . Tar.foldEntries (:) [] handleFormatError
-    . Tar.read
-    . Gzip.decompress
-    . LazyByteString.fromStrict
-    $ Binary.toByteString binary
-  versions <- Trans.lift . Stm.atomically $ Stm.readTVar versionsVar
-  Console.info $ unwords
-    ["Updating", pluralize "preferred version" $ Map.size versions, "..."]
-  Monad.forM_ (Map.toList versions) $ \(packageName, versionRange) -> App.sql_
+  countVar <- Trans.lift <| Stm.newTVarIO 1
+  revisionsVar <- Trans.lift <| Stm.newTVarIO Map.empty
+  versionsVar <- Trans.lift <| Stm.newTVarIO Map.empty
+  traverse_ (processIndexEntry countVar revisionsVar versionsVar)
+    <<< Tar.foldEntries (:) [] handleFormatError
+    <<< Tar.read
+    <<< Gzip.decompress
+    <<< LazyByteString.fromStrict
+    <| Binary.toByteString binary
+  versions <- Trans.lift <<< Stm.atomically <| Stm.readTVar versionsVar
+  Console.info <| unwords
+    ["Updating", pluralize "preferred version" <| Map.size versions, "..."]
+  Monad.forM_ (Map.toList versions) <| \(packageName, versionRange) -> App.sql_
     "insert into preferred_versions (package_name, version_range) \
     \values (?, ?) \
     \on conflict (package_name) \
@@ -306,27 +309,27 @@ processIndexEntry
   -> Tar.Entry
   -> App.App request ()
 processIndexEntry countVar revisionsVar versionsVar entry = do
-  count <- Trans.lift . Stm.atomically $ do
+  count <- Trans.lift <<< Stm.atomically <| do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
-  Monad.when (rem count 1000 == 0)
-    . Console.info
-    . unwords
-    $ ["Processing entry number", show count, "..."]
+  Monad.when (count % 1000 == 0)
+    <<< Console.info
+    <<< unwords
+    <| ["Processing entry number", show count, "..."]
   case Tar.entryContent entry of
     Tar.NormalFile lazyContents _size ->
       let
-        path = Path.fromFilePath $ Tar.entryPath entry
+        path = Path.fromFilePath <| Tar.entryPath entry
         strictContents = LazyByteString.toStrict lazyContents
-        digest = Sha256.fromDigest $ Crypto.hash strictContents
-      in case FilePath.takeExtension $ Tar.entryPath entry of
+        digest = Sha256.fromDigest <| Crypto.hash strictContents
+      in case FilePath.takeExtension <| Tar.entryPath entry of
         "" -> processPreferredVersion versionsVar path strictContents
         ".cabal" ->
           processPackageDescription revisionsVar path strictContents digest
         ".json" -> processPackageSignature path strictContents digest
-        _ -> WithCallStack.throw $ UnknownExtension entry
-    _ -> WithCallStack.throw $ UnknownEntry entry
+        _ -> WithCallStack.throw <| UnknownExtension entry
+    _ -> WithCallStack.throw <| UnknownEntry entry
 
 processPreferredVersion
   :: Stm.TVar (Map.Map PackageName.PackageName VersionRange.VersionRange)
@@ -336,23 +339,24 @@ processPreferredVersion
 processPreferredVersion versionsVar path strictContents = do
   packageName <- case Path.toStrings path of
     [rawPackageName, "preferred-versions"] -> parsePackageName rawPackageName
-    strings -> WithCallStack.throw $ UnexpectedPath strings
+    strings -> WithCallStack.throw <| UnexpectedPath strings
   versionRange <- case Utf8.toString strictContents of
-    "" -> pure $ VersionRange.fromCabal Cabal.anyVersion
+    "" -> pure <| VersionRange.fromCabal Cabal.anyVersion
     string -> case Cabal.simpleParsec string of
-      Nothing -> WithCallStack.throw $ InvalidVersionConstraint string
+      Nothing -> WithCallStack.throw <| InvalidVersionConstraint string
       Just (Cabal.PackageVersionConstraint pn vr) ->
         if pn == PackageName.toCabal packageName
-          then pure $ VersionRange.fromCabal vr
-          else WithCallStack.throw $ PackageNameMismatch packageName pn
-  Trans.lift . Stm.atomically . Stm.modifyTVar versionsVar $ Map.insert
-    packageName
-    versionRange
+          then pure <| VersionRange.fromCabal vr
+          else WithCallStack.throw <| PackageNameMismatch packageName pn
+  Trans.lift
+    <<< Stm.atomically
+    <<< Stm.modifyTVar versionsVar
+    <| Map.insert packageName versionRange
 
 parsePackageName
   :: Exception.MonadThrow m => String -> m PackageName.PackageName
 parsePackageName string = case PackageName.fromString string of
-  Nothing -> WithCallStack.throw $ InvalidPackageName string
+  Nothing -> WithCallStack.throw <| InvalidPackageName string
   Just packageName -> pure packageName
 
 processPackageDescription
@@ -372,27 +376,27 @@ processPackageDescription revisionsVar path strictContents digest = do
       packageName <- parsePackageName rawPackageName
       version <- parseVersion rawVersion
       pure (packageName, version)
-    strings -> WithCallStack.throw $ UnexpectedPath strings
+    strings -> WithCallStack.throw <| UnexpectedPath strings
   -- Get the revision number and update the map.
-  revision <- Trans.lift . Stm.atomically $ do
+  revision <- Trans.lift <<< Stm.atomically <| do
     allRevisions <- Stm.readTVar revisionsVar
     case Map.lookup packageName allRevisions of
       Nothing -> do
         let revision = Revision.zero
-        Stm.modifyTVar revisionsVar . Map.insert packageName $ Map.singleton
-          version
-          revision
+        Stm.modifyTVar revisionsVar
+          <<< Map.insert packageName
+          <| Map.singleton version revision
         pure revision
       Just packageRevisions -> case Map.lookup version packageRevisions of
         Nothing -> do
           let revision = Revision.zero
           Stm.modifyTVar revisionsVar
-            $ Map.adjust (Map.insert version revision) packageName
+            <| Map.adjust (Map.insert version revision) packageName
           pure revision
         Just versionRevision -> do
           let revision = Revision.increment versionRevision
           Stm.modifyTVar revisionsVar
-            $ Map.adjust (Map.insert version revision) packageName
+            <| Map.adjust (Map.insert version revision) packageName
           pure revision
   -- Build the new path with revision.
   let
@@ -408,7 +412,7 @@ processPackageDescription revisionsVar path strictContents digest = do
   case rows of
     [] -> pure ()
     Sql.Only expected : _ ->
-      Monad.when (digest /= expected) . Console.warn $ mconcat
+      Monad.when (digest /= expected) <<< Console.warn <| fold
         [ "Digest of "
         , show newPath
         , " changed from "
@@ -425,8 +429,8 @@ processPackageDescription revisionsVar path strictContents digest = do
 
 parseVersion :: Exception.MonadThrow m => String -> m Version.Version
 parseVersion string = case Cabal.simpleParsec string of
-  Nothing -> WithCallStack.throw $ InvalidVersionNumber string
-  Just version -> pure $ Version.fromCabal version
+  Nothing -> WithCallStack.throw <| InvalidVersionNumber string
+  Just version -> pure <| Version.fromCabal version
 
 -- For now we are essentially ignoring these entries. In the future we may want
 -- to do something with them. That's why we're storing them in the database.
@@ -457,7 +461,7 @@ processPackageSignature path strictContents digest = do
       packageName <- parsePackageName rawPackageName
       version <- parseVersion rawVersion
       pure (packageName, version)
-    strings -> WithCallStack.throw $ UnexpectedPath strings
+    strings -> WithCallStack.throw <| UnexpectedPath strings
   let
     newPath = Path.fromStrings
       [ "s"
@@ -469,7 +473,7 @@ processPackageSignature path strictContents digest = do
   case rows of
     [] -> pure ()
     Sql.Only expected : _ ->
-      Monad.when (digest /= expected) . Console.warn $ mconcat
+      Monad.when (digest /= expected) <<< Console.warn <| fold
         [ "Digest of "
         , show newPath
         , " changed from "
@@ -515,19 +519,19 @@ data PackageNameMismatch
 instance Exception.Exception PackageNameMismatch
 
 upsertBlob_ :: ByteString.ByteString -> Sha256.Sha256 -> App.App request ()
-upsertBlob_ contents = Monad.void . upsertBlob contents
+upsertBlob_ contents = Monad.void <<< upsertBlob contents
 
 upsertBlob :: ByteString.ByteString -> Sha256.Sha256 -> App.App request Bool
 upsertBlob contents sha256 = do
   rows <- App.sql "select count(*) from blobs where sha256 = ?" [sha256]
-  let count = maybe (0 :: Int) Sql.fromOnly $ Maybe.listToMaybe rows
+  let count = maybe (0 :: Int) Sql.fromOnly <| Maybe.listToMaybe rows
   if count < 1
     then do
       App.sql_
         "insert into blobs (octets, sha256, size) values (?, ?, ?)"
         ( Binary.fromByteString contents
         , sha256
-        , Size.fromInt $ ByteString.length contents
+        , Size.fromInt <| ByteString.length contents
         )
       pure True
     else pure False
@@ -545,10 +549,10 @@ newtype UnknownEntry
 instance Exception.Exception UnknownEntry
 
 unsafeThrow :: Exception.Exception e => e -> a
-unsafeThrow = Unsafe.unsafePerformIO . WithCallStack.throw
+unsafeThrow = Unsafe.unsafePerformIO <<< WithCallStack.throw
 
 sleep :: IO.MonadIO m => Double -> m ()
-sleep = IO.liftIO . Concurrent.threadDelay . round . (* 1000000)
+sleep = IO.liftIO <<< Concurrent.threadDelay <<< round <<< (* 1000000)
 
 addRequestHeader
   :: Http.HeaderName
@@ -564,7 +568,7 @@ fetchTarballs = do
   names <- App.sql
     "select name from files where name like 'd/%/%/0/.cabal' order by name asc"
     ()
-  mapM_ (fetchTarball . Sql.fromOnly) names
+  traverse_ (fetchTarball <<< Sql.fromOnly) names
 
 fetchTarball :: Path.Path -> App.App request ()
 fetchTarball path = do
@@ -573,7 +577,7 @@ fetchTarball path = do
       package <- parsePackageName rawPackage
       version <- parseVersion rawVersion
       pure (PackageName.toString package, Version.toString version)
-    strings -> WithCallStack.throw $ UnexpectedPath strings
+    strings -> WithCallStack.throw <| UnexpectedPath strings
   let tarballPath = Path.fromStrings ["t", package, version, ".tar.gz"]
   fileRows <- App.sql "select count(*) from files where name = ?" [tarballPath]
   case fileRows of
@@ -586,11 +590,10 @@ fetchTarball path = do
         case oldFileRows of
           Sql.Only sha256 : _ -> pure sha256
           _ -> do
-            hackageUrl <- Reader.asks $ Config.hackageUrl . Context.config
+            hackageUrl <- Reader.asks <| Config.hackageUrl <<< Context.config
             let
-              pkg = mconcat [package, "-", version]
-              url =
-                mconcat [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
+              pkg = fold [package, "-", version]
+              url = fold [hackageUrl, "/package/", pkg, "/", pkg, ".tar.gz"]
             initialRequest <- Client.parseRequest url
             cacheRows <- App.sql "select etag from cache where url = ?" [url]
             let
@@ -602,24 +605,26 @@ fetchTarball path = do
                 (Etag.toByteString etag)
                 initialRequest
             response <- getResponse request
-            body <- case Http.statusCode $ Client.responseStatus response of
+            body <- case Http.statusCode <| Client.responseStatus response of
               200 -> do
-                Console.info $ unwords ["Downloaded", pkg, "tarball."]
-                pure . LazyByteString.toStrict $ Client.responseBody response
+                Console.info <| unwords ["Downloaded", pkg, "tarball."]
+                pure
+                  <<< LazyByteString.toStrict
+                  <| Client.responseBody response
               410 -> do
-                Console.warn $ unwords ["Tarball", pkg, "gone!"]
+                Console.warn <| unwords ["Tarball", pkg, "gone!"]
                 pure emptyTarball
               451 -> do
-                Console.warn $ unwords ["Tarball", pkg, "unavailable!"]
+                Console.warn <| unwords ["Tarball", pkg, "unavailable!"]
                 pure emptyTarball
               _ -> handleOther request response
             let
               newEtag =
                 Etag.fromByteString
-                  . Maybe.fromMaybe ByteString.empty
-                  . lookup Http.hETag
-                  $ Client.responseHeaders response
-              sha256 = Sha256.fromDigest $ Crypto.hash body
+                  <<< Maybe.fromMaybe ByteString.empty
+                  <<< lookup Http.hETag
+                  <| Client.responseHeaders response
+              sha256 = Sha256.fromDigest <| Crypto.hash body
             upsertBlob_ body sha256
             App.sql_
               "insert into cache (etag, sha256, url) values (?, 'unused', ?)"
@@ -642,48 +647,48 @@ fetchTarball path = do
 --   removed "for legal reasons" and returns an HTTP 451.
 --   <https://github.com/haskell/hackage-server/issues/436>
 emptyTarball :: ByteString.ByteString
-emptyTarball = LazyByteString.toStrict . Gzip.compress $ Tar.write []
+emptyTarball = LazyByteString.toStrict <<< Gzip.compress <| Tar.write []
 
 processTarballs :: App.App request ()
 processTarballs = do
-  countVar <- Trans.lift $ Stm.newTVarIO 1
+  countVar <- Trans.lift <| Stm.newTVarIO 1
   rows <- App.sql
     "select name, digest \
     \from files \
     \where name like 't/%/%/.tar.gz' \
     \order by name asc"
     ()
-  mapM_ (uncurry $ processTarball countVar) rows
+  traverse_ (uncurry <| processTarball countVar) rows
 
 processTarball
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
-processTarball countVar path sha256 = maybeProcess_ path sha256 $ do
-  count <- Trans.lift . Stm.atomically $ do
+processTarball countVar path sha256 = maybeProcess_ path sha256 <| do
+  count <- Trans.lift <<< Stm.atomically <| do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
-  Monad.when (rem count 1000 == 0)
-    . Console.info
-    . unwords
-    $ ["Processing tarball number", show count, "..."]
+  Monad.when (count % 1000 == 0)
+    <<< Console.info
+    <<< unwords
+    <| ["Processing tarball number", show count, "..."]
   (package, version) <- case Path.toStrings path of
     ["t", rawPackage, rawVersion, ".tar.gz"] -> do
       package <- parsePackageName rawPackage
       version <- parseVersion rawVersion
       pure (package, version)
-    strings -> WithCallStack.throw $ UnexpectedPath strings
+    strings -> WithCallStack.throw <| UnexpectedPath strings
   binary <- do
     maybeBinary <- getBinary sha256
     case maybeBinary of
-      Nothing -> WithCallStack.throw $ MissingBinary sha256
+      Nothing -> WithCallStack.throw <| MissingBinary sha256
       Just binary -> pure binary
   linkVar <- Trans.lift Stm.newEmptyTMVarIO
-  mapM_ (processTarballEntry package version linkVar)
-    . Tar.foldEntries (:) [] handleFormatError
-    . Tar.read
-    . Gzip.decompress
-    . LazyByteString.fromStrict
-    $ Binary.toByteString binary
+  traverse_ (processTarballEntry package version linkVar)
+    <<< Tar.foldEntries (:) [] handleFormatError
+    <<< Tar.read
+    <<< Gzip.decompress
+    <<< LazyByteString.fromStrict
+    <| Binary.toByteString binary
 
 -- https://github.com/haskell/hackage-server/issues/851
 handleFormatError :: Tar.FormatError -> [a]
@@ -703,37 +708,39 @@ processTarballEntry package version linkVar entry =
     Tar.OtherEntryType 'L' byteString _ -> do
       let
         expected = Path.fromStrings [".", ".", "@LongLink"]
-        actual = Path.fromFilePath $ Tar.entryPath entry
+        actual = Path.fromFilePath <| Tar.entryPath entry
         link =
           Path.fromFilePath
-            . Utf8.toString
-            . stripTrailingNullBytes
-            $ LazyByteString.toStrict byteString
-      Monad.when (actual /= expected) . WithCallStack.throw $ InvalidLongLink
-        entry
-      Trans.lift . Stm.atomically $ do
+            <<< Utf8.toString
+            <<< stripTrailingNullBytes
+            <| LazyByteString.toStrict byteString
+      Monad.when (actual /= expected)
+        <<< WithCallStack.throw
+        <| InvalidLongLink entry
+      Trans.lift <<< Stm.atomically <| do
         maybeLink <- Stm.tryTakeTMVar linkVar
         case maybeLink of
-          Just oldLink -> WithCallStack.throw $ LongLinkOverwrite oldLink link
+          Just oldLink ->
+            WithCallStack.throw <| LongLinkOverwrite oldLink link
           Nothing -> Stm.putTMVar linkVar link
 
     Tar.NormalFile byteString _ -> do
       let entryPath = Tar.entryPath entry
-      maybeLink <- Trans.lift . Stm.atomically $ Stm.tryTakeTMVar linkVar
+      maybeLink <- Trans.lift <<< Stm.atomically <| Stm.tryTakeTMVar linkVar
       partialPath <- case maybeLink of
-        Nothing -> pure $ Path.fromFilePath entryPath
+        Nothing -> pure <| Path.fromFilePath entryPath
         Just link -> do
           let
-            prefix = Path.toFilePath $ Path.fromFilePath entryPath
+            prefix = Path.toFilePath <| Path.fromFilePath entryPath
             string = Path.toFilePath link
           Monad.unless (prefix `List.isPrefixOf` string)
-            . WithCallStack.throw
-            $ InvalidPrefix prefix string
+            <<< WithCallStack.throw
+            <| InvalidPrefix prefix string
           pure link
       let
         contents = LazyByteString.toStrict byteString
-        sha256 = Sha256.fromDigest $ Crypto.hash contents
-        prefix = mconcat
+        sha256 = Sha256.fromDigest <| Crypto.hash contents
+        prefix = fold
           [PackageName.toString package, "-", Version.toString version, "/"]
         string = Path.toFilePath partialPath
       if prefix `List.isPrefixOf` string
@@ -742,19 +749,19 @@ processTarballEntry package version linkVar entry =
           let
             fullPath =
               Path.fromStrings
-                . ("c" :)
-                . (PackageName.toString package :)
-                . (Version.toString version :)
-                . drop 1
-                $ Path.toStrings partialPath
+                <<< ("c" :)
+                <<< (PackageName.toString package :)
+                <<< (Version.toString version :)
+                <<< drop 1
+                <| Path.toStrings partialPath
           App.sql_
             "insert into files (digest, name) values (?, ?) \
             \on conflict (name) do update set digest = excluded.digest"
             (sha256, fullPath)
         else
           Monad.when (Set.notMember entryPath ignoredPaths)
-          . WithCallStack.throw
-          $ InvalidPrefix prefix string
+          <<< WithCallStack.throw
+          <| InvalidPrefix prefix string
 
     Tar.Directory -> pure ()
     Tar.HardLink _ -> pure () -- https://github.com/haskell/hackage-server/issues/858
@@ -763,14 +770,14 @@ processTarballEntry package version linkVar entry =
     Tar.OtherEntryType 'x' _ _ -> pure () -- metadata
     Tar.SymbolicLink _ -> pure ()
 
-    _ -> WithCallStack.throw $ UnknownEntry entry
+    _ -> WithCallStack.throw <| UnknownEntry entry
 
 -- | Some old package tarballs contain paths that don't start with the package
 -- identifier. In general we want to throw an exception if we encounter a path
 -- with the wrong prefix. Since these paths already exist, we don't want to
 -- throw and exception for them.
 ignoredPaths :: Set.Set FilePath
-ignoredPaths = Set.fromList $ fmap
+ignoredPaths = Set.fromList <| map
   FilePath.joinPath
   [ [".", "._BirdPP-1.1"]
   , [".", "._ParserFunction-0.0.4"]
@@ -782,7 +789,7 @@ ignoredPaths = Set.fromList $ fmap
   ]
 
 stripTrailingNullBytes :: ByteString.ByteString -> ByteString.ByteString
-stripTrailingNullBytes = fst . ByteString.spanEnd (== 0x00)
+stripTrailingNullBytes = fst <<< ByteString.spanEnd (== 0x00)
 
 newtype MissingBinary
   = MissingBinary Sha256.Sha256
@@ -810,59 +817,60 @@ instance Exception.Exception InvalidPrefix
 
 parsePackageDescriptions :: App.App request ()
 parsePackageDescriptions = do
-  countVar <- Trans.lift $ Stm.newTVarIO 1
+  countVar <- Trans.lift <| Stm.newTVarIO 1
   rows <- App.sql
     "select name, digest \
     \from files \
     \where name like 'd/%/%/%/.cabal' \
     \order by name asc"
     ()
-  mapM_ (uncurry $ parsePackageDescription countVar) rows
+  traverse_ (uncurry <| parsePackageDescription countVar) rows
 
 parsePackageDescription
   :: Stm.TVar Word -> Path.Path -> Sha256.Sha256 -> App.App request ()
-parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
-  count <- Trans.lift . Stm.atomically $ do
+parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 <| do
+  count <- Trans.lift <<< Stm.atomically <| do
     count <- Stm.readTVar countVar
     Stm.modifyTVar countVar (+ 1)
     pure count
-  Monad.when (rem count 1000 == 0)
-    . Console.info
-    . unwords
-    $ ["Parsing package description number", show count, "..."]
+  Monad.when (count % 1000 == 0)
+    <<< Console.info
+    <<< unwords
+    <| ["Parsing package description number", show count, "..."]
   (pkg, ver, rev) <- case Path.toStrings path of
     ["d", rawPackage, rawVersion, rawRevision, ".cabal"] -> do
       package <- parsePackageName rawPackage
       version <- parseVersion rawVersion
       revision <- parseRevision rawRevision
       pure (package, version, revision)
-    strings -> WithCallStack.throw $ UnexpectedPath strings
+    strings -> WithCallStack.throw <| UnexpectedPath strings
   binary <- do
     maybeBinary <- getBinary sha256
     case maybeBinary of
-      Nothing -> WithCallStack.throw $ MissingBinary sha256
+      Nothing -> WithCallStack.throw <| MissingBinary sha256
       Just binary -> pure binary
-  case Monadoc.Utility.Cabal.parse $ Binary.toByteString binary of
-    Left errs -> WithCallStack.throw . userError $ show (pkg, ver, rev, errs)
+  case Monadoc.Utility.Cabal.parse <| Binary.toByteString binary of
+    Left errs ->
+      WithCallStack.throw <<< userError <| show (pkg, ver, rev, errs)
     Right package -> do
       let
         packageName =
           Cabal.pkgName
-            . Cabal.package
-            . Cabal.packageDescription
-            $ Monadoc.Utility.Cabal.unwrapPackage package
+            <<< Cabal.package
+            <<< Cabal.packageDescription
+            <| Monadoc.Utility.Cabal.unwrapPackage package
         versionNumber =
           Version.fromCabal
-            . Cabal.pkgVersion
-            . Cabal.package
-            . Cabal.packageDescription
-            $ Monadoc.Utility.Cabal.unwrapPackage package
+            <<< Cabal.pkgVersion
+            <<< Cabal.package
+            <<< Cabal.packageDescription
+            <| Monadoc.Utility.Cabal.unwrapPackage package
       Monad.when (packageName /= PackageName.toCabal pkg)
-        . WithCallStack.throw
-        $ PackageNameMismatch pkg packageName
+        <<< WithCallStack.throw
+        <| PackageNameMismatch pkg packageName
       Monad.when (versionNumber /= ver)
-        . WithCallStack.throw
-        $ VersionNumberMismatch ver versionNumber
+        <<< WithCallStack.throw
+        <| VersionNumberMismatch ver versionNumber
       -- We don't bother checking the revision against the x-revision field
       -- because it's often wrong. See these Hackage issues for details:
       -- <https://github.com/haskell/hackage-server/issues/337>
@@ -872,7 +880,7 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
       -- this feature isn't well supported yet. See this issue for details:
       -- <https://github.com/haskell/cabal/issues/5660>.
       case toPackageDescription package of
-        Left _ -> WithCallStack.throw . userError $ show (pkg, ver, rev)
+        Left _ -> WithCallStack.throw <<< userError <| show (pkg, ver, rev)
         Right (pacdes, _) -> case Cabal.library pacdes of
           Nothing -> pure ()
           Just library -> do
@@ -890,52 +898,52 @@ parsePackageDescription countVar path sha256 = maybeProcess_ path sha256 $ do
                         z <- convertExtension y
                         pure (False, z)
                     )
-                  $ Cabal.defaultExtensions buildInfo
+                  <| Cabal.defaultExtensions buildInfo
                   <> Cabal.oldExtensions buildInfo
             Monad.forM_
-                (fmap ModuleName.fromCabal $ Cabal.exposedModules library)
-              $ \moduleName -> do
-                  maybeFile <- findSourceFile pkg ver sourceDirs moduleName
-                  App.sql_
-                    "insert into exposed_modules \
+                (map ModuleName.fromCabal <| Cabal.exposedModules library)
+              <| \moduleName -> do
+                   maybeFile <- findSourceFile pkg ver sourceDirs moduleName
+                   App.sql_
+                     "insert into exposed_modules \
                     \(package, version, revision, module, file) \
                     \values (?, ?, ?, ?, ?) \
                     \on conflict (package, version, revision, module) \
                     \do update set file = excluded.file"
-                    (pkg, ver, rev, moduleName, maybeFile)
-                  case maybeFile of
-                    Nothing -> pure ()
-                    Just file -> do
-                      rows <- App.sql
-                        "select blobs.octets from blobs \
+                     (pkg, ver, rev, moduleName, maybeFile)
+                   case maybeFile of
+                     Nothing -> pure ()
+                     Just file -> do
+                       rows <- App.sql
+                         "select blobs.octets from blobs \
                         \inner join files on files.digest = blobs.sha256 \
                         \where files.name = ?"
-                        [file]
-                      case rows of
-                        [] -> fail $ "missing contents for " <> show file
-                        Sql.Only contents : _ -> do
-                          let _ = contents :: Binary.Binary
-                          result <- IO.liftIO $ Monadoc.Utility.Ghc.parse
-                            extensions
-                            (Path.toFilePath file)
-                            (Binary.toByteString contents)
-                          App.sql_
-                            "update exposed_modules \
+                         [file]
+                       case rows of
+                         [] -> fail <| "missing contents for " <> show file
+                         Sql.Only contents : _ -> do
+                           let _ = contents :: Binary.Binary
+                           result <- IO.liftIO <| Monadoc.Utility.Ghc.parse
+                             extensions
+                             (Path.toFilePath file)
+                             (Binary.toByteString contents)
+                           App.sql_
+                             "update exposed_modules \
                             \set parsed = ? \
                             \where package = ? \
                             \and version = ? \
                             \and revision = ? \
                             \and module = ?"
-                            (Either.isRight result, pkg, ver, rev, moduleName)
-                          case result of
-                            Left _ -> pure ()
-                            Right module_ ->
-                              Monad.forM_ (getModuleExports module_)
-                                $ \identifier -> App.sql_
-                                    "insert or ignore into exported_identifiers \
+                             (Either.isRight result, pkg, ver, rev, moduleName)
+                           case result of
+                             Left _ -> pure ()
+                             Right module_ ->
+                               Monad.forM_ (getModuleExports module_)
+                                 <| \identifier -> App.sql_
+                                      "insert or ignore into exported_identifiers \
                                     \(package, version, revision, module, identifier) \
                                     \values (?, ?, ?, ?, ?)"
-                                    (pkg, ver, rev, moduleName, identifier)
+                                      (pkg, ver, rev, moduleName, identifier)
 
 -- https://hackage.haskell.org/package/ghc-8.10.1/docs/Parser.html#v:parseModule
 getModuleExports :: Monadoc.Utility.Ghc.Module -> [String]
@@ -944,11 +952,13 @@ getModuleExports module_ =
     ghcmod = Monadoc.Utility.Ghc.unwrapModule module_
     modnam :: String
     modnam =
-      maybe "?" (Ghc.moduleNameString . Ghc.unLoc) . Ghc.hsmodName $ Ghc.unLoc
-        ghcmod
-    maybeExports = Ghc.hsmodExports $ Ghc.unLoc ghcmod
+      maybe "?" (Ghc.moduleNameString <<< Ghc.unLoc)
+        <<< Ghc.hsmodName
+        <| Ghc.unLoc ghcmod
+    maybeExports = Ghc.hsmodExports <| Ghc.unLoc ghcmod
     crash label x =
-      error $ modnam <> " [" <> label <> "] " <> Ghc.showSDocUnsafe (Ghc.ppr x)
+      error <| modnam <> " [" <> label <> "] " <> Ghc.showSDocUnsafe
+        (Ghc.ppr x)
 
     -- TODO: Does an Orig RdrName actually show up anywhere? I think it's only
     -- generated by the compiler. Maybe be TH, but I'm not executing that.
@@ -970,7 +980,7 @@ getModuleExports module_ =
       Ghc.Qual y z -> Ghc.moduleNameString y <> "." <> Ghc.occNameString z
       Ghc.Orig y z ->
         Ghc.moduleNameString (Ghc.moduleName y) <> "." <> Ghc.occNameString z
-      Ghc.Exact y -> Ghc.occNameString $ Ghc.nameOccName y
+      Ghc.Exact y -> Ghc.occNameString <| Ghc.nameOccName y
 
     convertLWN :: Ghc.Located (Ghc.IEWrappedName Ghc.RdrName) -> String
     convertLWN x = case Ghc.unLoc x of
@@ -1042,14 +1052,14 @@ getModuleExports module_ =
 
       Ghc.SigD _ sig -> case sig of
         -- type X = ...
-        Ghc.TypeSig _ lrns _ -> fmap convertLRN lrns
+        Ghc.TypeSig _ lrns _ -> map convertLRN lrns
         -- pattern X = ...
-        Ghc.PatSynSig _ lrns _ -> fmap convertLRN lrns
+        Ghc.PatSynSig _ lrns _ -> map convertLRN lrns
         Ghc.ClassOpSig{} -> crash "SigD/ClassOpSig" sig
         Ghc.IdSig{} -> crash "SigD/IdSig" sig
         Ghc.FixSig _ fixitySig -> case fixitySig of
           -- infix 4 ==
-          Ghc.FixitySig _ lrns _ -> fmap convertLRN lrns
+          Ghc.FixitySig _ lrns _ -> map convertLRN lrns
           Ghc.XFixitySig{} -> crash "SigD/FixSig/XFixitySig" fixitySig
         -- {-# INLINE ... #-}
         Ghc.InlineSig{} -> []
@@ -1095,8 +1105,10 @@ getModuleExports module_ =
       Ghc.XHsDecl{} -> crash "XHsDecl" hsDecl
   in case maybeExports of
     Nothing ->
-      concatMap (convertDecl . Ghc.unLoc) . Ghc.hsmodDecls $ Ghc.unLoc ghcmod
-    Just exports -> fmap (convertIE . Ghc.unLoc) $ Ghc.unLoc exports
+      foldMap (convertDecl <<< Ghc.unLoc)
+        <<< Ghc.hsmodDecls
+        <| Ghc.unLoc ghcmod
+    Just exports -> map (convertIE <<< Ghc.unLoc) <| Ghc.unLoc exports
 
 convertExtension :: C.KnownExtension -> Maybe G.Extension
 convertExtension x = case x of
@@ -1251,7 +1263,7 @@ mapMaybeM f l = case l of
   h : t -> do
     m <- f h
     case m of
-      Just x -> pure $ Just x
+      Just x -> pure <| Just x
       Nothing -> mapMaybeM f t
 
 findSourceFileIn
@@ -1273,7 +1285,7 @@ findSourceFileWith
   -> App.App request (Maybe Path.Path)
 findSourceFileWith pkg ver dir mdl ext = do
   let
-    path = mconcat
+    path = fold
       [ Path.fromStrings ["c", PackageName.toString pkg, Version.toString ver]
       , case dir of
         "." -> mempty
@@ -1282,14 +1294,14 @@ findSourceFileWith pkg ver dir mdl ext = do
         '.' : '/' : rest -> Path.fromFilePath rest
         _ -> Path.fromFilePath dir
       , Path.fromFilePath
-      $ Cabal.toFilePath (ModuleName.toCabal mdl)
+      <| Cabal.toFilePath (ModuleName.toCabal mdl)
       <> "."
       <> ext
       ]
   rows <- App.sql "select name from files where name = ?" [path]
   case rows of
     [] -> pure Nothing
-    Sql.Only name : _ -> pure $ Just name
+    Sql.Only name : _ -> pure <| Just name
 
 -- | Although the generic package description type does have a package
 -- description in it, that nested PD isn't actually usable. This function is
@@ -1303,9 +1315,9 @@ toPackageDescription =
   let
     flagAssignment = Cabal.mkFlagAssignment []
     componentRequestedSpec = Cabal.ComponentRequestedSpec False False
-    isDependencySatisfiable = const True
+    isDependencySatisfiable = always True
     platform = Cabal.Platform Cabal.X86_64 Cabal.Linux
-    compilerId = Cabal.CompilerId Cabal.GHC $ Cabal.mkVersion [8, 10, 1]
+    compilerId = Cabal.CompilerId Cabal.GHC <| Cabal.mkVersion [8, 10, 1]
     abiTag = Cabal.NoAbiTag
     compilerInfo = Cabal.unknownCompilerInfo compilerId abiTag
     additionalConstraints = []
@@ -1317,7 +1329,7 @@ toPackageDescription =
         platform
         compilerInfo
         additionalConstraints
-      . Monadoc.Utility.Cabal.unwrapPackage
+      <<< Monadoc.Utility.Cabal.unwrapPackage
 
 data VersionNumberMismatch
   = VersionNumberMismatch Version.Version Version.Version
@@ -1327,7 +1339,7 @@ instance Exception.Exception VersionNumberMismatch
 
 parseRevision :: Exception.MonadThrow m => String -> m Revision.Revision
 parseRevision string = case Revision.fromString string of
-  Nothing -> WithCallStack.throw $ InvalidRevision string
+  Nothing -> WithCallStack.throw <| InvalidRevision string
   Just revision -> pure revision
 
 newtype InvalidRevision
@@ -1338,7 +1350,7 @@ instance Exception.Exception InvalidRevision
 
 maybeProcess_
   :: Path.Path -> Sha256.Sha256 -> App.App request () -> App.App request ()
-maybeProcess_ path sha256 = Monad.void . maybeProcess path sha256
+maybeProcess_ path sha256 = Monad.void <<< maybeProcess path sha256
 
 maybeProcess
   :: Path.Path
@@ -1351,10 +1363,10 @@ maybeProcess path sha256 process = do
     Sql.Only actual : _ | actual == sha256 -> pure Nothing
     _ -> do
       result <- process
-      timestamp <- IO.liftIO $ fmap Timestamp.fromUtcTime Time.getCurrentTime
+      timestamp <- IO.liftIO <| map Timestamp.fromUtcTime Time.getCurrentTime
       App.sql_
         "insert into processed_files (path, sha256, timestamp) \
         \values (?, ?, ?) on conflict (path) do update set \
         \sha256 = excluded.sha256, timestamp = excluded.timestamp"
         (path, sha256, timestamp)
-      pure $ Just result
+      pure <| Just result

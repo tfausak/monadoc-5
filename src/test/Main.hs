@@ -14,6 +14,7 @@ import qualified Monadoc.Handler.SearchSpec
 import qualified Monadoc.Handler.TachyonsSpec
 import qualified Monadoc.Handler.ThrowSpec
 import qualified Monadoc.MainSpec
+import Monadoc.Prelude
 import qualified Monadoc.Server.ApplicationSpec
 import qualified Monadoc.Server.CommonSpec
 import qualified Monadoc.Server.MainSpec
@@ -60,7 +61,7 @@ import qualified MonadocSpec
 import Test.Hspec
 
 main :: IO ()
-main = hspec $ do
+main = hspec <| do
   Monadoc.Data.CommitSpec.spec
   Monadoc.Data.MigrationsSpec.spec
   Monadoc.Data.OptionsSpec.spec

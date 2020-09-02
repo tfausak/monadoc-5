@@ -4,6 +4,7 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.UUID as Uuid
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Sql as Sql
 import qualified System.Random as Random
 
@@ -14,14 +15,14 @@ newtype Guid
   deriving (Eq, Show)
 
 instance Sql.FromField Guid where
-  fromField = Sql.fromFieldVia $ fmap fromUuid . Uuid.fromText
+  fromField = Sql.fromFieldVia <| map fromUuid <<< Uuid.fromText
 
 instance Random.Random Guid where
-  random = Bifunctor.first fromUuid . Random.random
-  randomR r = Bifunctor.first fromUuid . Random.randomR (both toUuid r)
+  random = Bifunctor.first fromUuid <<< Random.random
+  randomR r = Bifunctor.first fromUuid <<< Random.randomR (both toUuid r)
 
 instance Sql.ToField Guid where
-  toField = Sql.toField . Uuid.toText . toUuid
+  toField = Sql.toField <<< Uuid.toText <<< toUuid
 
 both :: Bifunctor.Bifunctor p => (a -> b) -> p a a -> p b b
 both f = Bifunctor.bimap f f

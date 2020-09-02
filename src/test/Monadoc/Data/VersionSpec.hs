@@ -2,23 +2,23 @@ module Monadoc.Data.VersionSpec where
 
 import qualified Data.Version as Version
 import qualified Monadoc.Data.Version as Monadoc.Version
+import Monadoc.Prelude
 import Test.Hspec
 
 spec :: Spec
-spec = describe "Monadoc.Data.Version" $ do
+spec = describe "Monadoc.Data.Version" <| do
 
-  describe "string" $ do
+  describe "string" <| do
 
-    it "is not null" $ do
-      Monadoc.Version.string `shouldSatisfy` not . null
+    it "is not null" <| do
+      Monadoc.Version.string `shouldSatisfy` present
 
-  describe "version" $ do
+  describe "version" <| do
 
-    it "has four branches" $ do
+    it "has four branches" <| do
       Version.versionBranch Monadoc.Version.version
-        `shouldSatisfy` (== 4)
-        . length
+        `shouldSatisfy` ((== 4) <<< length)
 
-    it "has no tags" $ do
+    it "has no tags" <| do
       let Version.Version _ tags = Monadoc.Version.version
-      tags `shouldSatisfy` null
+      tags `shouldSatisfy` blank
