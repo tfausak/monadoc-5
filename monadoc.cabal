@@ -114,6 +114,7 @@ library
     Monadoc.Handler.Index
     Monadoc.Handler.Logo
     Monadoc.Handler.LogOut
+    Monadoc.Handler.Package
     Monadoc.Handler.Ping
     Monadoc.Handler.Robots
     Monadoc.Handler.Search
@@ -189,6 +190,7 @@ test-suite test
     Monadoc.Handler.IndexSpec
     Monadoc.Handler.LogoSpec
     Monadoc.Handler.LogOutSpec
+    Monadoc.Handler.PackageSpec
     Monadoc.Handler.PingSpec
     Monadoc.Handler.RobotsSpec
     Monadoc.Handler.SearchSpec
