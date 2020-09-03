@@ -1,6 +1,7 @@
 module Monadoc.Handler.SearchSpec where
 
 import qualified Monadoc
+import qualified Monadoc.Main as Main
 import qualified Monadoc.Handler.Search as Search
 import Monadoc.Prelude
 import qualified Monadoc.Type.App as App
@@ -19,5 +20,7 @@ spec = describe "Monadoc.Handler.Search" <| do
       ctx <- Monadoc.configToContext Config.test
       response <- App.run
         ctx { Context.request = Wai.defaultRequest }
-        Search.handle
+        do
+          Main.runMigrations
+          Search.handle
       Wai.responseStatus response `shouldBe` Http.ok200

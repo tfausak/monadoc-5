@@ -95,6 +95,10 @@ migrations = fromList
     \module text not null, \
     \identifier text not null, \
     \unique (package, version, revision, module, identifier))"
+  , makeMigration
+    (2020, 9, 3, 9, 5, 0)
+    "create index exported_identifiers_package_index \
+    \on exported_identifiers (package)"
   ]
 
 makeMigration
