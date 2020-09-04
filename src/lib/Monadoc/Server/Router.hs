@@ -8,7 +8,7 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
 
-parseRoute :: Http.Method -> [Text.Text] -> Maybe Route.Route
+parseRoute :: Http.Method -> [Text] -> Maybe Route.Route
 parseRoute method path = do
   stdMethod <- either (always Nothing) Just <| Http.parseMethod method
   case (stdMethod, path) of
@@ -30,23 +30,22 @@ parseRoute method path = do
     (Http.GET, ["static", "tachyons-4-12-0.css"]) -> Just Route.Tachyons
     _ -> Nothing
 
-renderRelativeRoute :: Route.Route -> Text.Text
-renderRelativeRoute route = case route of
-  Route.Account -> "/account"
-  Route.Favicon -> "/favicon.ico"
-  Route.GitHubCallback -> "/api/github-callback"
-  Route.Index -> "/"
-  Route.Logo -> "/static/logo.png"
-  Route.LogOut -> "/api/log-out"
-  Route.Package p -> "/package/" <> PackageName.toText p
-  Route.Ping -> "/api/ping"
-  Route.Robots -> "/robots.txt"
-  Route.Search -> "/search"
-  Route.Tachyons -> "/static/tachyons-4-12-0.css"
-  Route.Throw -> "/api/throw"
-  Route.Version p v ->
-    "/package/" <> PackageName.toText p <> "/" <> Version.toText v
+renderRelativeRoute :: Route.Route -> Text
+renderRelativeRoute route = foldMap (Text.cons '/') <| case route of
+  Route.Account -> ["account"]
+  Route.Favicon -> ["favicon.ico"]
+  Route.GitHubCallback -> ["api", "github-callback"]
+  Route.Index -> [""]
+  Route.Logo -> ["static", "logo.png"]
+  Route.LogOut -> ["api", "log-out"]
+  Route.Package p -> ["package", PackageName.toText p]
+  Route.Ping -> ["api", "ping"]
+  Route.Robots -> ["robots.txt"]
+  Route.Search -> ["search"]
+  Route.Tachyons -> ["static", "tachyons-4-12-0.css"]
+  Route.Throw -> ["api", "throw"]
+  Route.Version p v -> ["package", PackageName.toText p, Version.toText v]
 
-renderAbsoluteRoute :: Config.Config -> Route.Route -> Text.Text
+renderAbsoluteRoute :: Config.Config -> Route.Route -> Text
 renderAbsoluteRoute config =
   (Text.pack (Config.url config) <>) <<< renderRelativeRoute
