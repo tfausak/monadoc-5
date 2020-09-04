@@ -113,7 +113,6 @@ module Monadoc.Prelude
   , Data.Set.Set
   , Data.String.IsString
   , Data.String.String
-  , Data.String.fromString
   , Data.String.lines
   , Data.String.unlines
   , Data.String.unwords

@@ -3,7 +3,7 @@ module Monadoc.Type.Revision where
 import qualified Data.Text as Text
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
-import Monadoc.Prelude hiding (fromString)
+import Monadoc.Prelude
 import qualified Text.Read as Read
 
 newtype Revision

@@ -6,7 +6,7 @@ import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.Parsec as Cabal
 import qualified Distribution.Types.Version as Cabal
-import Monadoc.Prelude hiding (fromString)
+import Monadoc.Prelude
 import qualified Monadoc.Utility.Sql as Sql
 
 newtype Version = Version Cabal.Version deriving (Eq, Ord, Show)

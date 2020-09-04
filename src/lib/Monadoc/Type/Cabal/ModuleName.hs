@@ -4,7 +4,7 @@ import qualified Data.List as List
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.ModuleName as Cabal
-import Monadoc.Prelude hiding (fromString)
+import Monadoc.Prelude
 
 newtype ModuleName = ModuleName Cabal.ModuleName deriving (Eq, Ord, Show)
 

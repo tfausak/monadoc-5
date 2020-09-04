@@ -1,6 +1,7 @@
 module Monadoc.Data.Options where
 
 import qualified Data.List as List
+import qualified Data.String as String
 import qualified Data.Text as Text
 import Monadoc.Prelude
 import qualified Monadoc.Type.Config as Config
@@ -106,7 +107,7 @@ hostOption =
       <> "."
       )
     <<< argument "STRING"
-    <| \host config -> Right config { Config.host = fromString host }
+    <| \host config -> Right config { Config.host = String.fromString host }
 
 showHost :: Warp.HostPreference -> String
 showHost host = case host of
@@ -150,7 +151,7 @@ servicesOption =
 
 readServices :: String -> Maybe (Set Service.Service)
 readServices string = do
-  list <- traverse readService <<< Text.splitOn "," <| fromString string
+  list <- traverse readService <| Text.splitOn "," <| Text.pack string
   guard <| present list
   let set = fromList list
   guard <| length set == length list
