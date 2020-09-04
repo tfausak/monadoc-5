@@ -12,6 +12,7 @@ import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Search as Handler.Search
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
 import qualified Monadoc.Handler.Throw as Handler.Throw
+import qualified Monadoc.Handler.Version as Handler.Version
 import Monadoc.Prelude
 import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.App as App
@@ -46,9 +47,10 @@ runRoute maybeRoute = do
     Route.Index -> Handler.Index.handle
     Route.Logo -> Handler.Logo.handle
     Route.LogOut -> Handler.LogOut.handle
-    Route.Package name -> Handler.Package.handle name
+    Route.Package p -> Handler.Package.handle p
     Route.Ping -> Handler.Ping.handle
     Route.Robots -> Handler.Robots.handle
     Route.Search -> Handler.Search.handle
     Route.Tachyons -> Handler.Tachyons.handle
     Route.Throw -> Handler.Throw.handle
+    Route.Version p v -> Handler.Version.handle p v

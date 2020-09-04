@@ -1,12 +1,16 @@
 module Monadoc.Type.Revision where
 
+import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
-import Monadoc.Prelude
+import Monadoc.Prelude hiding (fromString)
 import qualified Text.Read as Read
 
 newtype Revision
   = Revision Word
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
+
+instance Sql.FromField Revision where
+  fromField = Sql.fromField >>> map fromWord
 
 instance Sql.ToField Revision where
   toField = Sql.toField <<< toWord

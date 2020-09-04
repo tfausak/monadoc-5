@@ -120,6 +120,7 @@ library
     Monadoc.Handler.Search
     Monadoc.Handler.Tachyons
     Monadoc.Handler.Throw
+    Monadoc.Handler.Version
     Monadoc.Main
     Monadoc.Prelude
     Monadoc.Server.Application
@@ -196,6 +197,7 @@ test-suite test
     Monadoc.Handler.SearchSpec
     Monadoc.Handler.TachyonsSpec
     Monadoc.Handler.ThrowSpec
+    Monadoc.Handler.VersionSpec
     Monadoc.MainSpec
     Monadoc.Server.ApplicationSpec
     Monadoc.Server.CommonSpec

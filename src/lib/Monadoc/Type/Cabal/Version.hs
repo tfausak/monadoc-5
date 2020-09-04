@@ -1,6 +1,7 @@
 module Monadoc.Type.Cabal.Version where
 
 import qualified Data.List as List
+import qualified Data.Text as Text
 import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.Parsec as Cabal
@@ -22,9 +23,15 @@ fromCabal = Version
 fromString :: String -> Maybe Version
 fromString = map fromCabal <<< Cabal.simpleParsec
 
+fromText :: Text -> Maybe Version
+fromText = Text.unpack >>> fromString
+
 toCabal :: Version -> Cabal.Version
 toCabal (Version cabal) = cabal
 
 toString :: Version -> String
 toString =
   List.intercalate "." <<< map show <<< Cabal.versionNumbers <<< toCabal
+
+toText :: Version -> Text
+toText = toString >>> Text.pack

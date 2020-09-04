@@ -2,6 +2,7 @@ module Monadoc.Type.Route where
 
 import Monadoc.Prelude
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
+import qualified Monadoc.Type.Cabal.Version as Version
 
 -- | All of the routes that are reachable from the server. Unless otherwise
 -- noted, routes probably respond to HTTP GET requests. It is expected that
@@ -19,4 +20,5 @@ data Route
   | Search
   | Tachyons
   | Throw
+  | Version PackageName.PackageName Version.Version
   deriving (Eq, Show)

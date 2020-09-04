@@ -1,4 +1,4 @@
-module Monadoc.Handler.Package where
+module Monadoc.Handler.Version where
 
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.List as List
@@ -7,24 +7,23 @@ import qualified Database.SQLite.Simple as Sql
 import qualified Lucid as H
 import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
-import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Server.Template as Template
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
 import qualified Monadoc.Type.Cabal.Version as Version
 import qualified Monadoc.Type.Context as Context
-import qualified Monadoc.Type.Route as Route
+import qualified Monadoc.Type.Revision as Revision
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
-handle :: PackageName.PackageName -> App.App Wai.Request Wai.Response
-handle name = do
+handle :: PackageName.PackageName -> Version.Version -> App.App Wai.Request Wai.Response
+handle name version = do
   context <- Reader.ask
   maybeUser <- Common.getCookieUser
   loginUrl <- Common.makeLoginUrl
   rows <- App.sql
-    "select distinct version from exported_identifiers where package = ?"
-    [name]
+    "select distinct revision from exported_identifiers where package = ? and version = ?"
+    (name, version)
 
   let
     config = Context.config context
@@ -34,15 +33,13 @@ handle name = do
       then H.p_ do
         "Could not find a package named "
         H.code_ <| H.toHtml <| PackageName.toText name
+        " with version number "
+        H.code_ <| H.toHtml <| Version.toText version
         "."
       else rows
         |> map Sql.fromOnly
         |> List.sortOn Ord.Down
-        |> map (\ version -> version
-          |> Version.toString
-          |> H.toHtml
-          |> H.a_ [H.href_ <| Router.renderAbsoluteRoute config <| Route.Version name version]
-          |> H.li_)
+        |> map (Revision.toString >>> H.toHtml >>> H.li_)
         |> fold
         |> H.ul_
 
