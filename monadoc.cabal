@@ -116,6 +116,7 @@ library
     Monadoc.Handler.LogOut
     Monadoc.Handler.Package
     Monadoc.Handler.Ping
+    Monadoc.Handler.Revision
     Monadoc.Handler.Robots
     Monadoc.Handler.Search
     Monadoc.Handler.Tachyons
@@ -193,6 +194,7 @@ test-suite test
     Monadoc.Handler.LogOutSpec
     Monadoc.Handler.PackageSpec
     Monadoc.Handler.PingSpec
+    Monadoc.Handler.RevisionSpec
     Monadoc.Handler.RobotsSpec
     Monadoc.Handler.SearchSpec
     Monadoc.Handler.TachyonsSpec

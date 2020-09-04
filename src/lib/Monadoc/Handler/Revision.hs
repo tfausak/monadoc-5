@@ -1,34 +1,33 @@
-module Monadoc.Handler.Version where
+module Monadoc.Handler.Revision where
 
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.List as List
-import qualified Data.Ord as Ord
 import qualified Database.SQLite.Simple as Sql
 import qualified Lucid as H
 import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
-import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Server.Template as Template
 import qualified Monadoc.Type.App as App
+import qualified Monadoc.Type.Cabal.ModuleName as ModuleName
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
 import qualified Monadoc.Type.Cabal.Version as Version
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Revision as Revision
-import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
 handle
   :: PackageName.PackageName
   -> Version.Version
+  -> Revision.Revision
   -> App.App Wai.Request Wai.Response
-handle name version = do
+handle name version revision = do
   context <- Reader.ask
   maybeUser <- Common.getCookieUser
   loginUrl <- Common.makeLoginUrl
   rows <- App.sql
-    "select distinct revision from exported_identifiers where package = ? and version = ?"
-    (name, version)
+    "select distinct module from exported_identifiers where package = ? and version = ? and revision = ?"
+    (name, version, revision)
 
   let
     config = Context.config context
@@ -40,23 +39,14 @@ handle name version = do
         H.code_ <| H.toHtml <| PackageName.toText name
         " with version number "
         H.code_ <| H.toHtml <| Version.toText version
+        " and revision number "
+        H.code_ <| H.toHtml <| Revision.toText revision
         "."
       else
         rows
         |> map Sql.fromOnly
-        |> List.sortOn Ord.Down
-        |> map
-             (\revision ->
-               revision
-                 |> Revision.toString
-                 |> H.toHtml
-                 |> H.a_
-                      [ H.href_
-                        <| Router.renderAbsoluteRoute config
-                        <| Route.Revision name version revision
-                      ]
-                 |> H.li_
-             )
+        |> List.sort
+        |> map (ModuleName.toString >>> H.toHtml >>> H.li_)
         |> fold
         |> H.ul_
 

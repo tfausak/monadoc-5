@@ -1,11 +1,15 @@
 module Monadoc.Type.Cabal.ModuleName where
 
 import qualified Data.List as List
+import qualified Database.SQLite.Simple.FromField as Sql
 import qualified Database.SQLite.Simple.ToField as Sql
 import qualified Distribution.ModuleName as Cabal
-import Monadoc.Prelude
+import Monadoc.Prelude hiding (fromString)
 
 newtype ModuleName = ModuleName Cabal.ModuleName deriving (Eq, Ord, Show)
+
+instance Sql.FromField ModuleName where
+  fromField = Sql.fromField >>> map fromString
 
 instance Sql.ToField ModuleName where
   toField = Sql.toField <<< toString

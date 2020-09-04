@@ -8,6 +8,7 @@ import qualified Monadoc.Handler.Logo as Handler.Logo
 import qualified Monadoc.Handler.LogOut as Handler.LogOut
 import qualified Monadoc.Handler.Package as Handler.Package
 import qualified Monadoc.Handler.Ping as Handler.Ping
+import qualified Monadoc.Handler.Revision as Handler.Revision
 import qualified Monadoc.Handler.Robots as Handler.Robots
 import qualified Monadoc.Handler.Search as Handler.Search
 import qualified Monadoc.Handler.Tachyons as Handler.Tachyons
@@ -49,6 +50,7 @@ runRoute maybeRoute = do
     Route.LogOut -> Handler.LogOut.handle
     Route.Package p -> Handler.Package.handle p
     Route.Ping -> Handler.Ping.handle
+    Route.Revision p v r -> Handler.Revision.handle p v r
     Route.Robots -> Handler.Robots.handle
     Route.Search -> Handler.Search.handle
     Route.Tachyons -> Handler.Tachyons.handle

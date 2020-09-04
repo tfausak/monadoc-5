@@ -1,3 +1,6 @@
+import Monadoc.Prelude
+import Test.Hspec
+
 import qualified Monadoc.Data.CommitSpec
 import qualified Monadoc.Data.MigrationsSpec
 import qualified Monadoc.Data.OptionsSpec
@@ -10,12 +13,13 @@ import qualified Monadoc.Handler.LogoSpec
 import qualified Monadoc.Handler.LogOutSpec
 import qualified Monadoc.Handler.PackageSpec
 import qualified Monadoc.Handler.PingSpec
+import qualified Monadoc.Handler.RevisionSpec
 import qualified Monadoc.Handler.RobotsSpec
 import qualified Monadoc.Handler.SearchSpec
 import qualified Monadoc.Handler.TachyonsSpec
 import qualified Monadoc.Handler.ThrowSpec
+import qualified Monadoc.Handler.VersionSpec
 import qualified Monadoc.MainSpec
-import Monadoc.Prelude
 import qualified Monadoc.Server.ApplicationSpec
 import qualified Monadoc.Server.CommonSpec
 import qualified Monadoc.Server.MainSpec
@@ -59,7 +63,6 @@ import qualified Monadoc.Utility.TimeSpec
 import qualified Monadoc.Utility.Utf8Spec
 import qualified Monadoc.Worker.MainSpec
 import qualified MonadocSpec
-import Test.Hspec
 
 main :: IO ()
 main = hspec <| do
@@ -75,10 +78,12 @@ main = hspec <| do
   Monadoc.Handler.LogOutSpec.spec
   Monadoc.Handler.PackageSpec.spec
   Monadoc.Handler.PingSpec.spec
+  Monadoc.Handler.RevisionSpec.spec
   Monadoc.Handler.RobotsSpec.spec
   Monadoc.Handler.SearchSpec.spec
   Monadoc.Handler.TachyonsSpec.spec
   Monadoc.Handler.ThrowSpec.spec
+  Monadoc.Handler.VersionSpec.spec
   Monadoc.MainSpec.spec
   Monadoc.Server.ApplicationSpec.spec
   Monadoc.Server.CommonSpec.spec
