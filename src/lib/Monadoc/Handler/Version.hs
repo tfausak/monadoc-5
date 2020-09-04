@@ -16,7 +16,10 @@ import qualified Monadoc.Type.Revision as Revision
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 
-handle :: PackageName.PackageName -> Version.Version -> App.App Wai.Request Wai.Response
+handle
+  :: PackageName.PackageName
+  -> Version.Version
+  -> App.App Wai.Request Wai.Response
 handle name version = do
   context <- Reader.ask
   maybeUser <- Common.getCookieUser
@@ -36,7 +39,8 @@ handle name version = do
         " with version number "
         H.code_ <| H.toHtml <| Version.toText version
         "."
-      else rows
+      else
+        rows
         |> map Sql.fromOnly
         |> List.sortOn Ord.Down
         |> map (Revision.toString >>> H.toHtml >>> H.li_)

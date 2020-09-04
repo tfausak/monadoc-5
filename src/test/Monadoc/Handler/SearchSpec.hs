@@ -1,8 +1,8 @@
 module Monadoc.Handler.SearchSpec where
 
 import qualified Monadoc
-import qualified Monadoc.Main as Main
 import qualified Monadoc.Handler.Search as Search
+import qualified Monadoc.Main as Main
 import Monadoc.Prelude
 import qualified Monadoc.Type.App as App
 import qualified Monadoc.Type.Config as Config

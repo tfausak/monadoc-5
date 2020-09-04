@@ -44,7 +44,8 @@ renderRelativeRoute route = case route of
   Route.Search -> "/search"
   Route.Tachyons -> "/static/tachyons-4-12-0.css"
   Route.Throw -> "/api/throw"
-  Route.Version p v -> "/package/" <> PackageName.toText p <> "/" <> Version.toText v
+  Route.Version p v ->
+    "/package/" <> PackageName.toText p <> "/" <> Version.toText v
 
 renderAbsoluteRoute :: Config.Config -> Route.Route -> Text.Text
 renderAbsoluteRoute config =

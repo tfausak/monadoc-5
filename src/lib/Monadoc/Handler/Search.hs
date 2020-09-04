@@ -1,13 +1,13 @@
 module Monadoc.Handler.Search where
 
 import qualified Control.Monad.Trans.Reader as Reader
+import qualified Database.SQLite.Simple as Sql
 import qualified Lucid as H
 import Monadoc.Prelude
 import qualified Monadoc.Server.Common as Common
+import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Server.Template as Template
 import qualified Monadoc.Type.App as App
-import qualified Database.SQLite.Simple as Sql
-import qualified Monadoc.Server.Router as Router
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
 import qualified Monadoc.Type.Context as Context
 import qualified Monadoc.Type.Route as Route
@@ -23,14 +23,18 @@ handle = do
 
   let
     config = Context.config context
-    query = context
-      |> Context.request
-      |> Wai.queryString
-      |> lookup "query"
-      |> join
-      |> maybe "" Utf8.toText
+    query =
+      context
+        |> Context.request
+        |> Wai.queryString
+        |> lookup "query"
+        |> join
+        |> maybe "" Utf8.toText
 
-  rows <- App.sql "select distinct package from exported_identifiers where package like ? order by package asc limit 10" [query]
+  rows <- App.sql
+    "select distinct package from exported_identifiers \
+    \where package like ? order by package asc limit 10"
+    [query]
 
   let
     content = do
@@ -40,10 +44,17 @@ handle = do
         "."
       rows
         |> map Sql.fromOnly
-        |> map (\ name -> name
-          |> PackageName.toText
-          |> H.toHtml
-          |> H.a_ [H.href_ <| Router.renderAbsoluteRoute config <| Route.Package name])
+        |> map
+             (\name ->
+               name
+                 |> PackageName.toText
+                 |> H.toHtml
+                 |> H.a_
+                      [ H.href_
+                        <| Router.renderAbsoluteRoute config
+                        <| Route.Package name
+                      ]
+             )
         |> map H.li_
         |> fold
         |> H.ul_

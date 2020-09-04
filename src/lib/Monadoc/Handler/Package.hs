@@ -35,14 +35,22 @@ handle name = do
         "Could not find a package named "
         H.code_ <| H.toHtml <| PackageName.toText name
         "."
-      else rows
+      else
+        rows
         |> map Sql.fromOnly
         |> List.sortOn Ord.Down
-        |> map (\ version -> version
-          |> Version.toString
-          |> H.toHtml
-          |> H.a_ [H.href_ <| Router.renderAbsoluteRoute config <| Route.Version name version]
-          |> H.li_)
+        |> map
+             (\version ->
+               version
+                 |> Version.toString
+                 |> H.toHtml
+                 |> H.a_
+                      [ H.href_
+                        <| Router.renderAbsoluteRoute config
+                        <| Route.Version name version
+                      ]
+                 |> H.li_
+             )
         |> fold
         |> H.ul_
 
