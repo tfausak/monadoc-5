@@ -2,6 +2,7 @@ module Monadoc.Server.Router where
 
 import qualified Data.Text as Text
 import Monadoc.Prelude
+import qualified Monadoc.Type.Cabal.ModuleName as ModuleName
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
 import qualified Monadoc.Type.Cabal.Version as Version
 import qualified Monadoc.Type.Config as Config
@@ -30,6 +31,12 @@ parseRoute method path = do
       ver <- Version.fromText v
       rev <- Revision.fromText r
       pure <| Route.Revision pkg ver rev
+    (Http.GET, ["package", p, v, r, m]) -> do
+      pkg <- PackageName.fromText p
+      ver <- Version.fromText v
+      rev <- Revision.fromText r
+      mod <- ModuleName.fromText m
+      pure <| Route.Module pkg ver rev mod
     (Http.GET, ["robots.txt"]) -> Just Route.Robots
     (Http.GET, ["search"]) -> Just Route.Search
     (Http.GET, ["static", "logo.png"]) -> Just Route.Logo
@@ -44,6 +51,13 @@ renderRelativeRoute route = foldMap (Text.cons '/') <| case route of
   Route.Index -> [""]
   Route.Logo -> ["static", "logo.png"]
   Route.LogOut -> ["api", "log-out"]
+  Route.Module p v r m ->
+    [ "package"
+    , PackageName.toText p
+    , Version.toText v
+    , Revision.toText r
+    , ModuleName.toText m
+    ]
   Route.Package p -> ["package", PackageName.toText p]
   Route.Ping -> ["api", "ping"]
   Route.Revision p v r ->

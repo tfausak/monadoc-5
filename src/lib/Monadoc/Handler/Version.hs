@@ -27,7 +27,8 @@ handle name version = do
   maybeUser <- Common.getCookieUser
   loginUrl <- Common.makeLoginUrl
   rows <- App.sql
-    "select distinct revision from exported_identifiers where package = ? and version = ?"
+    "select distinct revision from exposed_modules \
+    \where package = ? and version = ?"
     (name, version)
 
   let

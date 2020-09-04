@@ -1,6 +1,7 @@
 module Monadoc.Type.Route where
 
 import Monadoc.Prelude
+import qualified Monadoc.Type.Cabal.ModuleName as ModuleName
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
 import qualified Monadoc.Type.Cabal.Version as Version
 import qualified Monadoc.Type.Revision as Revision
@@ -15,6 +16,7 @@ data Route
   | Index
   | Logo
   | LogOut -- ^ POST
+  | Module PackageName.PackageName Version.Version Revision.Revision ModuleName.ModuleName
   | Package PackageName.PackageName
   | Ping
   | Revision PackageName.PackageName Version.Version Revision.Revision

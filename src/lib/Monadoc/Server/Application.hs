@@ -6,6 +6,7 @@ import qualified Monadoc.Handler.GitHubCallback as Handler.GitHubCallback
 import qualified Monadoc.Handler.Index as Handler.Index
 import qualified Monadoc.Handler.Logo as Handler.Logo
 import qualified Monadoc.Handler.LogOut as Handler.LogOut
+import qualified Monadoc.Handler.Module as Handler.Module
 import qualified Monadoc.Handler.Package as Handler.Package
 import qualified Monadoc.Handler.Ping as Handler.Ping
 import qualified Monadoc.Handler.Revision as Handler.Revision
@@ -48,6 +49,7 @@ runRoute maybeRoute = do
     Route.Index -> Handler.Index.handle
     Route.Logo -> Handler.Logo.handle
     Route.LogOut -> Handler.LogOut.handle
+    Route.Module p v r m -> Handler.Module.handle p v r m
     Route.Package p -> Handler.Package.handle p
     Route.Ping -> Handler.Ping.handle
     Route.Revision p v r -> Handler.Revision.handle p v r

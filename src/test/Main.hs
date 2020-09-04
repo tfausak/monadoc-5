@@ -11,6 +11,7 @@ import qualified Monadoc.Handler.GitHubCallbackSpec
 import qualified Monadoc.Handler.IndexSpec
 import qualified Monadoc.Handler.LogoSpec
 import qualified Monadoc.Handler.LogOutSpec
+import qualified Monadoc.Handler.ModuleSpec
 import qualified Monadoc.Handler.PackageSpec
 import qualified Monadoc.Handler.PingSpec
 import qualified Monadoc.Handler.RevisionSpec
@@ -76,6 +77,7 @@ main = hspec <| do
   Monadoc.Handler.IndexSpec.spec
   Monadoc.Handler.LogoSpec.spec
   Monadoc.Handler.LogOutSpec.spec
+  Monadoc.Handler.ModuleSpec.spec
   Monadoc.Handler.PackageSpec.spec
   Monadoc.Handler.PingSpec.spec
   Monadoc.Handler.RevisionSpec.spec
