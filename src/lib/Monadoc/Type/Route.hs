@@ -1,5 +1,6 @@
 module Monadoc.Type.Route where
 
+import qualified Data.Text as Text
 import Monadoc.Prelude
 import qualified Monadoc.Type.Cabal.ModuleName as ModuleName
 import qualified Monadoc.Type.Cabal.PackageName as PackageName
@@ -13,6 +14,7 @@ data Route
   = Account
   | Favicon
   | GitHubCallback
+  | Identifier PackageName.PackageName Version.Version Revision.Revision ModuleName.ModuleName Text.Text
   | Index
   | Logo
   | LogOut -- ^ POST

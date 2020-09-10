@@ -45,14 +45,14 @@ handle = do
       rows
         |> map Sql.fromOnly
         |> map
-             (\name ->
-               name
+             (\pkg ->
+               pkg
                  |> PackageName.toText
                  |> H.toHtml
                  |> H.a_
                       [ H.href_
                         <| Router.renderAbsoluteRoute config
-                        <| Route.Package name
+                        <| Route.Package pkg
                       ]
              )
         |> map H.li_

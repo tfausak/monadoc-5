@@ -111,6 +111,7 @@ library
     Monadoc.Handler.Account
     Monadoc.Handler.Favicon
     Monadoc.Handler.GitHubCallback
+    Monadoc.Handler.Identifier
     Monadoc.Handler.Index
     Monadoc.Handler.Logo
     Monadoc.Handler.LogOut
@@ -190,6 +191,7 @@ test-suite test
     Monadoc.Handler.AccountSpec
     Monadoc.Handler.FaviconSpec
     Monadoc.Handler.GitHubCallbackSpec
+    Monadoc.Handler.IdentifierSpec
     Monadoc.Handler.IndexSpec
     Monadoc.Handler.LogoSpec
     Monadoc.Handler.LogOutSpec

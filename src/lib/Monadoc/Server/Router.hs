@@ -9,6 +9,13 @@ import qualified Monadoc.Type.Config as Config
 import qualified Monadoc.Type.Revision as Revision
 import qualified Monadoc.Type.Route as Route
 import qualified Network.HTTP.Types as Http
+import qualified Network.URI as Uri
+
+escape :: Text -> Text
+escape =
+  Text.unpack
+    >>> Uri.escapeURIString Uri.isUnescapedInURIComponent
+    >>> Text.pack
 
 parseRoute :: Http.Method -> [Text] -> Maybe Route.Route
 parseRoute method path = do
@@ -37,6 +44,12 @@ parseRoute method path = do
       rev <- Revision.fromText r
       mod <- ModuleName.fromText m
       pure <| Route.Module pkg ver rev mod
+    (Http.GET, ["package", p, v, r, m, idn]) -> do
+      pkg <- PackageName.fromText p
+      ver <- Version.fromText v
+      rev <- Revision.fromText r
+      mod <- ModuleName.fromText m
+      pure <| Route.Identifier pkg ver rev mod idn
     (Http.GET, ["robots.txt"]) -> Just Route.Robots
     (Http.GET, ["search"]) -> Just Route.Search
     (Http.GET, ["static", "logo.png"]) -> Just Route.Logo
@@ -44,29 +57,38 @@ parseRoute method path = do
     _ -> Nothing
 
 renderRelativeRoute :: Route.Route -> Text
-renderRelativeRoute route = foldMap (Text.cons '/') <| case route of
-  Route.Account -> ["account"]
-  Route.Favicon -> ["favicon.ico"]
-  Route.GitHubCallback -> ["api", "github-callback"]
-  Route.Index -> [""]
-  Route.Logo -> ["static", "logo.png"]
-  Route.LogOut -> ["api", "log-out"]
-  Route.Module p v r m ->
-    [ "package"
-    , PackageName.toText p
-    , Version.toText v
-    , Revision.toText r
-    , ModuleName.toText m
-    ]
-  Route.Package p -> ["package", PackageName.toText p]
-  Route.Ping -> ["api", "ping"]
-  Route.Revision p v r ->
-    ["package", PackageName.toText p, Version.toText v, Revision.toText r]
-  Route.Robots -> ["robots.txt"]
-  Route.Search -> ["search"]
-  Route.Tachyons -> ["static", "tachyons-4-12-0.css"]
-  Route.Throw -> ["api", "throw"]
-  Route.Version p v -> ["package", PackageName.toText p, Version.toText v]
+renderRelativeRoute route =
+  foldMap (escape >>> Text.cons '/') <| case route of
+    Route.Account -> ["account"]
+    Route.Favicon -> ["favicon.ico"]
+    Route.GitHubCallback -> ["api", "github-callback"]
+    Route.Identifier p v r m i ->
+      [ "package"
+      , PackageName.toText p
+      , Version.toText v
+      , Revision.toText r
+      , ModuleName.toText m
+      , i
+      ]
+    Route.Index -> [""]
+    Route.Logo -> ["static", "logo.png"]
+    Route.LogOut -> ["api", "log-out"]
+    Route.Module p v r m ->
+      [ "package"
+      , PackageName.toText p
+      , Version.toText v
+      , Revision.toText r
+      , ModuleName.toText m
+      ]
+    Route.Package p -> ["package", PackageName.toText p]
+    Route.Ping -> ["api", "ping"]
+    Route.Revision p v r ->
+      ["package", PackageName.toText p, Version.toText v, Revision.toText r]
+    Route.Robots -> ["robots.txt"]
+    Route.Search -> ["search"]
+    Route.Tachyons -> ["static", "tachyons-4-12-0.css"]
+    Route.Throw -> ["api", "throw"]
+    Route.Version p v -> ["package", PackageName.toText p, Version.toText v]
 
 renderAbsoluteRoute :: Config.Config -> Route.Route -> Text
 renderAbsoluteRoute config =

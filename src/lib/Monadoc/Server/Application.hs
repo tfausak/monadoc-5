@@ -3,6 +3,7 @@ module Monadoc.Server.Application where
 import qualified Monadoc.Handler.Account as Handler.Account
 import qualified Monadoc.Handler.Favicon as Handler.Favicon
 import qualified Monadoc.Handler.GitHubCallback as Handler.GitHubCallback
+import qualified Monadoc.Handler.Identifier as Handler.Identifier
 import qualified Monadoc.Handler.Index as Handler.Index
 import qualified Monadoc.Handler.Logo as Handler.Logo
 import qualified Monadoc.Handler.LogOut as Handler.LogOut
@@ -46,6 +47,7 @@ runRoute maybeRoute = do
     Route.Account -> Handler.Account.handle
     Route.Favicon -> Handler.Favicon.handle
     Route.GitHubCallback -> Handler.GitHubCallback.handle
+    Route.Identifier p v r m i -> Handler.Identifier.handle p v r m i
     Route.Index -> Handler.Index.handle
     Route.Logo -> Handler.Logo.handle
     Route.LogOut -> Handler.LogOut.handle

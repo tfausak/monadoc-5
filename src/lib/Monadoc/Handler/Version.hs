@@ -47,14 +47,14 @@ handle name version = do
         |> map Sql.fromOnly
         |> List.sortOn Ord.Down
         |> map
-             (\revision ->
-               revision
+             (\rev ->
+               rev
                  |> Revision.toString
                  |> H.toHtml
                  |> H.a_
                       [ H.href_
                         <| Router.renderAbsoluteRoute config
-                        <| Route.Revision name version revision
+                        <| Route.Revision name version rev
                       ]
                  |> H.li_
              )
