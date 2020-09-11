@@ -263,7 +263,7 @@ Resources:
     DependsOn: Listener
     Properties:
       Cluster: !Ref Cluster
-      DesiredCount: 1
+      DesiredCount: 0
       LoadBalancers:
         - ContainerName: !Sub ${AWS::StackName}-container-definition
           ContainerPort: !Ref PortNumber
